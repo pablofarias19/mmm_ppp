@@ -45,10 +45,10 @@ CAMPOS OPCIONALES:
 
 REGLAS IMPORTANTES:
 - El JSON debe ser un array en la raíz: `[ { ... }, { ... } ]`
-- "business_type" debe coincidir exactamente con la lista permitida (sin mayúsculas ni variantes).
+- "business_type" debe coincidir exactamente con la lista permitida (en minúsculas y sin variantes).
 - "lat" y "lng" deben ser números decimales válidos.
-- Los campos booleanos deben enviarse como `0` o `1`.
-- "price_range" se recomienda entre 1 y 5.
+- Los campos booleanos (`has_delivery`, `has_card_payment`, `is_franchise`) deben enviarse como `0` o `1`.
+- "price_range" se acepta en 1 a 5 (si llega fuera de rango, la API lo ajusta al límite más cercano).
 
 EJEMPLO DE SALIDA:
 [
@@ -120,7 +120,7 @@ CAMPOS OPCIONALES:
 REGLAS IMPORTANTES:
 - El JSON debe ser un array en la raíz: `[ { ... }, { ... } ]`
 - "lat" y "lng" son opcionales, pero si se envían deben ser números decimales válidos.
-- Los campos booleanos deben enviarse como `0` o `1`.
+- Los campos booleanos (`inpi_registrada`, `es_franquicia`, `tiene_zona`, `tiene_licencia`) deben enviarse como `0` o `1`.
 
 EJEMPLO DE SALIDA:
 [
