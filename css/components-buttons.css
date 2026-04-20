@@ -1,0 +1,175 @@
+/* ─── BUTTON BASE STYLES ─── */
+.btn,
+button,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: none;
+  border-radius: var(--border-radius-md);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-semibold);
+  line-height: var(--line-height-tight);
+  cursor: pointer;
+  text-decoration: none;
+  transition: all var(--transition-base);
+  outline: none;
+  position: relative;
+  overflow: hidden;
+}
+
+/* ─── PRIMARY BUTTON (Azul profundo) ─── */
+.btn-primary,
+.btn.primary,
+button:not([class]) {
+  background: var(--primary);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:hover,
+.btn.primary:hover {
+  background: var(--primary-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:active,
+.btn.primary:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-primary:focus,
+.btn.primary:focus {
+  box-shadow: 0 0 0 3px rgba(27, 59, 111, 0.1);
+}
+
+/* ─── SECONDARY BUTTON (Dorado - Acento) ─── */
+.btn-secondary,
+.btn.secondary {
+  background: var(--color-gold-dark);      /* #B8860B - texto legible sobre fondo blanco */
+  color: var(--text-inverse);
+  border: var(--border-width-normal) solid var(--color-gold-dark);
+  box-shadow: none;
+}
+
+.btn-secondary:hover,
+.btn.secondary:hover {
+  background: #96690A;
+  border-color: #96690A;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-gold);
+}
+
+.btn-secondary:active,
+.btn.secondary:active {
+  background: #7A5508;
+  transform: translateY(0);
+}
+
+/* ─── DANGER BUTTON (Rojo) ─── */
+.btn-danger,
+.btn.danger {
+  background: var(--accent);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-danger:hover,
+.btn.danger:hover {
+  background: var(--accent-dark);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-danger:active,
+.btn.danger:active {
+  transform: translateY(0);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ─── SUCCESS BUTTON (Verde) ─── */
+.btn-success,
+.btn.success {
+  background: var(--color-success);
+  color: var(--text-inverse);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-success:hover,
+.btn.success:hover {
+  background: #27ae60;
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── SMALL BUTTONS ─── */
+.btn-sm,
+.btn.small {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--font-size-xs);
+}
+
+/* ─── LARGE BUTTONS ─── */
+.btn-lg,
+.btn.large {
+  padding: var(--space-md) var(--space-lg);
+  font-size: var(--font-size-md);
+}
+
+/* ─── FULL WIDTH ─── */
+.btn-full,
+.btn.full {
+  width: 100%;
+}
+
+/* ─── DISABLED STATE ─── */
+.btn:disabled,
+button:disabled,
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ─── BUTTON GROUPS ─── */
+.btn-group {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+/* ─── RESPONSIVE ─── */
+@media (max-width: 768px) {
+  .btn {
+    padding: var(--space-sm) var(--space-md);
+    font-size: var(--font-size-sm);
+  }
+  
+  .btn-lg {
+    padding: var(--space-sm) var(--space-lg);
+  }
+}
+
+@media (max-width: 640px) {
+  .btn-full,
+  .btn-group {
+    width: 100%;
+  }
+  
+  .btn-group {
+    flex-direction: column;
+  }
+  
+  .btn-group .btn {
+    width: 100%;
+  }
+}

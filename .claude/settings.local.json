@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//var/www/**)",
+      "Bash(php -l views/business/map.php)",
+      "mcp__Claude_in_Chrome__tabs_context_mcp",
+      "Bash(mkdir -p \"C:\\\\\\\\Users\\\\\\\\USUARIO\\\\\\\\Documents\\\\\\\\programacion2\\\\\\\\mapitaV\\\\\\\\uploads\\\\\\\\businesses\" \"C:\\\\\\\\Users\\\\\\\\USUARIO\\\\\\\\Documents\\\\\\\\programacion2\\\\\\\\mapitaV\\\\\\\\uploads\\\\\\\\brands\")",
+      "Read(//c/Users/USUARIO/Documents/programacion2/mapitaV/uploads//**)",
+      "Bash(grep \"INSERT INTO \\\\`business_icons\\\\`\" u580580751_map.sql -A 550)",
+      "Bash(php api/api_iconos.php)",
+      "Bash(php -r ':*)",
+      "Bash(grep -r \"CREATE TABLE\\\\|CREATE DATABASE\" /c/Users/USUARIO/Documents/programacion2/mapitaV/*.sql)",
+      "Bash(grep -n \"SHOW TABLES\\\\|SELECT.*FROM\" /c/Users/USUARIO/Documents/programacion2/mapitaV/*.sql)",
+      "Bash(chmod 755 /c/Users/USUARIO/Documents/programacion2/mapitaV/uploads/brands)",
+      "Bash(ls -1 /c/Users/USUARIO/Documents/programacion2/mapitaV/css/*.css)",
+      "Bash(php -l /c/Users/USUARIO/Documents/programacion2/mapitaV/core/Database.php)",
+      "Bash(php -l /c/Users/USUARIO/Documents/programacion2/mapitaV/core/helpers.php)",
+      "Bash(php -l business/view_business.php)",
+      "Bash(php -l config/migration.sql)",
+      "Bash(grep -E \"\\\\.\\(php|html\\)$\")",
+      "Bash(grep -A 40 \"^CREATE TABLE \\\\`eventos\\\\`\" \"C:\\\\Users\\\\USUARIO\\\\Documents\\\\programacion2\\\\mapitaV\\\\u580580751_map.sql\")",
+      "Bash(find \"C:\\\\Users\\\\USUARIO\\\\Documents\\\\programacion2\\\\mapitaV\" -name \"*.sql\" -type f -exec grep -l \"trivias\\\\|CREATE TABLE.*trivia\" {} \\\\;)",
+      "WebFetch(domain:mapita.com.ar)"
+    ]
+  }
+}

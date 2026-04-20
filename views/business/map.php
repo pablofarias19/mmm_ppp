@@ -1,0 +1,4700 @@
+<?php
+session_start();
+require_once __DIR__ . '/../../core/helpers.php';
+
+// ── Open Graph ────────────────────────────────────────────────────────────────
+$og_title       = 'MAPITA - Mapa de Marcas y Negocios';
+$og_description = 'Descubrí marcas y negocios cerca tuyo.';
+$og_type        = 'website';
+$_scheme        = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
+$og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') . '/img/og-mapita.png';
+?>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%23667eea'/><text x='16' y='22' text-anchor='middle' font-size='16' fill='white'>🗺️</text></svg>">
+    <title>🗺️ Mapita — Mapa de Negocios y Marcas</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <?php require_once __DIR__ . '/../../includes/meta_og.php'; ?>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    <link rel="stylesheet" href="/css/variables-luxury.css">
+    <link rel="stylesheet" href="/css/components-buttons.css">
+    <link rel="stylesheet" href="/css/components-cards.css">
+    <link rel="stylesheet" href="/css/components-forms.css">
+    <link rel="stylesheet" href="/css/popup-redesign.css">
+    <link rel="stylesheet" href="/css/brand-popup-premium.css">
+    <link rel="stylesheet" href="/css/map-styles.css">
+    <link rel="stylesheet" href="/css/wt-panel.css">
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.2; }
+        }
+
+        /* Variables locales del mapa — solo las que variables-luxury.css no define */
+        :root {
+            --success:     #2ecc71;
+            --warning:     #f39c12;
+            --danger:      #e74c3c;
+            --info:        #3498db;
+            --light-gray:  #f5f6fa;
+            --medium-gray: #d0d5dd;
+            --dark-gray:   #6c757d;
+            --charcoal:    #2c3e50;
+        }
+
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; display: flex; flex-direction: row; height: 100vh; background: #fafbfc; }
+
+        /* ── Sidebar (RESPONSIVE) ────────────────────────────── */
+        #sidebar {
+            width: var(--sidebar-width);
+            padding: var(--space-md);
+            background: var(--bg-tertiary);
+            overflow-y: auto;
+            border-right: var(--border-width-thin) solid var(--color-gray-300);
+            transition: transform var(--transition-base), left var(--transition-base);
+            z-index: var(--z-fixed);
+        }
+        
+        #togglePanel {
+            display: none;
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            padding: 9px 12px;
+            z-index: 1001;           /* siempre encima del ver-selector (z:1000) */
+            background: var(--primary, #1B3B6F);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            font-weight: 700;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.25);
+            transition: background 0.2s, transform 0.15s;
+            white-space: nowrap;
+        }
+
+        #togglePanel:hover {
+            background: var(--primary-dark, #0d2247);
+            transform: translateY(-1px);
+        }
+        
+        #map {
+            flex: 1;
+            height: 100%;
+            min-height: 0; /* fix flex child height in some browsers */
+        }
+        
+        /* ── RESPONSIVE: Tablet (≤768px) ────────────────────────── */
+        @media (max-width: 768px) {
+            #sidebar {
+                position: fixed;
+                top: 0; left: 0;
+                width: 290px;
+                height: 100%;
+                transform: translateX(-100%);
+                border-right: none;
+                box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+                z-index: 900;
+            }
+            #sidebar.active { transform: translateX(0); }
+
+            /* overlay oscuro detrás del sidebar */
+            #sidebar.active::before {
+                content: '';
+                position: fixed;
+                inset: 0;
+                background: rgba(0,0,0,0.4);
+                z-index: -1;
+            }
+
+            #togglePanel {
+                display: flex;
+                align-items: center;
+                gap: 5px;
+                top: 10px;
+                left: 10px;
+                padding: 8px 12px;
+                font-size: 13px;
+                border-radius: 10px;
+            }
+        }
+
+        /* ── RESPONSIVE: Mobile (≤480px) ────────────────────────── */
+        @media (max-width: 480px) {
+            #sidebar { width: 86vw; max-width: 320px; }
+
+            #togglePanel {
+                top: 10px; left: 10px; bottom: auto;
+                padding: 8px 10px;
+                font-size: 13px;
+                border-radius: 8px;
+            }
+        }
+
+        /* ── Floating selector (REDISEÑADO) ─────────────────────── */
+        #ver-selector {
+            position: absolute;
+            top: 12px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+
+            display: flex;
+            align-items: center;
+            gap: 1px;
+
+            background: rgba(255, 255, 255, 0.98);
+            padding: 6px;
+            border-radius: 28px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            cursor: move;
+            user-select: none;
+            touch-action: none;
+            transition: box-shadow 0.3s ease, transform 0.2s ease;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        #ver-selector:hover {
+            box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
+        /* ── RESPONSIVE: Tablet y Mobile (≤768px) ───────────────── */
+        @media (max-width: 768px) {
+            #ver-selector {
+                position: fixed;
+                top: 10px;
+                left: 50%;
+                transform: translateX(-50%);
+                animation: none;
+                width: fit-content;
+                padding: 4px 5px;
+                gap: 2px;
+                cursor: default;
+                touch-action: auto;
+            }
+            /* Ocultar texto, mostrar solo emoji → botones compactos */
+            #ver-selector .toggle-btn .btn-label { display: none; }
+            #ver-selector .toggle-btn {
+                padding: 8px 14px !important;
+                font-size: 16px !important;
+                flex: none;
+                line-height: 1;
+            }
+            #ver-selector .drag-handle { display: none; }
+        }
+
+        #ver-selector button {
+            cursor: pointer;
+            padding: 10px 14px;
+            border: none;
+            border-radius: 22px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+        }
+
+        #ver-selector button:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+        }
+
+        #ver-selector button:active {
+            transform: translateY(0);
+        }
+
+        #ver-selector .drag-handle {
+            padding: 0 6px; color: #bbb; font-size: 15px; cursor: move; line-height: 1;
+            transition: color 0.2s;
+        }
+
+        #ver-selector:hover .drag-handle {
+            color: #999;
+        }
+
+        /* ── Toggle Button Styles ──────────────────── */
+        #ver-selector .toggle-btn {
+            padding: 10px 14px !important;
+            border: none;
+            border-radius: 22px;
+            font-size: 13px;
+            font-weight: 600;
+            font-family: inherit;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            background: #f0f0f0;
+            color: var(--charcoal);
+            cursor: pointer;
+        }
+
+        #ver-selector .toggle-btn.active {
+            background: var(--primary);
+            color: white;
+            font-weight: 700;
+        }
+
+        #ver-selector .toggle-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        #ver-selector .toggle-btn:active {
+            transform: translateY(0);
+        }
+
+        /* ── Sidebar cards ─────────────────────────── */
+        .sidebar-card {
+            background: white; border-radius: 10px; padding: 12px 14px;
+            margin-bottom: 12px; box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
+        .sidebar-card-label {
+            font-size: 10px; font-weight: 700; color: #999;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            margin-bottom: 8px; display: block;
+        }
+        .section-header {
+            font-size: 10px; font-weight: 700; color: #999;
+            text-transform: uppercase; letter-spacing: 0.8px;
+            padding: 8px 4px 4px; margin: 0;
+        }
+        #stats { text-align: center; font-size: 14px; font-weight: bold; color: #1976d2; }
+
+        /* ── List items ────────────────────────────── */
+        #lista .negocio, #lista .marca {
+            border-radius: 8px; padding: 10px; margin-bottom: 6px;
+            border: none; background: white;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.07);
+            cursor: pointer; transition: box-shadow 0.15s;
+        }
+        #lista .negocio:hover, #lista .marca:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.14); }
+        #lista .marca { background: #f8f0ff; }
+
+        /* ── Generic inputs/buttons reset (solo sidebar) ─────────── */
+        #sidebar select, #sidebar input[type="text"], #sidebar input[type="range"] {
+            width: 100%; padding: 8px; margin-bottom: 10px; font-size: 1em;
+        }
+
+        /* (ver-selector responsive ya definido arriba) */
+
+        /* ── Popup action buttons ──────────────────── */
+        .popup-action {
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 7px 11px; border-radius: 6px; font-size: 12px;
+            text-decoration: none; color: white !important; border: none; cursor: pointer;
+            font-family: sans-serif; line-height: 1; white-space: nowrap;
+            font-weight: 600; letter-spacing: 0.01em;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.18);
+            transition: filter 0.15s, transform 0.15s, box-shadow 0.15s;
+        }
+        .popup-action:hover {
+            filter: brightness(1.12);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.22);
+        }
+        .popup-action:active { transform: translateY(0); filter: brightness(0.95); }
+
+        /* ── Open/Closed badge ─────────────────────── */
+        .badge-open   { background: #d4edda; color: #155724; border-radius: 20px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+        .badge-closed { background: #f8d7da; color: #721c24; border-radius: 20px; padding: 2px 8px; font-size: 11px; font-weight: 600; }
+
+        /* ── Accordion filters (MEJORADO) ──────────────────────── */
+        .accordion-item { border-bottom: 1px solid #e8e9f0; }
+        .accordion-item:last-child { border-bottom: none; }
+        .accordion-btn {
+            width: 100%; text-align: left; padding: 12px 14px;
+            background: #f8f9fb; border: none; cursor: pointer;
+            font-weight: 600; font-size: 12px; text-transform: uppercase;
+            color: #555; letter-spacing: 0.5px;
+            transition: all 0.2s; display: flex; justify-content: space-between; align-items: center;
+            line-height: 1.4;
+        }
+        .accordion-btn:hover { background: #f0f1f8; }
+        .accordion-btn.active { background: #667eea; color: white; }
+
+        .accordion-content {
+            padding: 0; max-height: 0; overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+            background: #fafbff;
+        }
+        .accordion-content.active {
+            max-height: 500px;
+            padding: 14px 14px;
+        }
+
+        /* Checkboxes profesionales */
+        .accordion-content input[type="checkbox"],
+        .accordion-content input[type="radio"] {
+            width: 18px;
+            height: 18px;
+            min-width: 18px;
+            min-height: 18px;
+            margin-right: 10px;
+            margin-top: 1px;
+            cursor: pointer;
+            accent-color: #667eea;
+            flex-shrink: 0;
+        }
+
+        /* Labels con mejor espaciado y alineación */
+        .accordion-content label {
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            margin-bottom: 9px;
+            font-size: 13px;
+            color: #374151;
+            cursor: pointer;
+            padding: 6px 4px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            line-height: 1.5;
+            user-select: none;
+        }
+        .accordion-content label:hover {
+            background-color: #f0f1f8;
+            color: #667eea;
+        }
+        .accordion-content label:last-child { margin-bottom: 0; }
+        .filter-radius-slider {
+            width: 100%;
+            margin: 10px 0;
+            cursor: pointer;
+            accent-color: #667eea;
+            height: 6px;
+        }
+        .filter-location-autocomplete {
+            width: 100%;
+            padding: 8px 10px;
+            border: 1px solid #d0d5dd;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 13px;
+            font-family: inherit;
+            color: #374151;
+            transition: all 0.2s ease;
+        }
+        .filter-location-autocomplete:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .filter-location-autocomplete::placeholder {
+            color: #9ca3af;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Mobile toggle -->
+<button id="togglePanel" onclick="toggleSidebar()">☰ Menú</button>
+
+<!-- Floating draggable view selector (IMPROVED: Independent toggles) -->
+<div id="ver-selector">
+    <span class="drag-handle" title="Mover">⠿</span>
+    <button onclick="toggleVer('negocios')" id="sel-negocios" class="toggle-btn active"
+            style="border-radius:20px 0 0 20px;">
+        🏪 <span class="btn-label">Negocios</span>
+    </button>
+    <button onclick="toggleVer('marcas')" id="sel-marcas" class="toggle-btn active"
+            style="border-radius:0 20px 20px 0;">
+        🏷️ <span class="btn-label">Marcas</span>
+    </button>
+</div>
+
+<!-- Sidebar -->
+<div id="sidebar">
+    <h2 style="color:#667eea;margin:0 0 15px 0;">🗺️ Mapita</h2>
+
+    <input type="text" id="busqueda" placeholder="🔍 Buscar..." oninput="filtrar()"
+           style="width:100%;padding:10px 12px;border:1px solid #d0d5dd;border-radius:8px;margin-bottom:12px;font-size:13px;font-family:inherit;color:#374151;transition:all 0.2s ease;"
+           onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)'"
+           onblur="this.style.borderColor='#d0d5dd';this.style.boxShadow='none'">
+
+    <select id="tipo" onchange="filtrar()"
+            style="width:100%;padding:10px 12px;border:1px solid #d0d5dd;border-radius:8px;margin-bottom:12px;font-size:13px;font-family:inherit;color:#374151;background-color:white;cursor:pointer;transition:all 0.2s ease;"
+            onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)'"
+            onblur="this.style.borderColor='#d0d5dd';this.style.boxShadow='none'">
+        <option value="">📂 Todos los tipos</option>
+        <optgroup label="Gastronomía">
+            <option value="restaurante">🍽️ Restaurante</option>
+            <option value="cafeteria">☕ Cafetería</option>
+            <option value="bar">🍺 Bar / Pub</option>
+            <option value="panaderia">🥐 Panadería</option>
+            <option value="heladeria">🍦 Heladería</option>
+            <option value="pizzeria">🍕 Pizzería</option>
+        </optgroup>
+        <optgroup label="Comercio">
+            <option value="supermercado">🛒 Supermercado</option>
+            <option value="comercio">🛍️ Tienda / Local</option>
+            <option value="autos_venta">🚗 Autos a la venta</option>
+            <option value="motos_venta">🏍️ Motos a la venta</option>
+            <option value="indumentaria">👕 Indumentaria</option>
+            <option value="verduleria">🥦 Verdulería / Frutería</option>
+            <option value="carniceria">🥩 Carnicería</option>
+            <option value="pastas">🍝 Fábrica de Pastas</option>
+            <option value="ferreteria">🔧 Ferretería</option>
+            <option value="electronica">📱 Tecnología</option>
+            <option value="muebleria">🛋️ Mueblería</option>
+            <option value="floristeria">💐 Floristería</option>
+            <option value="libreria">📖 Librería</option>
+            <option value="kiosco">🏪 Kiosco</option>
+            <option value="optica">👓 Óptica</option>
+        </optgroup>
+        <optgroup label="Salud">
+            <option value="farmacia">💊 Farmacia</option>
+            <option value="hospital">🏥 Clínica / Hospital</option>
+            <option value="odontologia">🦷 Odontología</option>
+            <option value="psicologo">🧠 Psicología</option>
+            <option value="psicopedagogo">📚 Psicopedagogía</option>
+            <option value="fonoaudiologo">🗣️ Fonoaudiología</option>
+            <option value="grafologo">✍️ Grafología</option>
+            <option value="veterinaria">🐾 Veterinaria</option>
+        </optgroup>
+        <optgroup label="Belleza & Bienestar">
+            <option value="salon_belleza">💇 Peluquería / Salón</option>
+            <option value="barberia">💈 Barbería</option>
+            <option value="spa">💆 Spa / Estética</option>
+            <option value="gimnasio">💪 Gimnasio</option>
+            <option value="danza">💃 Danza / Ballet</option>
+        </optgroup>
+        <optgroup label="Servicios">
+            <option value="banco">🏦 Banco / Financiera</option>
+            <option value="inmobiliaria">🏠 Inmobiliaria</option>
+            <option value="seguros">🛡️ Seguros</option>
+            <option value="abogado">⚖️ Estudio Jurídico</option>
+            <option value="contador">📊 Contaduría</option>
+            <option value="arquitectura">📐 Arquitectura</option>
+            <option value="ingenieria">⚙️ Ingeniería</option>
+            <option value="taller">🔩 Taller Mecánico</option>
+            <option value="herreria">🔨 Herrería</option>
+            <option value="carpinteria">🪵 Carpintería</option>
+            <option value="modista">🧵 Modista / Costura</option>
+            <option value="construccion">🏗️ Construcción</option>
+            <option value="centro_vecinal">🏘️ Centro Vecinal / ONG</option>
+            <option value="remate">🔨 Remates / Subastas</option>
+        </optgroup>
+        <optgroup label="Educación & Turismo">
+            <option value="academia">🎓 Academia / Instituto</option>
+            <option value="idiomas">🌐 Instituto de Idiomas</option>
+            <option value="escuela">🏫 Escuela / Jardín</option>
+            <option value="hotel">🏨 Hotel / Alojamiento</option>
+            <option value="turismo">✈️ Turismo / Agencia</option>
+            <option value="cine">🎬 Cine / Teatro / Arte</option>
+        </optgroup>
+        <optgroup label="Otros">
+            <option value="otros">📍 Otros</option>
+        </optgroup>
+    </select>
+
+    <!-- ADVANCED FILTERS ACCORDION -->
+    <div id="filters-accordion" class="sidebar-card" style="padding:0;box-shadow:none;">
+
+        <!-- TIPO DE EMPRESA (MOVIDO AL INICIO - MÁS IMPORTANTE) -->
+        <div class="accordion-item">
+            <button class="accordion-btn" onclick="toggleAccordion(this)">
+                🏢 Tipo de Empresa
+                <span style="font-size:10px;">▼</span>
+            </button>
+            <div class="accordion-content">
+                <label><input type="checkbox" name="company-type" value="familiar" onchange="filtrar()"> 👨‍👩‍👧 Familiar</label>
+                <label><input type="checkbox" name="company-type" value="pyme" onchange="filtrar()"> 🏪 PYME/Mediana</label>
+                <label><input type="checkbox" name="company-type" value="grande" onchange="filtrar()"> 🏬 Gran empresa</label>
+                <label><input type="checkbox" name="company-type" value="multinacional" onchange="filtrar()"> 🌍 Multinacional</label>
+            </div>
+        </div>
+
+        <!-- UBICACIÓN -->
+        <div class="accordion-item">
+            <button class="accordion-btn" onclick="toggleAccordion(this)">
+                📍 Ubicación
+                <span style="font-size:10px;">▼</span>
+            </button>
+            <div class="accordion-content">
+                <label>
+                    <input type="checkbox" id="filter-location-enable" onchange="filtrar()">
+                    Mostrar solo dentro de X km desde mí
+                </label>
+                <input type="range" id="filter-location-radius" class="filter-radius-slider" min="1" max="50" value="10" onchange="filtrar()">
+                <div style="text-align:center;font-size:12px;color:#667eea;margin-bottom:10px;font-weight:600;letter-spacing:0.3px;">
+                    <span id="filter-location-radius-value">10</span> km
+                </div>
+                <input type="text" id="filter-location-city" class="filter-location-autocomplete"
+                       placeholder="O filtrar por ciudad..." oninput="filtrar()">
+            </div>
+        </div>
+
+        <!-- HORARIO -->
+        <div class="accordion-item">
+            <button class="accordion-btn" onclick="toggleAccordion(this)">
+                ⏰ Horario
+                <span style="font-size:10px;">▼</span>
+            </button>
+            <div class="accordion-content">
+                <label><input type="checkbox" id="filter-open-now" onchange="filtrar()"> Solo abiertos ahora</label>
+                <label><input type="checkbox" name="filter-days" value="lunes" onchange="filtrar()"> Lunes a viernes</label>
+                <label><input type="checkbox" name="filter-days" value="sabado" onchange="filtrar()"> Abierto sábados</label>
+                <label><input type="checkbox" name="filter-days" value="domingo" onchange="filtrar()"> Abierto domingos</label>
+            </div>
+        </div>
+
+        <!-- PRECIO -->
+        <div class="accordion-item">
+            <button class="accordion-btn" onclick="toggleAccordion(this)">
+                💰 Precio
+                <span style="font-size:10px;">▼</span>
+            </button>
+            <div class="accordion-content">
+                <label><input type="checkbox" name="price-range" value="1" onchange="filtrar()"> 💵 $</label>
+                <label><input type="checkbox" name="price-range" value="2" onchange="filtrar()"> 💵💵 $$</label>
+                <label><input type="checkbox" name="price-range" value="3" onchange="filtrar()"> 💵💵💵 $$$</label>
+                <label><input type="checkbox" name="price-range" value="4" onchange="filtrar()"> 💵💵💵💵 $$$$</label>
+                <label><input type="checkbox" name="price-range" value="5" onchange="filtrar()"> 💵💵💵💵💵 $$$$$</label>
+            </div>
+        </div>
+
+        <!-- PROTECCIÓN DE MARCA (marcas solo) -->
+        <div class="accordion-item" id="filter-protection-container" style="display:none;">
+            <button class="accordion-btn" onclick="toggleAccordion(this)">
+                🛡️ Protección
+                <span style="font-size:10px;">▼</span>
+            </button>
+            <div class="accordion-content">
+                <label><input type="checkbox" name="protection-level" value="Alta" onchange="filtrar()"> 🟢 Alta</label>
+                <label><input type="checkbox" name="protection-level" value="Media" onchange="filtrar()"> 🟡 Media</label>
+                <label><input type="checkbox" name="protection-level" value="Baja" onchange="filtrar()"> 🔴 Baja</label>
+            </div>
+        </div>
+
+        <!-- SECTOR/RUBRO (marcas solo) -->
+        <div class="accordion-item" id="filter-sector-container" style="display:none;">
+            <button class="accordion-btn" onclick="toggleAccordion(this)">
+                📋 Sector
+                <span style="font-size:10px;">▼</span>
+            </button>
+            <div class="accordion-content">
+                <input type="text" id="filter-sector-search" class="filter-location-autocomplete"
+                       placeholder="Buscar sector..." oninput="filtrar()" style="margin-bottom:8px;">
+                <div id="filter-sector-list" style="max-height:200px;overflow-y:auto;">
+                    <!-- Se llena dinámicamente -->
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Zonas Inmobiliarias: solo visible en modo negocios/ambos -->
+    <div id="inmuebles-container" class="sidebar-card">
+        <label style="display:flex;align-items:center;cursor:pointer;font-size:12px;">
+            <input type="checkbox" id="show-inmuebles" onchange="toggleInmuebles()" style="width:auto;margin-right:8px;">
+            🏠 Zonas de influencia (inmobiliarias)
+        </label>
+    </div>
+
+    <!-- Utility buttons -->
+    <div class="sidebar-card" style="display:flex;gap:5px;padding:10px;">
+        <button onclick="ubicarme()"
+                style="flex:1;padding:10px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
+            📍 Ubicarme
+        </button>
+        <button onclick="exportarPDF()"
+                style="flex:1;padding:10px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
+            🧾 PDF
+        </button>
+    </div>
+
+    <div class="sidebar-card" style="border-left:4px solid #00d4ff;">
+        <div style="font-size:12px;font-weight:700;color:#1565c0;margin-bottom:8px;">🧾 Selector MetaData</div>
+        <button type="button" onclick="toggleSelectionMode()" id="sel-multi"
+                style="width:100%;padding:10px;border:none;border-radius:8px;background:#00acc1;color:white;cursor:pointer;font-size:12px;font-weight:700;">
+            <span id="sel-multi-icon">🧾</span> <span id="sel-multi-label">Activar selección</span>
+        </button>
+        <div id="selection-mode-status" style="margin-top:8px;font-size:11px;color:#546e7a;">
+            Modo normal. Para salir del modo selección: botón “Salir del modo selección” o tecla S.
+        </div>
+    </div>
+
+    <div id="selection-panel" class="selection-panel" aria-live="polite" style="display:none;">
+        <div class="selection-panel__header">
+            <div class="selection-panel__title">Selección del mapa</div>
+            <button type="button" class="selection-panel__close" onclick="dismissSelectionPanel()" title="Salir del modo selección">✕</button>
+        </div>
+        <div class="selection-panel__intro">Usá este panel para seleccionar elementos y operar en bloque.</div>
+        <div id="selection-summary" class="selection-panel__summary">0 elementos</div>
+        <div id="selection-step" class="selection-panel__step">Activá el modo selección y elegí marcadores.</div>
+        <div id="selection-hint" class="selection-panel__hint" style="display:none;font-size:11px;color:#8cb4e0;margin-top:4px;">Paso 1: hacé click en marcadores o usá Shift + arrastrar para cuadro de selección.</div>
+        <div class="selection-panel__actions">
+            <button type="button" onclick="selectAllVisible()" title="Seleccionar todos los marcadores visibles en pantalla">➕ Seleccionar visibles</button>
+            <button type="button" onclick="clearSelection()">🧹 Vaciar selección</button>
+            <button type="button" id="selection-aggregate-btn" onclick="aggregateSelectedSurveys()">📊 Combinar encuestas</button>
+            <button type="button" onclick="exportSelection()" title="Exportar selección como JSON">📤 Exportar JSON</button>
+            <button type="button" id="selection-details-toggle" onclick="toggleSelectionDetails()">📋 Ver detalles</button>
+        </div>
+        <div id="selection-details" class="selection-panel__details selection-panel__details--hidden"></div>
+        <div id="selection-aggregate-result" class="selection-panel__result"></div>
+    </div>
+
+    <!-- Encuestas Activas -->
+    <div id="encuestas-container" class="sidebar-card" style="display:none;border-left:4px solid #f39c12;">
+        <h3 style="margin:0 0 12px 0;font-size:14px;color:#f39c12;">📊 Encuestas Activas</h3>
+        <div id="encuestas-list" style="max-height:150px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Eventos Próximos -->
+    <div id="eventos-container" class="sidebar-card" style="display:none;border-left:4px solid #e74c3c;">
+        <h3 style="margin:0 0 12px 0;font-size:14px;color:#e74c3c;">🎉 Eventos Próximos</h3>
+        <div id="eventos-list" style="max-height:150px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Trivias Disponibles -->
+    <div id="trivias-container" class="sidebar-card" style="display:none;border-left:4px solid #9b59b6;">
+        <h3 style="margin:0 0 12px 0;font-size:14px;color:#9b59b6;">🎯 Trivias Disponibles</h3>
+        <div id="trivias-list" style="max-height:150px;overflow-y:auto;"></div>
+    </div>
+
+    <div id="noticias-container" class="sidebar-card" style="display:none;border-left:4px solid #667eea;">
+        <h3 style="margin:0 0 12px 0;font-size:14px;color:#667eea;">📰 Últimas Noticias</h3>
+        <div id="noticias-list" style="max-height:150px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Ofertas Activas -->
+    <div id="ofertas-container" class="sidebar-card" style="display:none;border-left:4px solid #e74c3c;">
+        <h3 style="margin:0 0 8px 0;font-size:14px;color:#e74c3c;">🏷️ Ofertas Activas</h3>
+        <div id="ofertas-list" style="max-height:150px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- Transmisiones en Vivo -->
+    <div id="transmisiones-container" class="sidebar-card" style="display:none;border-left:4px solid #c0392b;">
+        <h3 style="margin:0 0 8px 0;font-size:14px;color:#c0392b;">
+            📡 <span style="display:inline-block;width:8px;height:8px;background:#c0392b;border-radius:50%;animation:blink 1s infinite;vertical-align:middle;margin-right:4px;"></span>
+            En Vivo
+        </h3>
+        <div id="transmisiones-list" style="max-height:150px;overflow-y:auto;"></div>
+    </div>
+
+    <?php if (isAdmin()): ?>
+    <!-- Admin: Toggle capas del mapa -->
+    <div class="sidebar-card" style="border-left:4px solid #6f42c1;">
+        <h3 style="margin:0 0 10px 0;font-size:13px;color:#6f42c1;display:flex;align-items:center;gap:6px;">
+            🛡️ Visibilidad de capas
+        </h3>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" id="toggle-eventos" checked onchange="toggleCapa('eventos',this.checked)" style="width:auto;margin:0;">
+                🎉 Eventos
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" id="toggle-noticias" checked onchange="toggleCapa('noticias',this.checked)" style="width:auto;margin:0;">
+                📰 Noticias
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" id="toggle-trivias" checked onchange="toggleCapa('trivias',this.checked)" style="width:auto;margin:0;">
+                🎯 Trivias
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" id="toggle-encuestas" checked onchange="toggleCapa('encuestas',this.checked)" style="width:auto;margin:0;">
+                📊 Encuestas
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" id="toggle-ofertas" checked onchange="toggleCapa('ofertas',this.checked)" style="width:auto;margin:0;">
+                🏷️ Ofertas
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                <input type="checkbox" id="toggle-transmisiones" checked onchange="toggleCapa('transmisiones',this.checked)" style="width:auto;margin:0;">
+                📡 Transmisiones
+            </label>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Stats -->
+    <div id="stats" class="sidebar-card"></div>
+
+    <!-- Results list -->
+    <div id="lista" style="max-height:340px;overflow-y:auto;"></div>
+
+    <!-- Auth -->
+    <div class="sidebar-card" style="margin-top:8px;">
+        <?php if (!isset($_SESSION['user_id'])): ?>
+            <button onclick="window.location.href='/login'"
+                    style="width:100%;padding:10px;background:#007bff;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:5px;">
+                👤 Iniciar Sesión
+            </button>
+            <button onclick="window.location.href='/register'"
+                    style="width:100%;padding:10px;background:#28a745;color:white;border:none;border-radius:6px;cursor:pointer;">
+                📝 Registrarse
+            </button>
+        <?php else: ?>
+            <p style="font-size:12px;color:#666;margin:0 0 10px 0;">
+                👤 <?php echo htmlspecialchars($_SESSION['user_name']); ?>
+            </p>
+            <button onclick="window.location.href='/mis-negocios'"
+                    style="width:100%;padding:10px;background:#007bff;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:5px;">
+                🏢 Mis Negocios
+            </button>
+            <button onclick="window.location.href='/add'"
+                    style="width:100%;padding:10px;background:#28a745;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:5px;">
+                ➕ Agregar Negocio
+            </button>
+            <?php if (isAdmin()): ?>
+            <button onclick="window.location.href='/admin'"
+                    style="width:100%;padding:10px;background:#6f42c1;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:5px;">
+                🛡️ Admin
+            </button>
+            <?php endif; ?>
+            <button onclick="window.location.href='/logout'"
+                    style="width:100%;padding:10px;background:#dc3545;color:white;border:none;border-radius:6px;cursor:pointer;">
+                🚪 Cerrar Sesión
+            </button>
+        <?php endif; ?>
+    </div>
+</div>
+
+<div id="map"></div>
+
+<script>
+// ─── State ──────────────────────────────────────────────────────────────────────
+const IS_ADMIN       = <?= isAdmin() ? 'true' : 'false' ?>;
+const SESSION_USER_ID = <?= (int)($_SESSION['user_id'] ?? 0) ?>;
+const MAPITA_LOCALE = document.documentElement.lang || 'es-AR';
+
+let negocios  = [];
+let marcas    = [];
+let mapa, marcadores = [], miUbicacion = null;
+let currentVer = 'negocios';
+let clusterGroup = null;
+let selectionMode = false;
+let selectionHighlightsLayer = null;
+const selectedItems = new Map();
+const selectionHighlights = new Map();
+const wtPollers = new Map();
+let eventoMarkers = [];
+let encuestaMarkers = [];
+const WT_MAX_MESSAGE_LEN = 140;
+const WT_POLL_INTERVAL_MS = 6000;
+const WT_HEARTBEAT_INTERVAL_MS = 20000;
+const WT_MESSAGE_CACHE_LIMIT = 30;
+
+// Capas independientes para contenido del dashboard (no se borran con clearLayers)
+let eventosLayer, noticiasLayer, triviasLayer, encuestasLayer, ofertasLayer, transmisionesLayer;
+let capasVisibles = { eventos:true, noticias:true, trivias:true, encuestas:true, ofertas:true, transmisiones:true };
+
+// Admin: mostrar u ocultar una capa de contenido del dashboard
+function toggleCapa(tipo, visible) {
+    capasVisibles[tipo] = visible;
+    const layerMap = {
+        eventos:       () => eventosLayer,
+        noticias:      () => noticiasLayer,
+        trivias:       () => triviasLayer,
+        encuestas:     () => encuestasLayer,
+        ofertas:       () => ofertasLayer,
+        transmisiones: () => transmisionesLayer,
+    };
+    const getLayer = layerMap[tipo];
+    if (!getLayer) return;
+    const layer = getLayer();
+    if (!layer) return;
+    if (visible) {
+        mapa.addLayer(layer);
+    } else {
+        mapa.removeLayer(layer);
+    }
+}
+
+let myBusinessMarkers   = [];
+let propertyZoneMarkers = [];
+let circles = [], licenseMarkers = [], franchiseMarkers = [], exclusiveMarkers = [];
+let zonaMarcaMarkers = [], licenciaMarcaMarkers = [], franquiciaMarcaMarkers = [], exclusivaMarcaMarkers = [];
+let activeSingleOverlays = [];
+let activeRelationLines = [];
+
+// Location filter state
+let userRadiusCircle = null;
+let userLocationMarker = null;
+
+// ─── A1: SVG Marker system (iconos cargados dinámicamente desde BD) ────────────────
+let iconosDB = {};  // Se llena con datos del API /api/api_iconos.php
+
+// ─── Color helpers ───────────────────────────────────────────────────────────────
+function _hexToRgb(hex) {
+    hex = hex.replace(/^#/, '');
+    if (hex.length === 3) hex = hex.split('').map(c => c+c).join('');
+    const n = parseInt(hex, 16);
+    return [n >> 16 & 255, n >> 8 & 255, n & 255];
+}
+function _rgbToHex(r, g, b) {
+    return '#' + [r,g,b].map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2,'0')).join('');
+}
+function lightenColor(hex, pct) {
+    const [r,g,b] = _hexToRgb(hex);
+    return _rgbToHex(r + (255-r)*pct/100, g + (255-g)*pct/100, b + (255-b)*pct/100);
+}
+function darkenColor(hex, pct) {
+    const [r,g,b] = _hexToRgb(hex);
+    return _rgbToHex(r*(1-pct/100), g*(1-pct/100), b*(1-pct/100));
+}
+function escapeHtml(value) {
+    return String(value ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+async function uploadBrandLogoPopup(input, brandId) {
+    const file = input.files[0];
+    if (!file) return;
+    const msgEl = document.getElementById('brand-logo-msg-' + brandId);
+    const show = (txt, ok) => {
+        if (!msgEl) return;
+        msgEl.style.display = 'block';
+        msgEl.style.background = ok ? '#d1fae5' : '#fee2e2';
+        msgEl.style.color = ok ? '#065f46' : '#991b1b';
+        msgEl.textContent = txt;
+    };
+    if (file.size > 200 * 1024) { show('❌ Máximo 200 KB. Comprimí en squoosh.app', false); return; }
+    if (!['image/jpeg','image/png','image/webp'].includes(file.type)) { show('❌ Solo JPG, PNG o WebP', false); return; }
+    const fd = new FormData();
+    fd.append('brand_id', brandId);
+    fd.append('action', 'upload');
+    fd.append('logo', file);
+    show('⏳ Subiendo...', true);
+    try {
+        const d = await fetch('/api/upload_brand_logo.php', { method: 'POST', body: fd }).then(r => r.json());
+        if (d.success) {
+            show('✅ Icono actualizado. Se verá en el mapa al recargar.', true);
+        } else {
+            show('❌ ' + (d.message || 'Error'), false);
+        }
+    } catch (e) {
+        show('❌ Error de conexión', false);
+    }
+    input.value = '';
+}
+
+async function deleteReview(reviewId, businessId) {
+    if (!confirm('¿Eliminar esta reseña?')) return;
+    try {
+        const r = await fetch('/api/reviews.php?review_id=' + reviewId, { method: 'DELETE' });
+        const d = await r.json();
+        if (d.success) {
+            const item = document.getElementById('review-item-' + reviewId);
+            if (item) item.remove();
+            // Refresh average
+            const el = document.querySelector('[data-rating-id="' + businessId + '"]');
+            if (el) {
+                const res = await fetch('/api/reviews.php?business_id=' + businessId).then(x => x.json());
+                const avg = parseFloat(res.data?.average?.avg || 0);
+                const tot = parseInt(res.data?.average?.total || 0);
+                const avgSpan = el.querySelector('span[style*="color:#888"]');
+                if (avgSpan) {
+                    if (tot === 0) {
+                        avgSpan.textContent = 'Sin reseñas aún';
+                    } else {
+                        avgSpan.textContent = avg.toFixed(1) + ' (' + tot + ' reseñas)';
+                    }
+                }
+            }
+        } else {
+            alert(d.message || 'No se pudo eliminar la reseña.');
+        }
+    } catch (e) {
+        alert('Error al eliminar la reseña.');
+    }
+}
+
+// ─── Contador para IDs únicos de gradientes SVG ──────────────────────────────────
+let _svgIconCount = 0;
+
+// ─── createSvgIcon con apariencia 3D ─────────────────────────────────────────────
+function createSvgIcon(emoji, color, isOpen, options = {}) {
+    const w  = options.size   || 32;
+    const h  = options.height || 44;
+    const cx = w / 2;
+    const id = 'si' + (++_svgIconCount);
+
+    const light  = lightenColor(color, 45);
+    const dark   = darkenColor(color, 28);
+    const extraClass = [
+        options.pulse ? 'icon-pulse' : '',
+        options.glow  ? 'icon-glow'  : '',
+    ].filter(Boolean).join(' ');
+
+    // Path escalado al tamaño del pin
+    const px = (v) => (v / 30 * w).toFixed(2);
+    const py = (v) => (v / 40 * h).toFixed(2);
+
+    const dot = isOpen === true
+        ? `<circle cx="${w-6}" cy="6" r="5" fill="#2ecc71" stroke="white" stroke-width="1.5"/>`
+        : isOpen === false
+        ? `<circle cx="${w-6}" cy="6" r="5" fill="#e74c3c" stroke="white" stroke-width="1.5"/>`
+        : '';
+
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg"
+        width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"
+        class="mapita-icon ${extraClass}">
+      <defs>
+        <radialGradient id="rg${id}" cx="33%" cy="28%" r="68%">
+          <stop offset="0%"   stop-color="${light}"/>
+          <stop offset="55%"  stop-color="${color}"/>
+          <stop offset="100%" stop-color="${dark}"/>
+        </radialGradient>
+        <filter id="fs${id}" x="-25%" y="-10%" width="150%" height="145%">
+          <feDropShadow dx="1" dy="3" stdDeviation="2.5" flood-color="rgba(0,0,0,0.32)"/>
+        </filter>
+        <radialGradient id="gl${id}" cx="32%" cy="22%" r="42%">
+          <stop offset="0%"   stop-color="white" stop-opacity="0.50"/>
+          <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <!-- Sombra en el suelo -->
+      <ellipse cx="${cx}" cy="${h - 2}" rx="${(w*0.36).toFixed(1)}" ry="2.5"
+               fill="rgba(0,0,0,0.16)"/>
+      <!-- Cuerpo del pin (gradiente 3D) -->
+      <path d="M${cx} 1.5 C${px(7)} 1.5 1.5 ${py(7)} 1.5 ${py(15)}
+               C1.5 ${py(26)} ${cx} ${h-1.5} ${cx} ${h-1.5}
+               C${cx} ${h-1.5} ${(w-1.5).toFixed(1)} ${py(26)} ${(w-1.5).toFixed(1)} ${py(15)}
+               C${(w-1.5).toFixed(1)} ${py(7)} ${px(23)} 1.5 ${cx} 1.5Z"
+            fill="url(#rg${id})" filter="url(#fs${id})"/>
+      <!-- Capa de brillo (gloss) -->
+      <path d="M${cx} 1.5 C${px(7)} 1.5 1.5 ${py(7)} 1.5 ${py(15)}
+               C1.5 ${py(26)} ${cx} ${h-1.5} ${cx} ${h-1.5}
+               C${cx} ${h-1.5} ${(w-1.5).toFixed(1)} ${py(26)} ${(w-1.5).toFixed(1)} ${py(15)}
+               C${(w-1.5).toFixed(1)} ${py(7)} ${px(23)} 1.5 ${cx} 1.5Z"
+            fill="url(#gl${id})"/>
+      <!-- Emoji -->
+      <text x="${cx}" y="${(h*0.43).toFixed(1)}"
+            text-anchor="middle" dominant-baseline="middle"
+            font-size="${(w*0.44).toFixed(0)}">${emoji}</text>
+      ${dot}
+    </svg>`;
+
+    return L.divIcon({
+        html: svg,
+        className: '',
+        iconSize:    [w, h],
+        iconAnchor:  [cx, h],
+        popupAnchor: [0, -(h + 2)]
+    });
+}
+
+function createSvgIconWithOffer(emoji, color, isOpen) {
+    const base = createSvgIcon(emoji, color, isOpen, { size: 32, height: 44 });
+    const wrapped = `<div style="position:relative;display:inline-block;">
+        ${base.options.html}
+        <span style="position:absolute;top:-3px;left:-3px;background:#e74c3c;color:white;border:2px solid #fff;border-radius:10px;padding:0 4px;font-size:9px;font-weight:700;line-height:14px;box-shadow:0 1px 4px rgba(0,0,0,.3)">%</span>
+    </div>`;
+    return L.divIcon({
+        html: wrapped,
+        className: '',
+        iconSize: [32, 44],
+        iconAnchor: [16, 44],
+        popupAnchor: [0, -46]
+    });
+}
+
+const nizaColors = { '1':'#e74c3c','2':'#e67e22','3':'#f1c40f','4':'#2ecc71','5':'#1abc9c','6':'#3498db','7':'#9b59b6' };
+function getNizaColor(clase) {
+    if (!clase) return '#3498db';
+    return nizaColors[clase.split(',')[0].trim()] || '#3498db';
+}
+
+// ─── Helper: genera SVG 3D para marcadores de contenido ─────────────────────────
+function make3dPin(emoji, color, w, h, extraClass) {
+    const cx    = w / 2;
+    const id    = 'ci' + (++_svgIconCount);
+    const light = lightenColor(color, 45);
+    const dark  = darkenColor(color, 28);
+    const px    = (v) => (v / 30 * w).toFixed(2);
+    const py    = (v) => (v / 40 * h).toFixed(2);
+    return `<svg xmlns="http://www.w3.org/2000/svg"
+        width="${w}" height="${h}" viewBox="0 0 ${w} ${h}"
+        class="mapita-icon${extraClass ? ' '+extraClass : ''}">
+      <defs>
+        <radialGradient id="rg${id}" cx="33%" cy="28%" r="68%">
+          <stop offset="0%"   stop-color="${light}"/>
+          <stop offset="55%"  stop-color="${color}"/>
+          <stop offset="100%" stop-color="${dark}"/>
+        </radialGradient>
+        <filter id="fs${id}" x="-25%" y="-10%" width="150%" height="145%">
+          <feDropShadow dx="1" dy="3" stdDeviation="2.5" flood-color="rgba(0,0,0,0.30)"/>
+        </filter>
+        <radialGradient id="gl${id}" cx="32%" cy="22%" r="42%">
+          <stop offset="0%"   stop-color="white" stop-opacity="0.48"/>
+          <stop offset="100%" stop-color="white" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <ellipse cx="${cx}" cy="${h-2}" rx="${(w*0.36).toFixed(1)}" ry="2.5"
+               fill="rgba(0,0,0,0.15)"/>
+      <path d="M${cx} 1.5 C${px(7)} 1.5 1.5 ${py(7)} 1.5 ${py(15)}
+               C1.5 ${py(26)} ${cx} ${h-1.5} ${cx} ${h-1.5}
+               C${cx} ${h-1.5} ${(w-1.5).toFixed(1)} ${py(26)} ${(w-1.5).toFixed(1)} ${py(15)}
+               C${(w-1.5).toFixed(1)} ${py(7)} ${px(23)} 1.5 ${cx} 1.5Z"
+            fill="url(#rg${id})" filter="url(#fs${id})"/>
+      <path d="M${cx} 1.5 C${px(7)} 1.5 1.5 ${py(7)} 1.5 ${py(15)}
+               C1.5 ${py(26)} ${cx} ${h-1.5} ${cx} ${h-1.5}
+               C${cx} ${h-1.5} ${(w-1.5).toFixed(1)} ${py(26)} ${(w-1.5).toFixed(1)} ${py(15)}
+               C${(w-1.5).toFixed(1)} ${py(7)} ${px(23)} 1.5 ${cx} 1.5Z"
+            fill="url(#gl${id})"/>
+      <text x="${cx}" y="${(h*0.43).toFixed(1)}"
+            text-anchor="middle" dominant-baseline="middle"
+            font-size="${(w*0.46).toFixed(0)}">${emoji}</text>
+    </svg>`;
+}
+
+// ─── FASE 1: Cargar iconos dinámicamente desde API ──────────────────────────────
+async function cargarIconosDesdeAPI() {
+    try {
+        const response = await fetch('/api/api_iconos.php');
+        const resultado = await response.json();
+
+        if (resultado.success && resultado.data) {
+            // API devuelve un objeto keyed por business_type, no un array
+            if (Array.isArray(resultado.data)) {
+                // Si por algún motivo viene como array, convertir a objeto
+                iconosDB = {};
+                resultado.data.forEach(icon => {
+                    iconosDB[icon.business_type] = {
+                        emoji: icon.emoji,
+                        color: icon.color
+                    };
+                });
+            } else {
+                // API devuelve objeto keyed correctamente, usar directamente
+                iconosDB = resultado.data;
+            }
+            console.log(`✅ Iconos cargados: ${Object.keys(iconosDB).length} tipos de negocio`);
+            console.debug('Tipos disponibles:', Object.keys(iconosDB).slice(0, 5));
+        } else {
+            console.warn('⚠️ Error al cargar iconos desde API:', resultado.message || 'Respuesta inválida');
+            // Usar fallback con icono genérico
+            iconosDB = {
+                '*': { emoji: '📍', color: '#667eea' }
+            };
+        }
+    } catch (error) {
+        console.error('❌ Error cargando iconos:', error);
+        // Usar fallback genérico
+        iconosDB = {
+            '*': { emoji: '📍', color: '#667eea' }
+        };
+    }
+}
+
+// ─── A2: Open/Closed logic ───────────────────────────────────────────────────────
+function estaAbierto(n) {
+    if (!n.horario_apertura || !n.horario_cierre) return null;
+    const now  = new Date();
+    const days = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+    const day  = days[now.getDay()];
+    if (n.dias_cierre && n.dias_cierre.toLowerCase().replace(/\s/g,'').split(',').includes(day)) return false;
+    const [oh, om] = n.horario_apertura.split(':').map(Number);
+    const [ch, cm] = n.horario_cierre.split(':').map(Number);
+    const mins = now.getHours() * 60 + now.getMinutes();
+    return mins >= oh * 60 + om && mins <= ch * 60 + cm;
+}
+
+function isVehicleSaleType(n) {
+    return n && (n.business_type === 'autos_venta' || n.business_type === 'motos_venta');
+}
+function isRemateType(n) {
+    return n && n.business_type === 'remate';
+}
+function parseDateSafe(dateValue) {
+    if (!dateValue) return null;
+    const d = new Date(dateValue);
+    return isNaN(d.getTime()) ? null : d;
+}
+function getRemateWindow(n) {
+    const inicio = parseDateSafe(n.remate_fecha_inicio || n.fecha_inicio);
+    const fin = parseDateSafe(n.remate_fecha_fin || n.remate_fecha_cierre || n.fecha_fin || n.fecha_cierre);
+    return { inicio, fin };
+}
+function getRemateStatus(n) {
+    const now = new Date();
+    const { inicio, fin } = getRemateWindow(n);
+    if (!inicio) return { key: 'sin_fecha', label: '🔨 Sin fecha definida' };
+    if (now < inicio) return { key: 'programado', label: '🟡 Programado' };
+    if (fin && now > fin) return { key: 'finalizado', label: '⚫ Finalizado' };
+    return { key: 'in_curso', label: '🟢 En curso' };
+}
+function formatDateTime(dateValue) {
+    return dateValue ? dateValue.toLocaleString(MAPITA_LOCALE) : '';
+}
+function pasaFiltroAbiertosAhora(n) {
+    if (isVehicleSaleType(n)) return false;
+    if (isRemateType(n)) return getRemateStatus(n).key === 'in_curso';
+    return estaAbierto(n) === true;
+}
+
+// ─── A5: Price indicator ─────────────────────────────────────────────────────────
+function precioStr(pr) {
+    if (!pr || pr < 1 || pr > 5) return '';
+    const filled = '<span style="color:#27ae60;font-weight:700;">$</span>'.repeat(pr);
+    const empty  = '<span style="color:#ddd;">$</span>'.repeat(5 - pr);
+    return '<span style="letter-spacing:1px;font-size:13px;">' + filled + empty + '</span>';
+}
+
+// ─── WT (Walkie Talkie) MVP ───────────────────────────────────────────────────────
+const WT_META_SEPARATOR = ' · ';
+
+function escapeHtml(s) {
+    return String(s || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function wtPanelKey(entityType, entityId) {
+    return entityType + ':' + entityId;
+}
+
+function renderWtPanel(entityType, entityId, title) {
+    if (!entityType || !entityId) return '';
+    const safeEntityType = escapeHtml(entityType);
+    const safeEntityId = escapeHtml(entityId);
+    const key = wtPanelKey(safeEntityType, safeEntityId);
+    const safeTitle = escapeHtml(title || '');
+    const panelId = 'wt-panel-' + key.replace(/[^a-z0-9]/gi, '-');
+    return `
+        <div class="wt-toggle-wrapper" style="margin:6px 0 2px;">
+            <button type="button"
+                class="popup-action popup-action-wt-toggle"
+                aria-controls="${panelId}"
+                aria-expanded="false"
+                onclick="(function(btn){
+                    var p=document.getElementById('${panelId}');
+                    var open=p.style.display!=='none'&&p.style.display!=='';
+                    p.style.display=open?'none':'block';
+                    btn.setAttribute('aria-expanded',!open);
+                    if(!open&&!p.dataset.wtReady){initWtPanels(p.parentElement);}
+                })(this)"
+                style="background:#1f2937;display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:8px;border:none;cursor:pointer;color:white;font-size:12px;font-weight:600;transition:all 0.2s;">
+                <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" style="flex-shrink:0;">
+                    <rect x="8" y="6" width="8" height="14" rx="2" stroke="currentColor" fill="none" stroke-width="1.8"/>
+                    <line x1="12" y1="2" x2="12" y2="6" stroke="currentColor" stroke-width="1.8"/>
+                    <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                </svg>
+                <span style="font-style:italic;color:#60a5fa;">Mensajes WT</span>
+            </button>
+        </div>
+        <div id="${panelId}" class="wt-panel" data-wt-panel="1" data-wt-key="${key}" data-wt-entity-type="${safeEntityType}" data-wt-entity-id="${safeEntityId}" data-wt-since-id="0" style="display:none;">
+            <div class="wt-header">
+                <strong>📻 WT</strong>
+                <span class="wt-title">${safeTitle}</span>
+                <span class="wt-listeners" data-wt-listeners>👂 0</span>
+            </div>
+            <div class="wt-messages" data-wt-messages><div class="wt-empty">Sin mensajes por ahora.</div></div>
+            <div class="wt-compose">
+                <input type="text" maxlength="500" placeholder="Escribí un mensaje..." data-wt-input>
+                <button type="button" data-wt-send>Enviar</button>
+            </div>
+        </div>
+    `;
+}
+
+function stopWtPollingByKey(key) {
+    const poller = wtPollers.get(key);
+    if (poller) {
+        clearInterval(poller);
+        wtPollers.delete(key);
+    }
+}
+
+function stopWtPollingInRoot(root) {
+    if (!root) return;
+    root.querySelectorAll?.('[data-wt-panel="1"]').forEach(panel => {
+        stopWtPollingByKey(panel.dataset.wtKey || '');
+    });
+}
+
+function stopAllWtPolling() {
+    wtPollers.forEach(timer => clearInterval(timer));
+    wtPollers.clear();
+}
+
+async function wtApi(action, payload, method = 'GET') {
+    const isGet = method === 'GET';
+    const params = new URLSearchParams();
+    params.set('action', action);
+    if (payload) {
+        Object.entries(payload).forEach(([k, v]) => {
+            if (v !== undefined && v !== null && v !== '') params.set(k, String(v));
+        });
+    }
+    const url = '/api/wt.php' + (isGet ? ('?' + params.toString()) : '');
+    const res = await fetch(url, isGet ? { credentials: 'same-origin' } : {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(Object.assign({ action }, payload || {}))
+    });
+    return res.json();
+}
+
+async function wtPoll(panel) {
+    if (!panel || !document.body.contains(panel)) return;
+    const entityType = panel.dataset.wtEntityType;
+    const entityId = panel.dataset.wtEntityId;
+    let sinceId = parseInt(panel.dataset.wtSinceId || '0', 10) || 0;
+    const messagesEl = panel.querySelector('[data-wt-messages]');
+    const listenersEl = panel.querySelector('[data-wt-listeners]');
+    if (!entityType || !entityId || !messagesEl) return;
+
+    try {
+        const [msgRes, listenersRes] = await Promise.all([
+            wtApi('messages', { entity_type: entityType, entity_id: entityId, since_id: sinceId }, 'GET'),
+            wtApi('listeners', { entity_type: entityType, entity_id: entityId }, 'GET')
+        ]);
+
+        if (msgRes?.success && Array.isArray(msgRes.data)) {
+            if (sinceId === 0) messagesEl.innerHTML = '';
+            msgRes.data.forEach(m => {
+                const row = document.createElement('div');
+                row.className = 'wt-message';
+                const meta = document.createElement('div');
+                meta.className = 'wt-meta';
+                meta.textContent = (m.sender_name || 'Invitado') + WT_META_SEPARATOR + (m.created_at || '');
+                const text = document.createElement('div');
+                text.className = 'wt-text';
+                text.textContent = m.message || '';
+                row.appendChild(meta);
+                row.appendChild(text);
+                messagesEl.appendChild(row);
+                const mid = parseInt(m.id, 10);
+                if (mid > sinceId) {
+                    sinceId = mid;
+                    panel.dataset.wtSinceId = String(mid);
+                }
+            });
+            if (!messagesEl.children.length) {
+                messagesEl.innerHTML = '<div class="wt-empty">Sin mensajes por ahora.</div>';
+            } else {
+                messagesEl.scrollTop = messagesEl.scrollHeight;
+            }
+        }
+
+        if (listenersEl && listenersRes?.success) {
+            listenersEl.textContent = '👂 ' + (listenersRes.data?.count || 0);
+        }
+    } catch (e) {
+        // Silencioso para no romper popups existentes
+    }
+}
+
+async function wtSendMessage(panel) {
+    if (!panel) return;
+    const input = panel.querySelector('[data-wt-input]');
+    if (!input) return;
+    const message = (input.value || '').trim();
+    if (!message) return;
+    input.disabled = true;
+    try {
+        const res = await wtApi('send', {
+            entity_type: panel.dataset.wtEntityType,
+            entity_id: panel.dataset.wtEntityId,
+            message: message
+        }, 'POST');
+        if (res?.success) {
+            input.value = '';
+            await wtPoll(panel);
+        }
+    } catch (e) {
+        // Ignorar error para mantener UX del mapa estable
+    } finally {
+        input.disabled = false;
+        input.focus();
+    }
+}
+
+function startWtPolling(panel) {
+    if (!panel) return;
+    const key = panel.dataset.wtKey;
+    if (!key) return;
+    stopWtPollingByKey(key);
+    wtApi('presence', {
+        entity_type: panel.dataset.wtEntityType,
+        entity_id: panel.dataset.wtEntityId
+    }, 'POST').catch(() => {});
+    wtPoll(panel);
+    const timer = setInterval(() => {
+        if (!document.body.contains(panel)) {
+            stopWtPollingByKey(key);
+            return;
+        }
+        wtApi('presence', {
+            entity_type: panel.dataset.wtEntityType,
+            entity_id: panel.dataset.wtEntityId
+        }, 'POST').catch(() => {});
+        wtPoll(panel);
+    }, WT_POLL_INTERVAL_MS);
+    wtPollers.set(key, timer);
+}
+
+function initWtPanels(root) {
+    const container = root || document;
+    container.querySelectorAll?.('[data-wt-panel="1"]').forEach(panel => {
+        if (panel.dataset.wtReady === '1') return;
+        panel.dataset.wtReady = '1';
+        const sendBtn = panel.querySelector('[data-wt-send]');
+        const input = panel.querySelector('[data-wt-input]');
+        sendBtn?.addEventListener('click', () => wtSendMessage(panel));
+        input?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                wtSendMessage(panel);
+            }
+        });
+        startWtPolling(panel);
+    });
+}
+
+// ─── Map Init ────────────────────────────────────────────────────────────────────
+function inicializarMapa() {
+    if (mapa) { mapa.remove(); }
+    mapa = L.map('map').setView([-34.6037, -58.3816], 12);
+
+    const capas = {
+        'Mapa':     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                        { attribution: '© OpenStreetMap' }),
+        'Satélite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+                        { attribution: '© Esri' }),
+        'Oscuro':   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+                        { attribution: '© OpenStreetMap © CartoDB' })
+    };
+    capas['Mapa'].addTo(mapa);
+    L.control.layers(capas, {}, { position: 'topright', collapsed: true }).addTo(mapa);
+
+    clusterGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16 });
+    mapa.addLayer(clusterGroup);
+    selectionHighlightsLayer = L.layerGroup().addTo(mapa);
+    clusterGroup.on('clusterclick', function(e) {
+        if (!selectionMode) return;
+        stopLeafletEvent(e);
+        const cluster = e?.layer;
+        const childMarkers = cluster?.getAllChildMarkers ? cluster.getAllChildMarkers() : [];
+        let added = 0;
+        childMarkers.forEach(marker => {
+            if (addMarkerToSelection(marker)) added++;
+        });
+        const hint = document.getElementById('selection-hint');
+        if (hint) hint.style.display = 'none';
+        updateSelectionPanel();
+        const result = document.getElementById('selection-aggregate-result');
+        if (result) result.textContent = added > 0
+            ? `Se agregaron ${added} elementos del grupo seleccionado.`
+            : 'Ese grupo ya estaba completamente seleccionado.';
+    });
+
+    // Capas separadas para contenido del dashboard
+    eventosLayer      = L.layerGroup().addTo(mapa);
+    noticiasLayer     = L.layerGroup().addTo(mapa);
+    triviasLayer      = L.layerGroup().addTo(mapa);
+    encuestasLayer    = L.layerGroup().addTo(mapa);
+    ofertasLayer      = L.layerGroup().addTo(mapa);
+    transmisionesLayer = L.layerGroup().addTo(mapa);
+
+    mapa.on('popupclose', () => {
+        clearSingleOverlays();
+        clearRelationLines();
+    });
+
+    // ─── FASE 1: Cargar iconos dinámicamente desde la BD ──────────────
+    cargarIconosDesdeAPI();
+
+    // ─── B1: Lazy rating load on popup open ────────────────────────────────────
+    mapa.on('popupopen', async (e) => {
+        if (selectionMode) {
+            mapa.closePopup(e.popup);
+            return;
+        }
+        const el = e.popup.getElement()?.querySelector('[data-rating-id]');
+        if (el) {
+            const bid = el.getAttribute('data-rating-id');
+            try {
+                const res = await fetch('/api/reviews.php?business_id=' + bid).then(r => r.json());
+                const avg = parseFloat(res.data?.average?.avg || res.data?.average?.avg_rating || 0);
+                const tot = parseInt(res.data?.average?.total || 0);
+                const reviews = Array.isArray(res.data?.reviews) ? res.data.reviews : [];
+
+                let html = '';
+                if (tot === 0) {
+                    html = '<span style="color:#bbb;font-size:11px;">Sin reseñas aún</span>';
+                } else {
+                    const full  = Math.min(5, Math.round(avg));
+                    const stars = '⭐'.repeat(full) + '☆'.repeat(5 - full);
+                    html = stars + ' <span style="color:#888;font-size:11px;">' + avg.toFixed(1) + ' (' + tot + ' reseñas)</span>';
+                }
+
+                // Show individual reviews for admin or when there are any
+                if (reviews.length > 0) {
+                    html += '<div id="review-list-' + bid + '" style="margin-top:6px;max-height:160px;overflow-y:auto;">';
+                    reviews.forEach(function(rv) {
+                        const canDel = IS_ADMIN || (SESSION_USER_ID > 0 && parseInt(rv.user_id) === SESSION_USER_ID);
+                        const rStars = '⭐'.repeat(Math.min(5, parseInt(rv.rating) || 0));
+                        const date   = rv.created_at ? rv.created_at.substring(0, 10) : '';
+                        const cmt    = rv.comment ? escapeHtml(String(rv.comment)) : '<em style="color:#888;">Sin comentario</em>';
+                        html += '<div id="review-item-' + rv.id + '" style="border-top:1px solid #333;padding:4px 0;font-size:11px;">'
+                             + '<div style="display:flex;justify-content:space-between;align-items:center;">'
+                             + '<span style="color:#aaa;">' + rStars + ' <strong>' + escapeHtml(rv.username || '') + '</strong> <span style="color:#666;">' + date + '</span></span>'
+                             + (canDel ? '<button onclick="deleteReview(' + rv.id + ',' + bid + ')" style="background:#c0392b;color:#fff;border:none;border-radius:3px;padding:1px 6px;font-size:10px;cursor:pointer;">✕</button>' : '')
+                             + '</div>'
+                             + '<div style="color:#ccc;margin-top:2px;">' + cmt + '</div>'
+                             + '</div>';
+                    });
+                    html += '</div>';
+                }
+
+                el.innerHTML = html;
+            } catch (err) {
+                el.innerHTML = '';
+            }
+        }
+        initWTPanelsInPopup(e.popup.getElement());
+    });
+    mapa.on('popupopen', (e) => {
+        drawRelationLinesForPopup(e.popup?._source || null);
+    });
+
+    filtrar();
+}
+
+function getSelectionKey(kind, id) {
+    return kind + ':' + id;
+}
+
+function buildSelectionMetadata(rawMeta = {}) {
+    const meta = {};
+    Object.entries(rawMeta).forEach(([label, value]) => {
+        if (value === null || value === undefined) return;
+        const normalized = String(value).trim();
+        if (!normalized) return;
+        meta[label] = normalized;
+    });
+    return meta;
+}
+
+function getSelectionEmoji(kind) {
+    if (kind === 'negocio') return '🏪';
+    if (kind === 'marca') return '🏷️';
+    if (kind === 'evento') return '🎉';
+    if (kind === 'encuesta') return '📋';
+    if (kind === 'noticia') return '📰';
+    if (kind === 'trivia') return '🎯';
+    if (kind === 'oferta') return '💰';
+    if (kind === 'transmision') return '📡';
+    return '📍';
+}
+
+function renderSelectionMetaItem(item) {
+    const metaLines = Object.entries(item.metadata || {})
+        .map(([label, value]) => `<div><strong>${escapeHtml(label)}:</strong> ${escapeHtml(value)}</div>`)
+        .join('');
+    return `<article class="selection-meta-item">
+        <div class="selection-meta-item__title">${getSelectionEmoji(item.kind)} ${escapeHtml(item.name || 'Elemento')}</div>
+        ${metaLines || '<div>Sin metadatos disponibles.</div>'}
+    </article>`;
+}
+
+function buildNegocioMetadata(n) {
+    return buildSelectionMetadata({
+        'Tipo': n.business_type,
+        'Dirección': n.address || n.ubicacion,
+        'Ciudad': n.ciudad,
+        'Teléfono': n.phone,
+        'Mapita ID': n.mapita_id
+    });
+}
+
+function buildMarcaMetadata(n) {
+    return buildSelectionMetadata({
+        'Rubro': n.rubro,
+        'Clase Niza': n.clase_principal,
+        'Ubicación': n.ubicacion || n.address,
+        'Estado': n.estado,
+        'Mapita ID': n.mapita_id
+    });
+}
+
+function buildEventoMetadata(evt) {
+    return buildSelectionMetadata({
+        'Fecha': evt.fecha,
+        'Hora': evt.hora,
+        'Ubicación': evt.ubicacion,
+        'Organizador': evt.organizador,
+        'Mapita ID': evt.mapita_id
+    });
+}
+
+function buildEncuestaMetadata(enc) {
+    return buildSelectionMetadata({
+        'Descripción': enc.descripcion,
+        'Vencimiento': enc.fecha_expiracion,
+        'Link': enc.link,
+        'Mapita ID': enc.mapita_id
+    });
+}
+
+function buildNoticiaMetadata(n) {
+    return buildSelectionMetadata({
+        'Categoría': n.categoria,
+        'Fecha': n.fecha_publicacion ? String(n.fecha_publicacion).substring(0, 10) : null,
+        'Ubicación': n.ubicacion,
+        'Mapita ID': n.mapita_id
+    });
+}
+
+function buildTriviaMetadata(tri) {
+    return buildSelectionMetadata({
+        'Dificultad': tri.dificultad,
+        'Tiempo límite': tri.tiempo_limite ? tri.tiempo_limite + ' seg' : null,
+        'Ubicación': tri.ubicacion,
+        'Mapita ID': tri.mapita_id
+    });
+}
+
+function buildOfertaMetadata(o) {
+    return buildSelectionMetadata({
+        'Precio normal': o.precio_normal ? '$' + parseFloat(o.precio_normal).toLocaleString() : null,
+        'Precio oferta': o.precio_oferta ? '$' + parseFloat(o.precio_oferta).toLocaleString() : null,
+        'Vencimiento': o.fecha_expiracion,
+        'Mapita ID': o.mapita_id
+    });
+}
+
+function buildTransmisionMetadata(tx) {
+    return buildSelectionMetadata({
+        'Tipo': tx.tipo,
+        'En vivo': tx.en_vivo ? 'Sí' : 'No',
+        'Mapita ID': tx.mapita_id
+    });
+}
+
+function applySelectionVisual(marker, key) {
+    if (!mapa || !marker?.getLatLng || !selectedItems.has(key)) return;
+    const latlng = marker.getLatLng();
+    const ring = L.circleMarker(latlng, {
+        radius: 20,
+        color: '#00d4ff',
+        weight: 3,
+        fillColor: '#00d4ff',
+        fillOpacity: 0.08,
+        interactive: false
+    });
+    selectionHighlightsLayer?.addLayer(ring);
+    selectionHighlights.set(key, ring);
+    const el = marker.getElement ? marker.getElement() : null;
+    if (el) el.classList.add('mapita-selected-marker');
+    if (marker instanceof L.CircleMarker) {
+        if (!marker._selectionOriginalStyle) {
+            marker._selectionOriginalStyle = {
+                color: marker.options.color,
+                weight: marker.options.weight,
+                fillColor: marker.options.fillColor,
+                fillOpacity: marker.options.fillOpacity
+            };
+        }
+        marker.setStyle({ weight: 5, color: '#00d4ff' });
+    }
+}
+
+function removeSelectionVisual(marker, key) {
+    const ring = selectionHighlights.get(key);
+    if (ring && selectionHighlightsLayer) selectionHighlightsLayer.removeLayer(ring);
+    selectionHighlights.delete(key);
+    const el = marker?.getElement ? marker.getElement() : null;
+    if (el) el.classList.remove('mapita-selected-marker');
+    if (marker instanceof L.CircleMarker && marker._selectionOriginalStyle) {
+        marker.setStyle(marker._selectionOriginalStyle);
+    }
+}
+
+function updateSelectionPanel() {
+    const panel = document.getElementById('selection-panel');
+    const summary = document.getElementById('selection-summary');
+    const aggregateBtn = document.getElementById('selection-aggregate-btn');
+    const step = document.getElementById('selection-step');
+    const detailsToggle = document.getElementById('selection-details-toggle');
+    const details = document.getElementById('selection-details');
+    const hint = document.getElementById('selection-hint');
+    if (!panel || !summary || !hint) return;
+    const counts = { negocio: 0, marca: 0, evento: 0, encuesta: 0, noticia: 0, trivia: 0, oferta: 0, transmision: 0 };
+    selectedItems.forEach(item => {
+        if (counts[item.kind] !== undefined) counts[item.kind] += 1;
+    });
+    const total = selectedItems.size;
+    const parts = [];
+    if (counts.negocio)    parts.push('🏪 ' + counts.negocio);
+    if (counts.marca)      parts.push('🏷️ ' + counts.marca);
+    if (counts.evento)     parts.push('🎉 ' + counts.evento);
+    if (counts.encuesta)   parts.push('📋 ' + counts.encuesta);
+    if (counts.noticia)    parts.push('📰 ' + counts.noticia);
+    if (counts.trivia)     parts.push('🎯 ' + counts.trivia);
+    if (counts.oferta)     parts.push('💰 ' + counts.oferta);
+    if (counts.transmision) parts.push('📡 ' + counts.transmision);
+    summary.textContent = total + ' seleccionado' + (total !== 1 ? 's' : '') + (parts.length ? ' · ' + parts.join(' · ') : '');
+    if (aggregateBtn) {
+        aggregateBtn.disabled = counts.encuesta === 0;
+    }
+    if (details) {
+        const items = Array.from(selectedItems.values());
+        details.innerHTML = items.length > 0
+            ? items.map(renderSelectionMetaItem).join('')
+            : '';
+    }
+    if (detailsToggle) {
+        const hidden = details?.classList.contains('selection-panel__details--hidden');
+        detailsToggle.disabled = total === 0;
+        detailsToggle.textContent = hidden ? '📋 Ver detalles' : '📕 Ocultar detalles';
+    }
+    if (step) {
+        if (total === 0 && selectionMode) {
+            step.textContent = 'Paso 1: seleccioná marcadores en el mapa.';
+        } else if (total > 0 && selectionMode) {
+            step.textContent = 'Paso 2: aplicá una acción sobre la selección.';
+        } else if (total > 0) {
+            step.textContent = 'La selección quedó guardada; podés exportar o limpiarla.';
+        } else {
+            step.textContent = 'Activá el modo selección y elegí marcadores.';
+        }
+    }
+    hint.style.display = selectionMode && total === 0 ? 'block' : 'none';
+    panel.style.display = (selectionMode || total > 0) ? 'block' : 'none';
+    updateSelectionToggleState();
+}
+
+function updateSelectionToggleState() {
+    const btn = document.getElementById('sel-multi');
+    const icon = document.getElementById('sel-multi-icon');
+    const label = document.getElementById('sel-multi-label');
+    const status = document.getElementById('selection-mode-status');
+    if (btn) {
+        btn.style.background = selectionMode ? '#00d4ff' : '#00acc1';
+    }
+    if (icon) icon.textContent = selectionMode ? '✅' : '🧾';
+    if (label) label.textContent = selectionMode ? 'Salir del modo selección' : 'Activar selección';
+    if (status) {
+        status.textContent = selectionMode
+            ? 'Modo selección activo. Click en íconos para agregar/quitar; Shift + arrastrar dibuja cuadro. Para salir: botón o tecla S.'
+            : 'Modo normal. Para activar el modo selección: botón “Activar selección” o tecla S.';
+    }
+}
+
+function toggleSelectionDetails() {
+    const details = document.getElementById('selection-details');
+    if (!details) return;
+    details.classList.toggle('selection-panel__details--hidden');
+    updateSelectionPanel();
+}
+
+function dismissSelectionPanel() {
+    selectionMode = false;
+    applySelectionModeVisualState();
+    clearSelection();
+    updateSelectionPanel();
+}
+
+function applySelectionModeVisualState() {
+    const mapContainer = document.getElementById('map');
+    if (mapContainer) mapContainer.classList.toggle('selection-mode-active', selectionMode);
+    if (!mapa) return;
+
+    if (selectionMode) {
+        mapa.dragging?.disable();
+        mapa.scrollWheelZoom?.disable();
+        mapa.doubleClickZoom?.disable();
+        mapa.touchZoom?.disable();
+        mapa.keyboard?.disable();
+        mapa.boxZoom?.enable();
+    } else {
+        mapa.dragging?.enable();
+        mapa.scrollWheelZoom?.enable();
+        mapa.doubleClickZoom?.enable();
+        mapa.touchZoom?.enable();
+        mapa.keyboard?.enable();
+        mapa.boxZoom?.disable();
+    }
+}
+
+function toggleSelectionMode() {
+    selectionMode = !selectionMode;
+    applySelectionModeVisualState();
+    if (selectionMode && mapa) mapa.closePopup();
+    if (selectionMode) {
+        const toast = document.createElement('div');
+        toast.className = 'selection-mode-toast';
+        toast.textContent = '✅ Modo selección activo · Hacé click en marcadores para seleccionar';
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3200);
+    }
+    updateSelectionPanel();
+}
+
+function toggleSelection(item, marker) {
+    const key = getSelectionKey(item.kind, item.id);
+    if (selectedItems.has(key)) {
+        selectedItems.delete(key);
+        removeSelectionVisual(marker, key);
+    } else {
+        selectedItems.set(key, item);
+        applySelectionVisual(marker, key);
+    }
+    const hint = document.getElementById('selection-hint');
+    if (hint) hint.style.display = 'none';
+    updateSelectionPanel();
+}
+
+function addMarkerToSelection(marker) {
+    if (!marker?._selectionItem || !marker?._selectionKey) return false;
+    if (selectedItems.has(marker._selectionKey)) return false;
+    selectedItems.set(marker._selectionKey, marker._selectionItem);
+    applySelectionVisual(marker, marker._selectionKey);
+    return true;
+}
+
+function clearSelection() {
+    selectedItems.clear();
+    selectionHighlights.forEach((layer) => selectionHighlightsLayer?.removeLayer(layer));
+    selectionHighlights.clear();
+    [...marcadores, ...eventoMarkers, ...encuestaMarkers, ...noticiaMarkers, ...triviaMarkers, ...ofertaMarkers, ...transmisionMarkers].forEach((marker) => {
+        const el = marker?.getElement ? marker.getElement() : null;
+        if (el) el.classList.remove('mapita-selected-marker');
+    });
+    updateSelectionPanel();
+    const result = document.getElementById('selection-aggregate-result');
+    if (result) result.textContent = 'Selección vacía.';
+}
+
+function refreshSelectionVisuals() {
+    if (!selectionHighlightsLayer) return;
+    selectionHighlights.forEach((layer) => selectionHighlightsLayer.removeLayer(layer));
+    selectionHighlights.clear();
+    [...marcadores, ...eventoMarkers, ...encuestaMarkers, ...noticiaMarkers, ...triviaMarkers, ...ofertaMarkers, ...transmisionMarkers].forEach((marker) => {
+        const key = marker?._selectionKey;
+        if (!key) return;
+        if (selectedItems.has(key)) applySelectionVisual(marker, key);
+        else removeSelectionVisual(marker, key);
+    });
+}
+
+function selectAllVisible() {
+    if (!mapa) return;
+    const bounds = mapa.getBounds();
+    const allMarkers = [...marcadores, ...eventoMarkers, ...encuestaMarkers, ...noticiaMarkers, ...triviaMarkers, ...ofertaMarkers, ...transmisionMarkers];
+    let added = 0;
+    allMarkers.forEach(marker => {
+        const latlng = marker.getLatLng ? marker.getLatLng() : null;
+        if (!latlng || !bounds.contains(latlng)) return;
+        if (addMarkerToSelection(marker)) added++;
+    });
+    updateSelectionPanel();
+    const hint = document.getElementById('selection-hint');
+    if (hint) hint.style.display = 'none';
+    const result = document.getElementById('selection-aggregate-result');
+    if (result) result.textContent = added > 0
+        ? 'Se agregaron ' + added + ' elementos visibles.'
+        : 'No había nuevos elementos visibles para agregar.';
+}
+
+function exportSelection() {
+    if (selectedItems.size === 0) return;
+    const data = Array.from(selectedItems.values()).map(item => ({
+        tipo: item.kind,
+        nombre: item.name,
+        lat: item.lat,
+        lng: item.lng,
+        ...item.metadata
+    }));
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const date = new Date().toISOString().split('T')[0];
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'mapita_seleccion_' + date + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+async function aggregateSelectedSurveys() {
+    const result = document.getElementById('selection-aggregate-result');
+    const ids = Array.from(selectedItems.values())
+        .filter(item => item.kind === 'encuesta')
+        .map(item => item.id);
+    if (ids.length === 0) {
+        if (result) result.textContent = 'Seleccioná al menos una encuesta.';
+        return;
+    }
+    try {
+        const res = await fetch('/api/encuestas.php?action=aggregate&ids=' + ids.join(','));
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error || data.message || 'Error');
+        const totalRespuestas = data.data?.summary?.total_respuestas ?? 0;
+        const participantes = data.data?.summary?.total_participantes ?? 0;
+        if (result) result.textContent = 'Encuestas: ' + ids.length + ' · Respuestas: ' + totalRespuestas + ' · Participantes: ' + participantes;
+    } catch (err) {
+        if (result) result.textContent = 'No se pudo agregar encuestas.';
+    }
+}
+
+function getWTKey(entityType, entityId) {
+    return entityType + ':' + entityId;
+}
+
+function stopLeafletEvent(e) {
+    if (e?.originalEvent) L.DomEvent.stop(e.originalEvent);
+}
+
+function cleanupWTPopup(popupEl) {
+    if (!popupEl || typeof popupEl.querySelectorAll !== 'function') return;
+    popupEl.querySelectorAll('.wt-panel[data-entity-type][data-entity-id]').forEach(panel => {
+        const key = getWTKey(panel.dataset.entityType, panel.dataset.entityId);
+        const timers = wtPollers.get(key);
+        if (timers) {
+            clearInterval(timers.poll);
+            clearInterval(timers.heartbeat);
+            wtPollers.delete(key);
+        }
+    });
+}
+
+function renderWTMessages(panel, container, messages) {
+    if (!panel || !container) return;
+    if (!messages || messages.length === 0) {
+        container.innerHTML = '<div class="wt-empty">Sin mensajes aún</div>';
+        return;
+    }
+    container.innerHTML = messages.map(msg => {
+        const messageId = parseInt(msg.id, 10) || 0;
+        const user = escapeHtml(msg.user_name || 'Usuario');
+        const text = escapeHtml(msg.message || '');
+        const when = escapeHtml(msg.created_at || '');
+        const isPreset = !!msg.is_preset;
+        const canDismiss = !!msg.can_dismiss && messageId > 0;
+        const closeBtn = canDismiss
+            ? '<button type="button" class="wt-dismiss" data-wt-dismiss="' + messageId + '" title="Cerrar mensaje temporal">✕</button>'
+            : '';
+        return '<div class="wt-msg' + (isPreset ? '' : ' wt-msg-temp') + '" data-wt-msg-id="' + messageId + '">'
+            + '<div class="wt-msg-head"><strong>' + user + '</strong>' + closeBtn + '</div>'
+            + '<span class="wt-msg-text">' + text + '</span>'
+            + '<small>' + when + '</small>'
+            + '</div>';
+    }).join('');
+    container.scrollTop = container.scrollHeight;
+}
+
+async function loadWTMessages(panel) {
+    const entityType = panel.dataset.entityType;
+    const entityId = panel.dataset.entityId;
+    const listEl = panel.querySelector('[data-wt-messages]');
+    const key = getWTKey(entityType, entityId);
+    const state = wtPollers.get(key) || {};
+    const hadLastId = !!state.lastId;
+    const params = new URLSearchParams({
+        action: 'list',
+        entity_type: entityType,
+        entity_id: entityId
+    });
+    if (hadLastId) params.set('since_id', String(state.lastId));
+    const response = await fetch('/api/wt.php?' + params.toString());
+    const data = await response.json();
+    if (!data.success) return;
+    const messages = data.data?.messages || [];
+    if (messages.length > 0) {
+        state.lastId = messages[messages.length - 1].id;
+        wtPollers.set(key, state);
+    }
+    if (!hadLastId || messages.length > 0) {
+        const mergedMessages = hadLastId
+            ? ((state.cached || []).concat(messages)).slice(-WT_MESSAGE_CACHE_LIMIT)
+            : messages.slice(-WT_MESSAGE_CACHE_LIMIT);
+        renderWTMessages(panel, listEl, mergedMessages);
+        state.cached = mergedMessages;
+    }
+    const count = data.data?.presence_count;
+    const header = panel.querySelector('.wt-header');
+    if (header && typeof count !== 'undefined') {
+        header.textContent = '📻 WT · ' + (panel.dataset.entityTitle || '') + ' · 👥 ' + count;
+    }
+}
+
+async function sendWTHeartbeat(panel) {
+    const body = new URLSearchParams({
+        action: 'heartbeat',
+        entity_type: panel.dataset.entityType,
+        entity_id: panel.dataset.entityId
+    });
+    await fetch('/api/wt.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+    });
+}
+
+async function sendWTMessage(panel) {
+    const input = panel.querySelector('[data-wt-input]');
+    if (!input) return;
+    const message = input.value.trim().slice(0, WT_MAX_MESSAGE_LEN);
+    if (!message) return;
+    const body = new URLSearchParams({
+        action: 'send',
+        entity_type: panel.dataset.entityType,
+        entity_id: panel.dataset.entityId,
+        message: message
+    });
+    const response = await fetch('/api/wt.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+    });
+    const data = await response.json();
+    if (!data.success) {
+        alert(data.error || data.message || 'No se pudo enviar el mensaje');
+        return;
+    }
+    input.value = '';
+    await loadWTMessages(panel);
+}
+
+async function dismissWTMessage(panel, messageId) {
+    const parsedMessageId = parseInt(messageId, 10) || 0;
+    if (!parsedMessageId) return;
+    const body = new URLSearchParams({
+        action: 'dismiss',
+        message_id: String(parsedMessageId),
+        entity_type: panel.dataset.entityType,
+        entity_id: panel.dataset.entityId
+    });
+    const response = await fetch('/api/wt.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: body.toString()
+    });
+    const data = await response.json();
+    if (!data.success) {
+        alert(data.error || data.message || 'No se pudo cerrar el mensaje');
+        return;
+    }
+    const key = getWTKey(panel.dataset.entityType, panel.dataset.entityId);
+    const state = wtPollers.get(key) || {};
+    state.lastId = null;
+    state.cached = [];
+    wtPollers.set(key, state);
+    await loadWTMessages(panel);
+}
+
+function initWTPanel(panel) {
+    if (!panel || panel.dataset.wtInit === '1') return;
+    panel.dataset.wtInit = '1';
+    const entityType = panel.dataset.entityType;
+    const entityId = panel.dataset.entityId;
+    const key = getWTKey(entityType, entityId);
+    panel.querySelectorAll('[data-wt-preset]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const input = panel.querySelector('[data-wt-input]');
+            if (input) input.value = (btn.getAttribute('data-wt-preset') || '').slice(0, WT_MAX_MESSAGE_LEN);
+        });
+    });
+    const sendBtn = panel.querySelector('[data-wt-send]');
+    if (sendBtn) sendBtn.addEventListener('click', () => sendWTMessage(panel));
+    const input = panel.querySelector('[data-wt-input]');
+    if (input) {
+        input.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter') {
+                ev.preventDefault();
+                sendWTMessage(panel);
+            }
+        });
+    }
+    const listEl = panel.querySelector('[data-wt-messages]');
+    if (listEl) {
+        listEl.addEventListener('click', (ev) => {
+            const target = ev.target?.closest?.('[data-wt-dismiss]');
+            if (!target) return;
+            const messageId = target.getAttribute('data-wt-dismiss');
+            dismissWTMessage(panel, messageId).catch(() => {});
+        });
+    }
+    wtPollers.set(key, { poll: null, heartbeat: null, lastId: null, cached: [] });
+    loadWTMessages(panel).catch(() => {});
+    sendWTHeartbeat(panel).catch(() => {});
+    const poll = setInterval(() => loadWTMessages(panel).catch(() => {}), WT_POLL_INTERVAL_MS);
+    const heartbeat = setInterval(() => sendWTHeartbeat(panel).catch(() => {}), WT_HEARTBEAT_INTERVAL_MS);
+    const state = wtPollers.get(key) || {};
+    state.poll = poll;
+    state.heartbeat = heartbeat;
+    wtPollers.set(key, state);
+}
+
+function initWTPanelsInPopup(popupEl) {
+    if (!popupEl) return;
+    popupEl.querySelectorAll('.wt-panel[data-entity-type][data-entity-id]').forEach(initWTPanel);
+}
+
+// ─── Filtering (ENHANCED with accordion filters) ────────────────────────────────
+function filtrar() {
+    [...circles, ...licenseMarkers, ...franchiseMarkers, ...exclusiveMarkers,
+     ...myBusinessMarkers, ...propertyZoneMarkers].forEach(l => mapa.removeLayer(l));
+    circles=[]; licenseMarkers=[]; franchiseMarkers=[]; exclusiveMarkers=[];
+    myBusinessMarkers=[]; propertyZoneMarkers=[];
+    clearSingleOverlays();
+    clearRelationLines();
+
+    if (currentVer === 'ninguno') {
+        document.getElementById('stats').textContent = '🏪 0  |  🏷️ 0';
+        mostrarLista([]);
+        mostrarMarcadores([]);
+        return;
+    }
+
+    // ─── Get filter values ───────────────────────────────────────────────────────
+    const tipo  = document.getElementById('tipo').value.toLowerCase();
+    const texto = document.getElementById('busqueda').value.toLowerCase();
+    const locationFilter = getLocationFilter();
+    const locationCity = getLocationCityFilter();
+    const priceFilter = getPriceFilter();
+    const timeFilter = getTimeFilter();
+    const daysFilter = getDaysFilter();
+    const companyTypeFilter = getCompanyTypeFilter();
+    const protectionFilter = getProtectionFilter();
+    const sectorFilter = getSectorFilter();
+
+    // Update UI visibility for brand/business-only filters
+    const showBrandFilters = (currentVer === 'marcas' || currentVer === 'ambos');
+    document.getElementById('filter-protection-container').style.display = showBrandFilters ? '' : 'none';
+    document.getElementById('filter-sector-container').style.display = showBrandFilters ? '' : 'none';
+
+    // ─── Filter negocios ────────────────────────────────────────────────────────
+    let negocios_filtered = [];
+    if (currentVer === 'negocios' || currentVer === 'ambos') {
+        negocios_filtered = negocios.filter(n => {
+            // Basic filters
+            if (tipo && n.business_type !== tipo) return false;
+            if (texto && !(n.name||'').toLowerCase().includes(texto) && !(n.address||'').toLowerCase().includes(texto)) return false;
+
+            // Location filter (radius)
+            if (locationFilter && miUbicacion && n.lat && n.lng) {
+                const dist = calcularDistancia(miUbicacion.lat, miUbicacion.lng, n.lat, n.lng);
+                if (dist > locationFilter.radius) return false;
+            }
+
+            // Location city filter
+            if (locationCity && !((n.address||'').toLowerCase().includes(locationCity))) return false;
+
+            // Price filter
+            if (priceFilter && !priceFilter.includes(n.price_range)) return false;
+
+            // Time filter: only open now
+            if (timeFilter) {
+                if (!pasaFiltroAbiertosAhora(n)) return false;
+            }
+
+            // Days filter
+            if (daysFilter && daysFilter.length > 0) {
+                const now = new Date();
+                const days = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+                const currentDay = days[now.getDay()];
+                if (!daysFilter.includes(currentDay)) return false;
+                // Also check if closed on this day
+                if (n.dias_cierre && n.dias_cierre.toLowerCase().replace(/\s/g,'').split(',').includes(currentDay)) {
+                    return false;
+                }
+            }
+
+            // Company type filter
+            if (companyTypeFilter && !companyTypeFilter.includes(inferCompanyType(n))) return false;
+
+            return true;
+        }).map(n => ({...n, tipo: 'negocio'}));
+    }
+
+    // ─── Filter marcas ──────────────────────────────────────────────────────────
+    let marcas_filtered = [];
+    if (currentVer === 'marcas' || currentVer === 'ambos') {
+        marcas_filtered = marcas.filter(m => {
+            // Basic filter
+            if (texto && !(m.nombre||'').toLowerCase().includes(texto)) return false;
+
+            // Protection filter
+            if (protectionFilter && !protectionFilter.includes(m.nivel_proteccion)) return false;
+
+            // Sector filter
+            if (sectorFilter) {
+                if (sectorFilter.text && !(m.rubro||'').toLowerCase().includes(sectorFilter.text)) return false;
+                if (sectorFilter.selected.length > 0 && !sectorFilter.selected.includes(m.rubro)) return false;
+            }
+
+            return true;
+        }).map(m => ({...m, tipo: 'marca'}));
+    }
+
+    let items = [...negocios_filtered, ...marcas_filtered];
+
+    const cntN = items.filter(i => i.tipo === 'negocio').length;
+    const cntM = items.filter(i => i.tipo === 'marca').length;
+    document.getElementById('stats').textContent = '🏪 ' + cntN + '  |  🏷️ ' + cntM;
+
+    mostrarLista(items);
+    mostrarMarcadores(items);
+}
+
+// ─── List rendering ──────────────────────────────────────────────────────────────
+function mostrarLista(lista) {
+    const contenedor = document.getElementById('lista');
+    contenedor.innerHTML = '';
+
+    const negs = lista.filter(i => i.tipo === 'negocio');
+    const mrks = lista.filter(i => i.tipo === 'marca');
+
+    if (currentVer === 'ambos' && negs.length && mrks.length) {
+        addListHeader(contenedor, '🏪 Negocios (' + negs.length + ')');
+        negs.forEach(n => addListItem(contenedor, n));
+        addListHeader(contenedor, '🏷️ Marcas (' + mrks.length + ')');
+        mrks.forEach(m => addListItem(contenedor, m));
+    } else {
+        lista.forEach(n => addListItem(contenedor, n));
+    }
+}
+
+function addListHeader(container, text) {
+    const h = document.createElement('div');
+    h.className = 'section-header';
+    h.textContent = text;
+    container.appendChild(h);
+}
+
+function addListItem(container, n) {
+    const isMarca = n.tipo === 'marca';
+    const div = document.createElement('div');
+    div.classList.add(isMarca ? 'marca' : 'negocio');
+
+    let dText = '';
+    if (miUbicacion && n.lat && n.lng) {
+        dText = ' · ' + calcularDistancia(miUbicacion.lat, miUbicacion.lng, n.lat, n.lng).toFixed(1) + ' km';
+    }
+
+    const name    = n.nombre || n.name    || 'Sin nombre';
+    const address = n.ubicacion || n.address || 'Sin dirección';
+    const type    = isMarca ? '🏷️ Marca' : (n.business_type || 'Negocio');
+
+    // Open/closed mini indicator for list items
+    const openStatus = (!isMarca && !isVehicleSaleType(n) && !isRemateType(n)) ? estaAbierto(n) : null;
+    const dot = openStatus === true  ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#2ecc71;margin-left:4px;vertical-align:middle;"></span>'
+              : openStatus === false ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#e74c3c;margin-left:4px;vertical-align:middle;"></span>'
+              : '';
+
+    div.innerHTML =
+        '<strong>' + name + '</strong>' + dot +
+        '<br><span style="color:#666;font-size:12px;">' + address + '</span>' +
+        '<br><small style="color:#aaa;">' + type + dText + '</small>';
+
+    // A7: open popup automatically when clicking list item
+    if (n.lat && n.lng) div.onclick = () => focusMarker(n.lat, n.lng);
+    container.appendChild(div);
+}
+
+// ─── A7: Focus marker and open its popup ─────────────────────────────────────────
+function focusMarker(lat, lng) {
+    mapa.setView([lat, lng], 15);
+    const m = marcadores.find(mk => {
+        const ll = mk.getLatLng ? mk.getLatLng() : null;
+        return ll && Math.abs(ll.lat - lat) < 0.00005 && Math.abs(ll.lng - lng) < 0.00005;
+    });
+    if (!m) return;
+    if (clusterGroup && clusterGroup.zoomToShowLayer) {
+        clusterGroup.zoomToShowLayer(m, () => setTimeout(() => m.openPopup(), 100));
+    } else {
+        m.openPopup();
+    }
+}
+
+// ─── Marker rendering ────────────────────────────────────────────────────────────
+function mostrarMarcadores(lista) {
+    clusterGroup.clearLayers();
+    marcadores = [];
+
+    lista.forEach(n => {
+        if (n.lat == null || n.lng == null) return;
+
+        const isMarca = n.tipo === 'marca';
+        const itemKind = isMarca ? 'marca' : 'negocio';
+        const itemId = parseInt(n.id, 10);
+        let marker;
+
+        if (isMarca) {
+            if (n.logo_url) {
+                // ── Icono de foto circular ────────────────────────────────────
+                const html = `<div style="
+                    width:44px;height:44px;border-radius:50%;
+                    border:3px solid #1B3B6F;
+                    box-shadow:0 2px 8px rgba(0,0,0,.35);
+                    background:url('${n.logo_url}') center/cover no-repeat #fff;
+                    position:relative;">
+                    <div style="position:absolute;bottom:-2px;right:-2px;
+                        background:#1B3B6F;color:white;border-radius:50%;
+                        width:16px;height:16px;font-size:9px;
+                        display:flex;align-items:center;justify-content:center;
+                        border:2px solid white;">🏷️</div>
+                </div>`;
+                marker = L.marker([n.lat, n.lng], {
+                    icon: L.divIcon({
+                        html: html, className: '',
+                        iconSize: [44, 44], iconAnchor: [22, 44], popupAnchor: [0, -46]
+                    })
+                });
+            } else {
+                // ── Círculo de color (fallback sin logo) ──────────────────────
+                const color = getNizaColor(n.clase_principal);
+                marker = L.circleMarker([n.lat, n.lng], {
+                    radius: 14, fillColor: color, color: '#fff', weight: 3, fillOpacity: 0.9
+                });
+            }
+        } else {
+            // A1: SVG icon with open/closed dot (cargado dinámicamente desde API)
+            const iconData = iconosDB[n.business_type] || { emoji: '📍', color: '#667eea' };
+            const color = iconData.color;
+            const emoji = iconData.emoji;
+            const open  = (isVehicleSaleType(n) || isRemateType(n)) ? null : estaAbierto(n);
+            const hasOfertaDestacada = !!(n.oferta_destacada_id || n.oferta_activa_id);
+            const icon = hasOfertaDestacada ? createSvgIconWithOffer(emoji, color, open) : createSvgIcon(emoji, color, open);
+            marker = L.marker([n.lat, n.lng], { icon });
+        }
+        marker._mapitaMeta = {
+            entity_type: isMarca ? 'brand' : 'business',
+            entity_id: n.id || null,
+            mapita_id: n.mapita_id || null
+        };
+
+        const name = n.nombre || n.name || 'Sin nombre';
+
+        // A3: Hover tooltip
+        const tooltipOffset = isMarca ? (n.logo_url ? -46 : -14) : -42;
+        marker.bindTooltip(name, { direction: 'top', offset: [0, tooltipOffset], opacity: 0.9 });
+
+        if (!isMarca) {
+            // For businesses: use standard popup
+            marker.bindPopup(buildPopup(n, isMarca), { maxWidth: 290 });
+        }
+
+        marker._selectionKey = getSelectionKey(itemKind, itemId);
+        marker._selectionItem = {
+            kind: itemKind,
+            id: itemId,
+            name: name,
+            lat: parseFloat(n.lat),
+            lng: parseFloat(n.lng),
+            metadata: isMarca ? buildMarcaMetadata(n) : buildNegocioMetadata(n)
+        };
+
+        marker.on('click', function(e) {
+            if (selectionMode) {
+                stopLeafletEvent(e);
+                toggleSelection(marker._selectionItem, marker);
+                if (marker.closePopup) marker.closePopup();
+                return;
+            }
+            if (isMarca) {
+                abrirBrandPopupPremium(n.id, n.nombre, n.rubro, n);
+            }
+        });
+        marker.on('preclick', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+        });
+
+        clusterGroup.addLayer(marker);
+        marcadores.push(marker);
+    });
+    refreshSelectionVisuals();
+}
+
+// ─── Popup builder ───────────────────────────────────────────────────────────────
+function buildWTPopupSection(entityType, entityId, title) {
+    const safeTitle     = escapeHtml(title || '');
+    const safeType      = escapeHtml(entityType);
+    const safeEntityId  = escapeHtml(String(parseInt(entityId, 10) || 0));
+    const panelId       = 'wt-panel-' + safeType + '-' + safeEntityId;
+    const presets       = ['Hola 👋', 'Estoy cerca 📍', '¿Hay novedades?', 'Gracias 🙌'];
+    const presetButtons = presets
+        .map(t => '<button type="button" class="wt-preset" data-wt-preset="' + escapeHtml(t) + '">' + escapeHtml(t) + '</button>')
+        .join('');
+
+    const toggleBtn =
+        '<div style="margin:6px 0 2px;">' +
+            '<button type="button"' +
+            ' onclick="(function(b){' +
+                'var p=document.getElementById(\'' + panelId + '\');' +
+                'var open=p.style.display===\'block\';' +
+                'p.style.display=open?\'none\':\'block\';' +
+                'b.setAttribute(\'aria-expanded\',!open);' +
+                'if(!open&&!p.dataset.wtInitDone){' +
+                    'p.dataset.wtInitDone=\'1\';' +
+                    'initWTPanelsInPopup(p.parentElement);' +
+                '}' +
+            '})(this)"' +
+            ' aria-expanded="false"' +
+            ' style="background:#1f2937;display:inline-flex;align-items:center;gap:6px;' +
+                    'padding:6px 12px;border-radius:8px;border:none;cursor:pointer;color:white;' +
+                    'font-size:12px;font-weight:600;transition:background 0.2s;">' +
+                '<svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" style="flex-shrink:0;">' +
+                    '<rect x="8" y="6" width="8" height="14" rx="2" stroke="currentColor" fill="none" stroke-width="1.8"/>' +
+                    '<line x1="12" y1="2" x2="12" y2="6" stroke="currentColor" stroke-width="1.8"/>' +
+                    '<circle cx="12" cy="12" r="2" fill="currentColor"/>' +
+                '</svg>' +
+                '<span style="font-style:italic;color:#60a5fa;">Mensajes WT</span>' +
+            '</button>' +
+        '</div>';
+
+    const panel =
+        '<div id="' + panelId + '" class="wt-panel"' +
+            ' data-entity-type="' + safeType + '"' +
+            ' data-entity-id="' + safeEntityId + '"' +
+            ' data-entity-title="' + safeTitle + '"' +
+            ' style="display:none;">' +
+            '<div class="wt-header">📻 WT · ' + safeTitle + '</div>' +
+            '<div class="wt-presets">' + presetButtons + '</div>' +
+            '<div class="wt-messages" data-wt-messages><div class="wt-empty">Sin mensajes aún</div></div>' +
+            '<div class="wt-footer">' +
+                '<input maxlength="' + WT_MAX_MESSAGE_LEN + '" class="wt-input" data-wt-input placeholder="Mensaje corto (máx. ' + WT_MAX_MESSAGE_LEN + ')">' +
+                '<button type="button" class="wt-send" data-wt-send>Enviar</button>' +
+            '</div>' +
+        '</div>';
+
+    return toggleBtn + panel;
+}
+
+function buildPopup(n, isMarca) {
+    const name    = n.nombre || n.name    || 'Sin nombre';
+    const address = n.ubicacion || n.address || '';
+    const relType = isMarca ? 'brand' : 'business';
+    const relId = n.id || '';
+    const relMapitaId = n.mapita_id || '';
+
+    let p = '<div style="font-family: inherit;" data-rel-entity-type="' + relType + '" data-rel-entity-id="' + relId + '" data-rel-mapita-id="' + relMapitaId + '">';
+
+    // PROFESSIONAL HEADER (with gradient background)
+    p += '<div class="popup-header">';
+    p += '<h3>' + name + '</h3>';
+
+    if (!isMarca) {
+        if (isRemateType(n)) {
+            const remateStatus = getRemateStatus(n);
+            p += '<span class="status-badge">' + remateStatus.label + '</span>';
+        } else if (!isVehicleSaleType(n)) {
+            // For regular businesses: add open/closed status badge
+            const openStatus = estaAbierto(n);
+            if (openStatus === true)  p += '<span class="status-badge">🟢 Abierto ahora</span>';
+            if (openStatus === false) p += '<span class="status-badge">🔴 Cerrado</span>';
+        }
+    }
+    p += '</div>'; // Close popup-header
+
+    p += '<div class="popup-body">';
+
+    if (isMarca) {
+        // ── Brand popup ──────────────────────────────────────────────────────
+        if (n.clase_principal) p += '<p style="margin:5px 0;"><span style="background:' + getNizaColor(n.clase_principal) + ';color:white;padding:3px 8px;border-radius:10px;font-size:11px;">📋 CLASE ' + n.clase_principal + '</span></p>';
+        if (n.rubro)            p += '<p style="margin:4px 0;color:#555;font-size:12px;">🏷️ ' + n.rubro + '</p>';
+        if (n.valor_activo)     p += '<p style="margin:4px 0;color:#27ae60;font-weight:bold;font-size:13px;">💰 $' + n.valor_activo + '</p>';
+        if (n.nivel_proteccion) {
+            const col = n.nivel_proteccion==='Alta'?'#27ae60':n.nivel_proteccion==='Media'?'#f39c12':'#e74c3c';
+            p += '<p style="margin:4px 0;font-size:12px;">🛡️ Protección: <strong style="color:' + col + '">' + n.nivel_proteccion + '</strong></p>';
+        }
+        if (n.riesgo_oposicion) p += '<p style="margin:4px 0;font-size:12px;">⚠️ Riesgo: ' + n.riesgo_oposicion + '</p>';
+
+        // Condition buttons (per brand, shown in map)
+        const hasConds = n.tiene_zona || n.tiene_licencia || n.es_franquicia || n.zona_exclusiva;
+        if (hasConds) {
+            p += '<div style="margin:8px 0;border-top:1px solid #eee;padding-top:7px;">';
+            p += '<p style="margin:0 0 5px;font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px;">Ver en mapa</p>';
+            p += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
+            const bs = 'padding:5px 10px;border:none;border-radius:12px;cursor:pointer;font-size:11px;color:white;font-family:sans-serif;';
+            if (n.tiene_zona)     p += '<button onclick="toggleZonaSingle(' + n.lat + ',' + n.lng + ',' + (n.zona_radius_km||10) + ')" style="' + bs + 'background:#3498db;">🌐 Zona</button>';
+            if (n.tiene_licencia) p += '<button onclick="toggleLicenciaSingle(' + n.lat + ',' + n.lng + ')" style="' + bs + 'background:#27ae60;">📜 Licencia</button>';
+            if (n.es_franquicia)  p += '<button onclick="toggleFranquiciaSingle(' + n.lat + ',' + n.lng + ')" style="' + bs + 'background:#9c27b0;">🏢 Franquicia</button>';
+            if (n.zona_exclusiva) p += '<button onclick="toggleExclusivaSingle(' + n.lat + ',' + n.lng + ',' + (n.zona_exclusiva_radius_km||2) + ')" style="' + bs + 'background:#e74c3c;">🎯 Exclusiva</button>';
+            p += '</div></div>';
+        }
+
+        p += '</div>'; // Close popup-body
+
+        // Nav links for brands
+        p += '<div class="popup-footer">';
+        // Enlace de detalle según origen de la marca
+        var detalleUrl = (n.fuente === 'marcas')
+            ? '/brand_form?id=' + n.id
+            : '/brand_detail?id=' + n.id;
+        p += '<a href="' + detalleUrl + '" class="popup-action" style="background:#1B3B6F;">📋 Detalle</a>';
+        p += '<a href="/marcas" class="popup-action" style="background:#4285F4;">🗺️ Mapa</a>';
+        if (n.website) p += '<a href="' + n.website + '" target="_blank" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
+        p += '</div>';
+
+    } else {
+        // ── Business popup ──────────────────────────────────────────────────
+
+        if (n.oferta_destacada_id || n.oferta_activa_id) {
+            const precioNormal = n.oferta_destacada_precio_normal ? '$' + Number(n.oferta_destacada_precio_normal).toLocaleString() : '';
+            const precioOferta = n.oferta_destacada_precio_oferta ? '$' + Number(n.oferta_destacada_precio_oferta).toLocaleString() : '';
+            p += '<div class="popup-section" style="border:1px solid #ffd6d6;background:#fff5f5;">';
+            p += '<div class="popup-label">🏷️ Oferta destacada</div>';
+            p += '<div class="popup-value" style="font-weight:700;color:#c0392b;">' + (n.oferta_destacada_nombre || 'Promoción especial') + '</div>';
+            if (n.oferta_destacada_descripcion) {
+                p += '<div class="popup-value" style="font-size:12px;color:#555;">' + n.oferta_destacada_descripcion + '</div>';
+            }
+            if (precioOferta || precioNormal) {
+                p += '<div class="popup-value" style="margin-top:4px;">'
+                    + (precioNormal ? '<span style="text-decoration:line-through;color:#999;margin-right:6px;">' + precioNormal + '</span>' : '')
+                    + (precioOferta ? '<strong style="color:#e74c3c;">' + precioOferta + '</strong>' : '')
+                    + '</div>';
+            }
+            if (n.oferta_destacada_fecha_expiracion) {
+                p += '<div class="popup-value" style="font-size:11px;color:#777;">⏰ Hasta ' + n.oferta_destacada_fecha_expiracion + '</div>';
+            }
+            p += '</div>';
+        }
+
+        // Address section
+        if (address) {
+            p += '<div class="popup-section">';
+            p += '<div class="popup-label">📍 Dirección</div>';
+            p += '<div class="popup-value">' + address + '</div>';
+            p += '</div>';
+        }
+
+        // A5: Price range
+        const precio = precioStr(n.price_range);
+        if (precio) {
+            p += '<div class="popup-section">';
+            p += '<div class="popup-label">💰 Rango de precios</div>';
+            p += '<div class="popup-value">' + precio + '</div>';
+            p += '</div>';
+        }
+
+        // PHOTOS SECTION — desactivado: las fotos no se muestran en el popup del mapa
+
+        // A6: Description excerpt
+        if (n.description && n.description.trim()) {
+            const exc = n.description.length > 120 ? n.description.substring(0, 120) + '…' : n.description;
+            p += '<p style="margin:6px 0;color:#555;font-size:12px;line-height:1.5;">' + exc + '</p>';
+        }
+
+        // Details
+        if (n.phone) p += '<p style="margin:4px 0;font-size:12px;">📞 ' + n.phone + '</p>';
+        if (n.business_type === 'comercio' && n.tipo_comercio) p += '<p style="margin:4px 0;font-size:12px;">🏬 ' + n.tipo_comercio + '</p>';
+        if (isVehicleSaleType(n)) {
+            const vTipo = n.business_type === 'autos_venta' ? '🚗 Auto en venta' : '🏍️ Moto en venta';
+            p += '<p style="margin:4px 0;font-size:12px;">' + vTipo + '</p>';
+            if (n.vehiculo_marca || n.vehiculo_modelo) {
+                p += '<p style="margin:4px 0;font-size:12px;">🔧 ' + [n.vehiculo_marca, n.vehiculo_modelo].filter(Boolean).join(' ') + '</p>';
+            } else if (n.tipo_comercio) {
+                p += '<p style="margin:4px 0;font-size:12px;">🔧 ' + n.tipo_comercio + '</p>';
+            }
+            if (n.vehiculo_anio) p += '<p style="margin:4px 0;font-size:12px;">📅 Año: ' + n.vehiculo_anio + '</p>';
+            if (n.vehiculo_km) p += '<p style="margin:4px 0;font-size:12px;">🛣️ Km: ' + Number(n.vehiculo_km).toLocaleString() + '</p>';
+            if (n.vehiculo_precio) p += '<p style="margin:4px 0;font-size:12px;color:#e67e22;font-weight:700;">💰 $' + Number(n.vehiculo_precio).toLocaleString() + '</p>';
+            if (n.vehiculo_contacto) p += '<p style="margin:4px 0;font-size:12px;">📲 ' + n.vehiculo_contacto + '</p>';
+        } else if (isRemateType(n)) {
+            const rs = getRemateStatus(n);
+            p += '<p style="margin:4px 0;font-size:12px;">' + rs.label + '</p>';
+            const rw = getRemateWindow(n);
+            if (rw.inicio) p += '<p style="margin:4px 0;font-size:12px;">🕐 Inicio: ' + formatDateTime(rw.inicio) + '</p>';
+            if (rw.fin) p += '<p style="margin:4px 0;font-size:12px;">⏳ Cierre: ' + formatDateTime(rw.fin) + '</p>';
+            if (n.remate_titulo || n.tipo_comercio) p += '<p style="margin:4px 0;font-size:12px;">🔨 ' + (n.remate_titulo || n.tipo_comercio) + '</p>';
+        } else if (n.horario_apertura) {
+            p += '<p style="margin:4px 0;font-size:12px;">🕐 ' + n.horario_apertura + ' – ' + n.horario_cierre + '</p>';
+        }
+        if (n.categorias_productos) p += '<p style="margin:4px 0;color:#888;font-size:11px;">🏷️ ' + n.categorias_productos + '</p>';
+
+        // B1: Rating placeholder (lazy loaded on popupopen)
+        p += '<div class="popup-section">';
+        p += '<div data-rating-id="' + n.id + '" style="min-height:18px;">'
+           + '<span style="color:#ccc;font-size:11px;">⭐ cargando reseñas...</span></div>';
+        p += '</div>';
+        p += buildWTPopupSection('negocio', n.id, name);
+
+        p += '</div>'; // Close popup-body
+
+        // A4: Action bar (professional footer)
+        const waText = encodeURIComponent((n.name || '') + ' — ' + (n.address || '') + (n.website ? ' — ' + n.website : ''));
+        const gmaps  = 'https://www.google.com/maps/dir/?api=1&destination=' + n.lat + ',' + n.lng;
+        const wa     = 'https://wa.me/?text=' + waText;
+
+        p += '<div class="popup-footer">';
+        if (n.phone)   p += '<a href="tel:' + n.phone + '" class="popup-action" style="background:#27ae60;">📞 Llamar</a>';
+        if (n.email)   p += '<a href="mailto:' + n.email + '" class="popup-action" style="background:#8e44ad;">📧 Email</a>';
+        p += '<a href="' + gmaps + '" target="_blank" class="popup-action" style="background:#4285F4;">🗺️ Mapa</a>';
+        p += '<a href="' + wa   + '" target="_blank" class="popup-action" style="background:#25D366;">💬 WA</a>';
+        if (n.website) p += '<a href="' + n.website + '" target="_blank" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
+        p += '<a href="/business/view_business.php?id=' + n.id + '" target="_blank" class="popup-action" style="background:#1B3B6F;">📋 Detalle</a>';
+        p += '</div>';
+    }
+
+    p += '</div>';
+    return p;
+}
+
+// ─── Single-brand overlay functions ──────────────────────────────────────────────
+function clearSingleOverlays() {
+    activeSingleOverlays.forEach(l => mapa.removeLayer(l));
+    activeSingleOverlays = [];
+}
+
+function clearRelationLines() {
+    activeRelationLines.forEach(l => mapa.removeLayer(l));
+    activeRelationLines = [];
+}
+
+function getVisibleMarkersWithMeta() {
+    const out = [];
+    if (clusterGroup && clusterGroup.eachLayer) {
+        clusterGroup.eachLayer(layer => {
+            if (layer && layer._mapitaMeta) out.push(layer);
+        });
+    }
+    if (eventosLayer && eventosLayer.eachLayer) {
+        eventosLayer.eachLayer(layer => {
+            if (layer && layer._mapitaMeta) out.push(layer);
+        });
+    }
+    return out;
+}
+
+function findMarkerByEntity(entityType, entityId, mapitaId) {
+    const markers = getVisibleMarkersWithMeta();
+    return markers.find(m => {
+        const meta = m._mapitaMeta || {};
+        if (mapitaId && meta.mapita_id && meta.mapita_id === mapitaId) return true;
+        return meta.entity_type === entityType && String(meta.entity_id || '') === String(entityId || '');
+    }) || null;
+}
+
+async function drawRelationLinesForPopup(sourceMarker) {
+    if (!sourceMarker || !sourceMarker._mapitaMeta) return;
+    const meta = sourceMarker._mapitaMeta;
+    if (!meta.entity_id && !meta.mapita_id) return;
+    try {
+        const qs = meta.entity_id
+            ? `entity_type=${encodeURIComponent(meta.entity_type)}&entity_id=${encodeURIComponent(meta.entity_id)}`
+            : `mapita_id=${encodeURIComponent(meta.mapita_id)}`;
+        const res = await fetch('/api/relaciones.php?' + qs).then(r => r.json());
+        if (!res.success || !Array.isArray(res.data)) return;
+
+        clearRelationLines();
+        const sourceLL = sourceMarker.getLatLng ? sourceMarker.getLatLng() : null;
+        if (!sourceLL) return;
+
+        res.data.forEach(rel => {
+            const isSource = rel.source_entity_type === meta.entity_type && String(rel.source_entity_id) === String(meta.entity_id);
+            const otherType = isSource ? rel.target_entity_type : rel.source_entity_type;
+            const otherId = isSource ? rel.target_entity_id : rel.source_entity_id;
+            const otherMapita = isSource ? rel.target_mapita_id : rel.source_mapita_id;
+            const targetMarker = findMarkerByEntity(otherType, otherId, otherMapita);
+            if (!targetMarker || !targetMarker.getLatLng) return;
+            const targetLL = targetMarker.getLatLng();
+            if (!targetLL) return;
+            const line = L.polyline([sourceLL, targetLL], {
+                color: '#1B3B6F',
+                weight: 2,
+                opacity: 0.75,
+                dashArray: '6,6'
+            }).addTo(mapa);
+            activeRelationLines.push(line);
+        });
+    } catch (err) {
+        console.warn('Relaciones no disponibles:', err);
+    }
+}
+
+function toggleZonaSingle(lat, lng, radiusKm) {
+    clearSingleOverlays();
+    activeSingleOverlays.push(
+        L.circle([lat, lng], { radius: radiusKm*1000, fillColor:'#3498db', color:'#3498db', fillOpacity:0.2, weight:2, dashArray:'6,4' }).addTo(mapa)
+    );
+}
+function toggleLicenciaSingle(lat, lng) {
+    clearSingleOverlays();
+    activeSingleOverlays.push(
+        L.circleMarker([lat, lng], { radius:16, fillColor:'#27ae60', color:'#fff', weight:3, fillOpacity:0.85 }).addTo(mapa)
+    );
+}
+function toggleFranquiciaSingle(lat, lng) {
+    clearSingleOverlays();
+    activeSingleOverlays.push(
+        L.circleMarker([lat, lng], { radius:16, fillColor:'#9c27b0', color:'#fff', weight:3, fillOpacity:0.85 }).addTo(mapa)
+    );
+}
+function toggleExclusivaSingle(lat, lng, radiusKm) {
+    clearSingleOverlays();
+    activeSingleOverlays.push(
+        L.circle([lat, lng], { radius: radiusKm*1000, fillColor:'#e74c3c', color:'#e74c3c', fillOpacity:0.2, weight:2 }).addTo(mapa)
+    );
+}
+
+// ─── Layer toggles ───────────────────────────────────────────────────────────────
+function toggleMyBusiness() {
+    myBusinessMarkers.forEach(m => mapa.removeLayer(m));
+    myBusinessMarkers = [];
+    if (!document.getElementById('show-mis-negocios')?.checked) return;
+    if (currentVer === 'marcas') return;
+    negocios.slice(0, 5).forEach(n => {
+        if (!n.lat || !n.lng) return;
+        const m = L.circleMarker([n.lat, n.lng], { radius:12, fillColor:'#007bff', color:'#fff', weight:3 });
+        m.bindPopup('<b>🏢 ' + (n.name||'') + '</b><br>✅ Mi negocio');
+        m.addTo(mapa); myBusinessMarkers.push(m);
+    });
+}
+
+function toggleInmuebles() {
+    propertyZoneMarkers.forEach(m => mapa.removeLayer(m));
+    propertyZoneMarkers = [];
+    if (!document.getElementById('show-inmuebles').checked) return;
+    if (currentVer === 'marcas' || currentVer === 'ninguno') return;
+    negocios
+        .filter(n => n.business_type === 'inmobiliaria' && n.lat && n.lng)
+        .forEach(n => {
+            const c = L.circle([n.lat, n.lng], {
+                radius: 10000, fillColor:'#e67e22', color:'#e67e22', fillOpacity:0.15, weight:2, dashArray:'10,10'
+            });
+            c.bindPopup('<b>🏠 ' + (n.name||'') + '</b><br>Zona inmobiliaria');
+            c.addTo(mapa); propertyZoneMarkers.push(c);
+        });
+}
+
+function toggleZonasMarca() {
+    zonaMarcaMarkers.forEach(m => mapa.removeLayer(m)); zonaMarcaMarkers = [];
+    if (!(currentVer==='marcas'||currentVer==='ambos')) return;
+    marcas.filter(m => m.lat && m.lng && m.tiene_zona).forEach(m => {
+        const r = m.zona_radius_km || 10;
+        const c = L.circle([m.lat,m.lng],{radius:r*1000,fillColor:'#3498db',color:'#3498db',fillOpacity:0.15,weight:2,dashArray:'5,5'});
+        c.bindPopup(`<b>${m.nombre}</b><br>🌐 Zona: ${r}km`); c.addTo(mapa); zonaMarcaMarkers.push(c);
+    });
+}
+function toggleLicenciasMarca() {
+    licenciaMarcaMarkers.forEach(m => mapa.removeLayer(m)); licenciaMarcaMarkers = [];
+    if (!(currentVer==='marcas'||currentVer==='ambos')) return;
+    marcas.filter(m => m.lat && m.lng && m.tiene_licencia).forEach(m => {
+        const mk = L.circleMarker([m.lat,m.lng],{radius:10,fillColor:'#27ae60',color:'#fff',weight:2});
+        mk.bindPopup(`<b>${m.nombre}</b><br>📜 Licencia${m.licencia_detalle?': '+m.licencia_detalle:''}`);
+        mk.addTo(mapa); licenciaMarcaMarkers.push(mk);
+    });
+}
+function toggleFranquiciasMarca() {
+    franquiciaMarcaMarkers.forEach(m => mapa.removeLayer(m)); franquiciaMarcaMarkers = [];
+    if (!(currentVer==='marcas'||currentVer==='ambos')) return;
+    marcas.filter(m => m.lat && m.lng && m.es_franquicia).forEach(m => {
+        const mk = L.circleMarker([m.lat,m.lng],{radius:10,fillColor:'#9c27b0',color:'#fff',weight:2,fillOpacity:0.8});
+        mk.bindPopup(`<b>${m.nombre}</b><br>🏢 Franquicia${m.franchise_details?': '+m.franchise_details:''}`);
+        mk.addTo(mapa); franquiciaMarcaMarkers.push(mk);
+    });
+}
+function toggleExclusivasMarca() {
+    exclusivaMarcaMarkers.forEach(m => mapa.removeLayer(m)); exclusivaMarcaMarkers = [];
+    if (!(currentVer==='marcas'||currentVer==='ambos')) return;
+    marcas.filter(m => m.lat && m.lng && m.zona_exclusiva).forEach(m => {
+        const r = m.zona_exclusiva_radius_km || 2;
+        const c = L.circle([m.lat,m.lng],{radius:r*1000,fillColor:'#e74c3c',color:'#e74c3c',fillOpacity:0.2,weight:2});
+        c.bindPopup(`<b>${m.nombre}</b><br>🎯 Zona exclusiva: ${r}km`); c.addTo(mapa); exclusivaMarcaMarkers.push(c);
+    });
+}
+
+// ─── VER Selector ────────────────────────────────────────────────────────────────
+// Estado de visibilidad (nuevo sistema de toggles independientes)
+let mostrarNegocios = true;
+let mostrarMarcas = true;
+
+function toggleVer(tipo) {
+    if (tipo === 'negocios') {
+        mostrarNegocios = !mostrarNegocios;
+    } else if (tipo === 'marcas') {
+        mostrarMarcas = !mostrarMarcas;
+    }
+
+    // Actualizar estilos de botones
+    const btnNegocios = document.getElementById('sel-negocios');
+    const btnMarcas = document.getElementById('sel-marcas');
+
+    if (btnNegocios) {
+        if (mostrarNegocios) {
+            btnNegocios.classList.add('active');
+        } else {
+            btnNegocios.classList.remove('active');
+        }
+    }
+
+    if (btnMarcas) {
+        if (mostrarMarcas) {
+            btnMarcas.classList.add('active');
+        } else {
+            btnMarcas.classList.remove('active');
+        }
+    }
+
+    // Actualizar variable currentVer para compatibilidad
+    if (mostrarNegocios && mostrarMarcas) {
+        currentVer = 'ambos';
+    } else if (mostrarNegocios) {
+        currentVer = 'negocios';
+    } else if (mostrarMarcas) {
+        currentVer = 'marcas';
+    } else {
+        currentVer = 'ninguno';
+    }
+
+    // Aplicar filtro
+    filtrar();
+}
+
+// Función legacy (mantener por compatibilidad)
+function setVer(val) {
+    if (val === 'negocios') {
+        mostrarNegocios = true;
+        mostrarMarcas = false;
+    } else if (val === 'marcas') {
+        mostrarNegocios = false;
+        mostrarMarcas = true;
+    } else if (val === 'ambos') {
+        mostrarNegocios = true;
+        mostrarMarcas = true;
+    } else if (val === 'ninguno') {
+        mostrarNegocios = false;
+        mostrarMarcas = false;
+    }
+
+    currentVer = val;
+
+    // Actualizar botones
+    const btnNegocios = document.getElementById('sel-negocios');
+    const btnMarcas = document.getElementById('sel-marcas');
+
+    if (btnNegocios) {
+        if (mostrarNegocios) {
+            btnNegocios.classList.add('active');
+        } else {
+            btnNegocios.classList.remove('active');
+        }
+    }
+
+    if (btnMarcas) {
+        if (mostrarMarcas) {
+            btnMarcas.classList.add('active');
+        } else {
+            btnMarcas.classList.remove('active');
+        }
+    }
+
+    filtrar();
+}
+
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('active');
+}
+
+// ─── Touch swipe for sidebar ─────────────────────────────────────────────────────
+let _verSelectorDragging = false;
+(function () {
+    let txStart = 0, tyStart = 0, tActive = false;
+    const SWIPE = 60, EDGE = 30;
+    document.addEventListener('touchstart', e => { txStart = e.touches[0].clientX; tyStart = e.touches[0].clientY; tActive = true; }, { passive: true });
+    document.addEventListener('touchmove', e => {
+        if (!tActive) return;
+        if (Math.abs(e.touches[0].clientY - tyStart) > Math.abs(e.touches[0].clientX - txStart)) tActive = false;
+    }, { passive: true });
+    document.addEventListener('touchend', e => {
+        if (!tActive || _verSelectorDragging) return;
+        tActive = false;
+        const dx = e.changedTouches[0].clientX - txStart;
+        const sidebar = document.getElementById('sidebar');
+        if (dx >  SWIPE && txStart < EDGE) sidebar.classList.add('active');
+        if (dx < -SWIPE && sidebar.classList.contains('active')) sidebar.classList.remove('active');
+    }, { passive: true });
+})();
+
+// ─── Draggable ver-selector ───────────────────────────────────────────────────────
+(function () {
+    const el = document.getElementById('ver-selector');
+    let dragging = false, ox = 0, oy = 0, ex = 0, ey = 0;
+
+    function startDrag(cx, cy) {
+        dragging = true; _verSelectorDragging = true;
+        ox = cx; oy = cy;
+        const r = el.getBoundingClientRect(); ex = r.left; ey = r.top;
+    }
+    function doDrag(cx, cy) {
+        if (!dragging) return;
+        el.style.left = Math.max(0, ex + cx - ox) + 'px';
+        el.style.top  = Math.max(0, ey + cy - oy) + 'px';
+    }
+    function endDrag() { dragging = false; setTimeout(() => { _verSelectorDragging = false; }, 50); }
+
+    el.addEventListener('mousedown', e => { if (e.target.tagName === 'BUTTON') return; startDrag(e.clientX, e.clientY); e.preventDefault(); });
+    document.addEventListener('mousemove', e => doDrag(e.clientX, e.clientY));
+    document.addEventListener('mouseup', endDrag);
+
+    el.addEventListener('touchstart', e => { if (e.target.tagName === 'BUTTON') return; startDrag(e.touches[0].clientX, e.touches[0].clientY); }, { passive: true });
+    el.addEventListener('touchmove', e => { if (!dragging) return; doDrag(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+    el.addEventListener('touchend', endDrag, { passive: true });
+})();
+
+// ─── Utilities ───────────────────────────────────────────────────────────────────
+function calcularDistancia(lat1, lng1, lat2, lng2) {
+    const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLng = (lng2-lng1)*Math.PI/180;
+    const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+function exportarPDF() {
+    const el = document.getElementById('lista');
+    if (!el.hasChildNodes()) { alert('Lista vacía'); return; }
+    html2canvas(el, { scale: 2 }).then(canvas => {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF();
+        pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, 190, 0);
+        pdf.save('listado.pdf');
+    });
+}
+
+function ubicarme() {
+    if (!navigator.geolocation) { alert('Sin geolocalización'); return; }
+    navigator.geolocation.getCurrentPosition(pos => {
+        miUbicacion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+        // Limpiar marcador anterior
+        if (userLocationMarker) mapa.removeLayer(userLocationMarker);
+
+        // Crear marcador mejorado con icono moderno
+        userLocationMarker = L.marker([miUbicacion.lat, miUbicacion.lng], {
+            icon: L.divIcon({
+                html: '<div style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:white;border:3px solid var(--primary);border-radius:50%;box-shadow:0 2px 8px rgba(102,126,234,0.3);z-index:1000;"><span style="font-size:14px;">📍</span></div>',
+                className: '',
+                iconSize: [28, 28],
+                iconAnchor: [14, 14],
+                popupAnchor: [0, -16]
+            })
+        })
+        .bindPopup('📍 Tu ubicación')
+        .addTo(mapa);
+
+        // Actualizar círculo de radio si el filtro está activo
+        updateRadiusCircle();
+
+        mapa.setView([miUbicacion.lat, miUbicacion.lng], 14);
+        filtrar();
+    }, () => alert('No se pudo obtener la ubicación'));
+}
+
+// ─── Accordion toggle ────────────────────────────────────────────────────────────
+function toggleAccordion(btn) {
+    const content = btn.nextElementSibling;
+    btn.classList.toggle('active');
+    content.classList.toggle('active');
+}
+
+// ─── Filter helper functions ────────────────────────────────────────────────────
+function getLocationFilter() {
+    const enable = document.getElementById('filter-location-enable')?.checked;
+    if (!enable || !miUbicacion) return null;
+    const radius = parseInt(document.getElementById('filter-location-radius').value) || 10;
+    return { enabled: true, radius: radius };
+}
+
+function getLocationCityFilter() {
+    const city = document.getElementById('filter-location-city')?.value.toLowerCase().trim();
+    return city || null;
+}
+
+function getPriceFilter() {
+    const checks = Array.from(document.querySelectorAll('input[name="price-range"]:checked'));
+    if (checks.length === 0) return null;
+    return checks.map(c => parseInt(c.value));
+}
+
+function getTimeFilter() {
+    return document.getElementById('filter-open-now')?.checked || false;
+}
+
+function getDaysFilter() {
+    const checks = Array.from(document.querySelectorAll('input[name="filter-days"]:checked'));
+    return checks.length > 0 ? checks.map(c => c.value) : null;
+}
+
+function getCompanyTypeFilter() {
+    const checks = Array.from(document.querySelectorAll('input[name="company-type"]:checked'));
+    if (checks.length === 0) return null;
+    return checks.map(c => c.value);
+}
+
+function getProtectionFilter() {
+    const checks = Array.from(document.querySelectorAll('input[name="protection-level"]:checked'));
+    if (checks.length === 0) return null;
+    return checks.map(c => c.value);
+}
+
+function getSectorFilter() {
+    const text = document.getElementById('filter-sector-search')?.value.toLowerCase().trim();
+    const checks = Array.from(document.querySelectorAll('input[name="filter-sector"]:checked'));
+    if (checks.length === 0 && !text) return null;
+    return { text: text, selected: checks.map(c => c.value) };
+}
+
+// ─── Update radius circle on map ────────────────────────────────────────────────
+function updateRadiusCircle() {
+    if (!miUbicacion) return;
+
+    // Limpiar círculo anterior
+    if (userRadiusCircle) mapa.removeLayer(userRadiusCircle);
+
+    // Verificar si el filtro está activo
+    const locationFilter = getLocationFilter();
+    if (!locationFilter) return;
+
+    // Dibujar nuevo círculo con el radio actual
+    const radiusMeters = locationFilter.radius * 1000;
+    userRadiusCircle = L.circle([miUbicacion.lat, miUbicacion.lng], {
+        radius: radiusMeters,
+        fillColor: '#667eea',
+        color: '#667eea',
+        weight: 2,
+        opacity: 0.3,
+        fillOpacity: 0.08,
+        dashArray: '8,4'
+    }).addTo(mapa);
+
+    // Agregar tooltip
+    userRadiusCircle.bindTooltip(
+        `📍 Radio de búsqueda: ${locationFilter.radius} km`,
+        { permanent: false, direction: 'center', opacity: 0.85 }
+    );
+}
+
+// ─── Heuristics for company type ────────────────────────────────────────────────
+function inferCompanyType(negocio) {
+    if (!negocio) return 'pyme';
+    const name = (negocio.name || '').toLowerCase();
+    const desc = (negocio.description || '').toLowerCase();
+
+    // Detect multinational: company name contains international keywords or multiple locations
+    if (desc.includes('internacional') || desc.includes('global') ||
+        name.includes('global') || name.includes('international')) {
+        return 'multinacional';
+    }
+
+    // Detect large chain
+    const chainKeywords = ['cadena', 'sucursal', 'franquicia', 'grupo', 'empresa'];
+    if (chainKeywords.some(kw => desc.includes(kw))) {
+        return 'grande';
+    }
+
+    // Detect family business
+    if (desc.includes('familiar') || desc.includes('familia')) {
+        return 'familiar';
+    }
+
+    // Default: PYME
+    return 'pyme';
+}
+
+// ─── Boot ─────────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+    // Setup radius slider: update display and circle in real-time
+    const radiusInput = document.getElementById('filter-location-radius');
+    const radiusValue = document.getElementById('filter-location-radius-value');
+    const filterEnable = document.getElementById('filter-location-enable');
+
+    if (radiusInput && radiusValue) {
+        radiusInput.addEventListener('input', () => {
+            radiusValue.textContent = radiusInput.value;
+            updateRadiusCircle();  // Update circle on map in real-time
+        });
+    }
+
+    // Setup location filter toggle
+    if (filterEnable) {
+        filterEnable.addEventListener('change', () => {
+            updateRadiusCircle();  // Show/hide circle when toggling filter
+        });
+    }
+
+    // Inicializar mapa primero para que clusterGroup esté listo
+    inicializarMapa();
+
+    // Load data
+    try {
+        const rn = await fetch('/api/api_comercios.php').then(r => r.json());
+        if (rn.success) negocios = rn.data;
+    } catch (e) { console.error('Error cargando negocios', e); }
+
+    try {
+        const rm = await fetch('/api/brands.php').then(r => r.json());
+        if (rm.success) marcas = rm.data;
+        populateSectorFilter();
+    } catch (e) { console.error('Error cargando marcas', e); }
+
+    // Dibujar negocios y marcas en el mapa al cargar la página
+    filtrar();
+
+    // Cargar encuestas activas
+    try {
+        const re = await fetch('/api/encuestas.php').then(r => r.json());
+        if (re.success && re.data.length > 0) {
+            mostrarEncuestasWidget(re.data);
+            mostrarMarcadoresEncuestas(re.data);
+        }
+    } catch (e) { console.error('Error cargando encuestas', e); }
+
+    // Cargar eventos proximos
+    try {
+        const rev = await fetch('/api/eventos.php?action=upcoming').then(r => r.json());
+        if (rev.success && rev.data.length > 0) {
+            mostrarEventosWidget(rev.data);
+            mostrarMarcadoresEventos(rev.data);
+        }
+    } catch (e) { console.error('Error cargando eventos', e); }
+
+    // Cargar trivias activas
+    try {
+        const rt = await fetch('/api/trivias.php').then(r => r.json());
+        if (rt.success && rt.data.length > 0) {
+            mostrarTriviasWidget(rt.data);
+            mostrarMarcadoresTrivias(rt.data);
+        }
+    } catch (e) { console.error('Error cargando trivias', e); }
+
+    // Cargar noticias recientes
+    try {
+        const rn = await fetch('/api/noticias.php?action=recent&limit=20').then(r => r.json());
+        if (rn.success && rn.data.length > 0) {
+            mostrarNoticiasWidget(rn.data);
+            mostrarMarcadoresNoticias(rn.data);
+        }
+    } catch (e) { console.error('Error cargando noticias', e); }
+
+    // Cargar ofertas activas
+    try {
+        const ro = await fetch('/api/ofertas.php').then(r => r.json());
+        if (ro.success && ro.data.length > 0) {
+            mostrarOfertasWidget(ro.data);
+            mostrarMarcadoresOfertas(ro.data);
+        }
+    } catch (e) { console.error('Error cargando ofertas', e); }
+
+    // Cargar transmisiones
+    try {
+        const rt2 = await fetch('/api/transmisiones.php').then(r => r.json());
+        if (rt2.success && rt2.data.length > 0) {
+            mostrarTransmisionesWidget(rt2.data);
+            mostrarMarcadoresTransmisiones(rt2.data);
+        }
+    } catch (e) { console.error('Error cargando transmisiones', e); }
+
+    // Indicador de contenido cargado en el mapa
+    const totalExtra = eventoMarkers.length + noticiaMarkers.length + triviaMarkers.length + encuestaMarkers.length;
+    if (totalExtra > 0) {
+        const toast = document.createElement('div');
+        toast.style.cssText = 'position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(30,37,53,.88);color:white;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:600;z-index:4000;pointer-events:none;';
+        toast.textContent = `✅ ${totalExtra} elemento${totalExtra !== 1 ? 's' : ''} cargado${totalExtra !== 1 ? 's' : ''} en el mapa`;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 3500);
+    }
+    updateSelectionPanel();
+
+});
+
+// ─── Populate sector/rubro filter from marcas ────────────────────────────────────
+function populateSectorFilter() {
+    const sectors = new Set();
+    marcas.forEach(m => {
+        if (m.rubro) sectors.add(m.rubro);
+    });
+
+    const sectorList = document.getElementById('filter-sector-list');
+    if (!sectorList) return;
+
+    Array.from(sectors).sort().forEach(sector => {
+        const label = document.createElement('label');
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.name = 'filter-sector';
+        input.value = sector;
+        input.addEventListener('change', filtrar);
+
+        const text = document.createElement('span');
+        text.textContent = sector;
+
+        label.appendChild(input);
+        label.appendChild(text);
+        label.style.display = 'flex';
+        label.style.alignItems = 'center';
+        label.style.marginBottom = '6px';
+        label.style.fontSize = '13px';
+        label.style.cursor = 'pointer';
+
+        sectorList.appendChild(label);
+    });
+}
+
+// ─── Photo Gallery Modal ──────────────────────────────────────────────────────────
+let photoGalleryData = { businessId: null, photos: [], currentIndex: 0 };
+
+function openPhotoGallery(businessId) {
+    const negocio = negocios.find(n => n.id === businessId);
+    if (!negocio || !negocio.photos || negocio.photos.length === 0) return;
+
+    photoGalleryData = {
+        businessId: businessId,
+        photos: negocio.photos,
+        currentIndex: 0
+    };
+
+    const modal = document.getElementById('photo-gallery-modal');
+    const modalImg = document.getElementById('photo-gallery-img');
+    const modalCaption = document.getElementById('photo-gallery-caption');
+
+    modalImg.src = photoGalleryData.photos[0];
+    modalCaption.innerHTML = '<strong>' + (negocio.name || 'Galería') + '</strong><br>Foto 1 de ' + negocio.photos.length;
+    modal.style.display = 'flex';
+
+    updateGalleryNav();
+}
+
+function closePhotoGallery() {
+    const modal = document.getElementById('photo-gallery-modal');
+    modal.style.display = 'none';
+}
+
+function nextPhoto() {
+    photoGalleryData.currentIndex = (photoGalleryData.currentIndex + 1) % photoGalleryData.photos.length;
+    updateGalleryPhoto();
+}
+
+function prevPhoto() {
+    photoGalleryData.currentIndex = (photoGalleryData.currentIndex - 1 + photoGalleryData.photos.length) % photoGalleryData.photos.length;
+    updateGalleryPhoto();
+}
+
+function updateGalleryPhoto() {
+    const modalImg = document.getElementById('photo-gallery-img');
+    const modalCaption = document.getElementById('photo-gallery-caption');
+    const negocio = negocios.find(n => n.id === photoGalleryData.businessId);
+
+    modalImg.src = photoGalleryData.photos[photoGalleryData.currentIndex];
+    if (negocio) {
+        modalCaption.innerHTML = '<strong>' + (negocio.name || 'Galería') + '</strong><br>Foto ' + (photoGalleryData.currentIndex + 1) + ' de ' + photoGalleryData.photos.length;
+    }
+    updateGalleryNav();
+}
+
+function updateGalleryNav() {
+    const prevBtn = document.getElementById('gallery-prev-btn');
+    const nextBtn = document.getElementById('gallery-next-btn');
+
+    prevBtn.style.opacity = photoGalleryData.currentIndex === 0 ? '0.5' : '1';
+    nextBtn.style.opacity = photoGalleryData.currentIndex === photoGalleryData.photos.length - 1 ? '0.5' : '1';
+    prevBtn.style.cursor = photoGalleryData.currentIndex === 0 ? 'default' : 'pointer';
+    nextBtn.style.cursor = photoGalleryData.currentIndex === photoGalleryData.photos.length - 1 ? 'default' : 'pointer';
+}
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+    const modal = document.getElementById('photo-gallery-modal');
+    if (modal.style.display !== 'flex') {
+        if (e.key === 'Escape' && selectionMode) {
+            e.preventDefault();
+            dismissSelectionPanel();
+            return;
+        }
+        // Selection mode shortcut: S key (when no input/textarea focused)
+        if (e.key === 's' || e.key === 'S') {
+            const active = document.activeElement;
+            if (!active || (active.tagName !== 'INPUT' && active.tagName !== 'TEXTAREA' && active.tagName !== 'SELECT')) {
+                e.preventDefault();
+                toggleSelectionMode();
+            }
+        }
+        return;
+    }
+
+    if (e.key === 'ArrowLeft') prevPhoto();
+    if (e.key === 'ArrowRight') nextPhoto();
+    if (e.key === 'Escape') closePhotoGallery();
+});
+
+// Click outside modal to close
+window.addEventListener('click', (e) => {
+    const modal = document.getElementById('photo-gallery-modal');
+    if (e.target === modal) closePhotoGallery();
+});
+
+// ─── Encuestas Widget ────────────────────────────────────────────────────────────
+function mostrarEncuestasWidget(encuestas) {
+    const container = document.getElementById('encuestas-container');
+    const lista = document.getElementById('encuestas-list');
+
+    if (!container || !lista || !encuestas || encuestas.length === 0) {
+        return;
+    }
+
+    container.style.display = 'block';
+    lista.innerHTML = '';
+
+    encuestas.forEach(enc => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            padding: 12px;
+            background: linear-gradient(135deg, #fff9e6 0%, #fff5cc 100%);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #ffc107;
+        `;
+
+        item.onmouseover = () => {
+            item.style.background = 'linear-gradient(135deg, #ffecb3 0%, #ffe082 100%)';
+            item.style.transform = 'translateY(-2px)';
+            item.style.boxShadow = '0 4px 12px rgba(243, 156, 18, 0.2)';
+        };
+
+        item.onmouseout = () => {
+            item.style.background = 'linear-gradient(135deg, #fff9e6 0%, #fff5cc 100%)';
+            item.style.transform = 'translateY(0)';
+            item.style.boxShadow = 'none';
+        };
+
+        item.onclick = () => {
+            abrirEncuesta(enc.id, enc.titulo);
+        };
+
+        const titulo = document.createElement('h4');
+        titulo.textContent = enc.titulo;
+        titulo.style.cssText = 'margin: 0 0 6px 0; font-size: 13px; color: #f39c12; font-weight: 600;';
+
+        const desc = document.createElement('p');
+        desc.textContent = (enc.descripcion || 'Sin descripción').substring(0, 60) + (enc.descripcion && enc.descripcion.length > 60 ? '...' : '');
+        desc.style.cssText = 'margin: 0; font-size: 12px; color: #856404; line-height: 1.3;';
+
+        item.appendChild(titulo);
+        item.appendChild(desc);
+        lista.appendChild(item);
+    });
+}
+
+function abrirEncuesta(encuestaId, titulo) {
+    // Crear modal para responder encuesta
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 5000;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    `;
+
+    content.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #f39c12;">📊 ${titulo}</h2>
+            <button onclick="this.closest('div').parentElement.parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">✕</button>
+        </div>
+        <p style="color: #666; margin-bottom: 20px;">Cargando encuesta...</p>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // Cargar datos de la encuesta
+    fetch('/api/encuestas.php?id=' + encuestaId)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const enc = data.data;
+                let html = `
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 style="margin: 0; color: #f39c12;">${enc.titulo}</h2>
+                        <button onclick="this.closest('div').parentElement.parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">✕</button>
+                    </div>
+                `;
+
+                if (enc.descripcion) {
+                    html += `<p style="color: #666; margin-bottom: 15px; line-height: 1.5;">${enc.descripcion}</p>`;
+                }
+
+                if (enc.preguntas && enc.preguntas.length > 0) {
+                    html += '<form id="encuesta-form">';
+                    enc.preguntas.forEach((preg, idx) => {
+                        html += `
+                            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                                <p style="margin: 0 0 10px 0; font-weight: 600; color: #2c3e50;">${idx + 1}. ${preg.pregunta}</p>
+                        `;
+
+                        if (preg.tipo === 'si_no') {
+                            html += `
+                                <label style="display: block; margin-bottom: 8px;">
+                                    <input type="radio" name="pregunta_${preg.id}" value="Sí" style="margin-right: 8px;"> Sí
+                                </label>
+                                <label style="display: block;">
+                                    <input type="radio" name="pregunta_${preg.id}" value="No" style="margin-right: 8px;"> No
+                                </label>
+                            `;
+                        } else if (preg.tipo === 'escala') {
+                            html += '<div style="display: flex; gap: 6px;">';
+                            for (let i = 1; i <= 5; i++) {
+                                html += `
+                                    <label style="flex: 1; text-align: center; cursor: pointer;">
+                                        <input type="radio" name="pregunta_${preg.id}" value="${i}" style="width: 100%;"> ${i}
+                                    </label>
+                                `;
+                            }
+                            html += '</div>';
+                        } else {
+                            html += `
+                                <textarea name="pregunta_${preg.id}" placeholder="Escribe tu respuesta..." style="width: 100%; padding: 10px; border: 1px solid #d0d5dd; border-radius: 4px; font-family: inherit; font-size: 13px;"></textarea>
+                            `;
+                        }
+
+                        html += '</div>';
+                    });
+
+                    html += `
+                        <button type="button" onclick="enviarEncuesta(${enc.id})" style="width: 100%; padding: 12px; background: #f39c12; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s;">
+                            ✓ Enviar Respuestas
+                        </button>
+                    </form>
+                    `;
+                } else {
+                    html += '<p style="color: #999; text-align: center;">Esta encuesta aún no tiene preguntas.</p>';
+                }
+
+                content.innerHTML = html;
+            }
+        })
+        .catch(e => {
+            console.error('Error cargando encuesta', e);
+            content.innerHTML = '<p style="color: #e74c3c;">Error al cargar la encuesta.</p>';
+        });
+
+    // Cerrar al hacer click afuera
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
+}
+
+function enviarEncuesta(encuestaId) {
+    if (!<?= isset($_SESSION['user_id']) && $_SESSION['user_id'] ? 'true' : 'false' ?>) {
+        alert('Debes iniciar sesión para responder encuestas');
+        window.location.href = '/login';
+        return;
+    }
+
+    const form = document.getElementById('encuesta-form');
+    const respuestas = {};
+
+    form.querySelectorAll('[name^="pregunta_"]').forEach(input => {
+        if (input.type === 'textarea' || input.type === 'radio' || input.type === 'text') {
+            const pregId = input.name.replace('pregunta_', '');
+            if (input.type === 'radio') {
+                const checked = form.querySelector(`[name="${input.name}"]:checked`);
+                if (checked) respuestas[pregId] = checked.value;
+            } else if (input.type === 'textarea') {
+                if (input.value) respuestas[pregId] = input.value;
+            }
+        }
+    });
+
+    if (Object.keys(respuestas).length === 0) {
+        alert('Debes responder al menos una pregunta');
+        return;
+    }
+
+    fetch('/api/encuestas.php?action=respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            encuesta_id: encuestaId,
+            respuestas: respuestas
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert('¡Gracias por responder!');
+            document.querySelector('[onclick*="parentElement"]').closest('div').parentElement.remove();
+        } else {
+            alert('Error: ' + (data.message || 'No se pudieron guardar las respuestas'));
+        }
+    })
+    .catch(e => {
+        console.error('Error enviando respuestas', e);
+        alert('Error al enviar respuestas');
+    });
+}
+
+// ─── Eventos Widget ────────────────────────────────────────────────────────────
+function mostrarEventosWidget(eventos) {
+    const container = document.getElementById('eventos-container');
+    const lista = document.getElementById('eventos-list');
+
+    if (!container || !lista || !eventos || eventos.length === 0) {
+        return;
+    }
+
+    container.style.display = 'block';
+    lista.innerHTML = '';
+
+    eventos.forEach(evt => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            padding: 12px;
+            background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e74c3c;
+        `;
+
+        item.onmouseover = () => {
+            item.style.background = 'linear-gradient(135deg, #ffcdd2 0%, #ef9a9a 100%)';
+            item.style.transform = 'translateY(-2px)';
+            item.style.boxShadow = '0 4px 12px rgba(231, 76, 60, 0.2)';
+        };
+
+        item.onmouseout = () => {
+            item.style.background = 'linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%)';
+            item.style.transform = 'translateY(0)';
+            item.style.boxShadow = 'none';
+        };
+
+        item.onclick = () => {
+            abrirEvento(evt.id, evt.titulo);
+        };
+
+        const titulo = document.createElement('h4');
+        titulo.textContent = evt.titulo;
+        titulo.style.cssText = 'margin: 0 0 6px 0; font-size: 13px; color: #e74c3c; font-weight: 600;';
+
+        const info = document.createElement('p');
+        let infoText = '';
+        if (evt.fecha_inicio) {
+            try {
+                const dt = new Date(evt.fecha_inicio);
+                infoText = dt.toLocaleDateString('es-AR', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            } catch (e) {
+                infoText = evt.fecha_inicio.substring(0, 10);
+            }
+        }
+        info.textContent = infoText + (evt.ubicacion ? ' · ' + evt.ubicacion : '');
+        info.style.cssText = 'margin: 0; font-size: 11px; color: #bf360c; line-height: 1.3;';
+
+        item.appendChild(titulo);
+        item.appendChild(info);
+        lista.appendChild(item);
+    });
+}
+
+function abrirEvento(eventoId, titulo) {
+    // Crear modal para detalle de evento
+    const modal = document.createElement('div');
+    modal.className = 'modal-overlay';
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 5000;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 500px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    `;
+
+    content.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #e74c3c;">🎉 ${titulo}</h2>
+            <button onclick="this.closest('div').parentElement.parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">✕</button>
+        </div>
+        <p style="color: #666; margin-bottom: 20px;">Cargando evento...</p>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // Cargar datos del evento
+    fetch('/api/eventos.php?id=' + eventoId)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const evt = data.data;
+                let html = `
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px;">
+                        <div>
+                            <h2 style="margin: 0 0 5px 0; color: #e74c3c;">${evt.titulo}</h2>
+                            <span style="display: inline-block; background: #ffebee; color: #e74c3c; padding: 4px 12px; border-radius: 12px; font-size: 12px; font-weight: 600;">${evt.categoria || 'Evento'}</span>
+                        </div>
+                        <button onclick="this.closest('div').parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">✕</button>
+                    </div>
+                `;
+
+                if (evt.descripcion) {
+                    html += `<p style="color: #666; margin-bottom: 15px; line-height: 1.5;">${evt.descripcion}</p>`;
+                }
+
+                html += '<div style="background: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 15px;">';
+
+                if (evt.fecha_inicio) {
+                    try {
+                        const dt = new Date(evt.fecha_inicio);
+                        const formatted = dt.toLocaleDateString('es-AR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                        html += `<p style="margin: 0 0 10px 0;"><strong>📅</strong> ${formatted}</p>`;
+                    } catch (e) {
+                        html += `<p style="margin: 0 0 10px 0;"><strong>📅</strong> ${evt.fecha_inicio}</p>`;
+                    }
+                }
+
+                if (evt.ubicacion) {
+                    html += `<p style="margin: 0 0 10px 0;"><strong>📍</strong> ${evt.ubicacion}</p>`;
+                }
+
+                if (evt.lat && evt.lng) {
+                    html += '<p style="margin: 0;"><strong>🗺\uFE0F</strong> ' + parseFloat(evt.lat).toFixed(4) + ', ' + parseFloat(evt.lng).toFixed(4) + '</p>';
+                }
+                if (evt.organizador) {
+                    html += '<p style="margin:8px 0 0"><strong>👤 Org.:</strong> ' + evt.organizador + '</p>';
+                }
+
+                html += '</div>';
+
+                // YouTube embed
+                if (evt.youtube_link) {
+                    var ytId = null;
+                    var m1 = evt.youtube_link.match(/youtu\.be\/([^?]+)/);
+                    var m2 = evt.youtube_link.match(/[?&]v=([^&]+)/);
+                    if (m1) ytId = m1[1];
+                    else if (m2) ytId = m2[1];
+
+                    if (ytId) {
+                        html += '<div style="border-radius:8px;overflow:hidden;margin-bottom:15px;background:#000">';
+                        html += '<div style="position:relative;padding-top:56.25%">';
+                        html += '<iframe src="https://www.youtube.com/embed/' + ytId + '?rel=0" style="position:absolute;top:0;left:0;width:100%;height:100%;border:none" allow="accelerometer;autoplay;clipboard-write;encrypted-media;gyroscope;picture-in-picture" allowfullscreen></iframe>';
+                        html += '</div></div>';
+                    } else {
+                        html += '<a href="' + evt.youtube_link + '" target="_blank" style="display:block;padding:12px;background:#ff0000;color:white;border-radius:6px;text-align:center;font-weight:600;text-decoration:none;margin-bottom:15px;">&#9654; Ver en YouTube</a>';
+                    }
+                }
+
+                if (evt.lat && evt.lng) {
+                    html += '<button onclick="document.querySelectorAll(\'.modal-overlay\').forEach(m=>m.remove());mapa.setView([' + evt.lat + ',' + evt.lng + '],16);" style="display:block;width:100%;padding:12px;background:#667eea;color:white;border:none;border-radius:6px;text-align:center;font-weight:600;cursor:pointer;transition:0.2s;">📍 Ver en Mapa</button>';
+                }
+
+                html += buildWTPopupSection('evento', evt.id, evt.titulo || 'Evento');
+                content.innerHTML = html;
+                initWTPanelsInPopup(content);
+            }
+        })
+        .catch(e => {
+            console.error('Error cargando evento', e);
+            content.innerHTML = '<p style="color: #e74c3c;">Error al cargar el evento.</p>';
+        });
+
+    // Cerrar al hacer click afuera
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            stopWtPollingInRoot(modal);
+            modal.remove();
+        }
+    };
+}
+
+// ─── Marcadores de Eventos en el mapa ─────────────────────────────────────────
+function mostrarMarcadoresEventos(eventos) {
+    eventosLayer.clearLayers();
+    eventoMarkers = [];
+
+    eventos.forEach(function(evt) {
+        if (!evt.lat || !evt.lng) return;
+        var hasYT  = !!evt.youtube_link;
+        var evColor = hasYT ? '#e74c3c' : '#c0392b';
+        var evEmoji = hasYT ? '▶' : '🎉';
+        // ¿Evento en las próximas 24h?
+        var isPulse = false;
+        if (evt.fecha) {
+            var evDate = new Date(evt.fecha + (evt.hora ? ' ' + evt.hora : ''));
+            var diff   = evDate - Date.now();
+            isPulse    = diff >= 0 && diff < 86400000;
+        }
+        var svg  = make3dPin(evEmoji, evColor, 32, 44, isPulse ? 'icon-pulse' : '');
+        var icon = L.divIcon({ html: svg, className: '', iconSize: [32,44], iconAnchor: [16,44], popupAnchor: [0,-46] });
+        var m = L.marker([parseFloat(evt.lat), parseFloat(evt.lng)], { icon: icon });
+        m._mapitaMeta = { entity_type: 'evento', entity_id: evt.id || null, mapita_id: evt.mapita_id || null };
+        m.bindTooltip('🎉 ' + evt.titulo, { direction: 'top', offset: [0,-44], opacity: 0.9 });
+
+        var popupHtml = '<div style="font-family:inherit;min-width:200px">'
+            + '<div style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
+            + '<strong style="font-size:14px;">' + evt.titulo + '</strong></div>'
+            + '<div style="padding:0 4px 8px">';
+        if (evt.fecha) popupHtml += '<p style="margin:4px 0;font-size:12px">📅 ' + evt.fecha + (evt.hora ? ' ' + evt.hora.substring(0,5) : '') + '</p>';
+        if (evt.ubicacion) popupHtml += '<p style="margin:4px 0;font-size:12px">📍 ' + evt.ubicacion + '</p>';
+        if (evt.organizador) popupHtml += '<p style="margin:4px 0;font-size:12px">👤 ' + evt.organizador + '</p>';
+        if (evt.descripcion) popupHtml += '<p style="margin:8px 0;font-size:12px;color:#555;">' + evt.descripcion.substring(0,100) + (evt.descripcion.length>100?'…':'') + '</p>';
+        popupHtml += buildWTPopupSection('evento', evt.id, evt.titulo);
+        popupHtml += '<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">';
+        if (hasYT) popupHtml += '<button onclick="abrirEvento(' + evt.id + ',this.closest(\'.leaflet-popup-content\').querySelector(\'strong\').textContent)" style="padding:6px 12px;background:#ff0000;color:white;border:none;border-radius:12px;cursor:pointer;font-size:12px;">▶ YouTube</button>';
+        popupHtml += '<button onclick="abrirEvento(' + evt.id + ',\'' + evt.titulo.replace(/'/g, '') + '\')" style="padding:6px 12px;background:#667eea;color:white;border:none;border-radius:12px;cursor:pointer;font-size:12px;">📋 Detalle</button>';
+        popupHtml += '</div></div></div>';
+
+        m.bindPopup(popupHtml, { maxWidth: 280 });
+        m._selectionKey = getSelectionKey('evento', parseInt(evt.id, 10));
+        m._selectionItem = {
+            kind: 'evento',
+            id: parseInt(evt.id, 10),
+            name: evt.titulo || 'Evento',
+            lat: parseFloat(evt.lat),
+            lng: parseFloat(evt.lng),
+            metadata: buildEventoMetadata(evt)
+        };
+        m.on('click', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+            toggleSelection(m._selectionItem, m);
+            m.closePopup();
+        });
+        m.on('preclick', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+        });
+        eventosLayer.addLayer(m);
+        eventoMarkers.push(m);
+    });
+    refreshSelectionVisuals();
+}
+
+// ─── Marcadores de Encuestas en el mapa ───────────────────────────────────────
+function mostrarMarcadoresEncuestas(encuestas) {
+    encuestasLayer.clearLayers();
+    encuestaMarkers = [];
+
+    encuestas.forEach(function(enc) {
+        if (!enc.lat || !enc.lng || enc.lat == 0) return;
+        var svg  = make3dPin('📋', '#f39c12', 30, 42, '');
+        var icon = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
+        var m = L.marker([parseFloat(enc.lat), parseFloat(enc.lng)], { icon: icon });
+        m.bindTooltip('📋 ' + enc.titulo, { direction: 'top', offset: [0,-42], opacity: 0.9 });
+
+        var popHtml = '<div style="font-family:inherit;min-width:200px">'
+            + '<div style="background:linear-gradient(135deg,#f39c12,#e67e22);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
+            + '<strong style="font-size:14px;">📋 ' + enc.titulo + '</strong></div>'
+            + '<div style="padding:0 4px 8px">';
+        if (enc.descripcion) popHtml += '<p style="margin:4px 0;font-size:12px;color:#555">' + enc.descripcion.substring(0,80) + '...</p>';
+        if (enc.fecha_expiracion) popHtml += '<p style="margin:6px 0;font-size:11px;color:#888">Vence: ' + enc.fecha_expiracion + '</p>';
+        if (enc.link) {
+            popHtml += '<a href="' + enc.link + '" target="_blank" style="display:block;padding:8px;background:#f39c12;color:white;border-radius:8px;text-align:center;text-decoration:none;font-size:12px;font-weight:600;margin-top:8px;">🔗 Responder</a>';
+        } else {
+            popHtml += '<button onclick="abrirEncuesta(' + enc.id + ',\'' + enc.titulo.replace(/'/g, '') + '\')" style="width:100%;padding:8px;background:#f39c12;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;margin-top:8px;">📋 Responder</button>';
+        }
+        popHtml += buildWTPopupSection('encuesta', enc.id, enc.titulo);
+        popHtml += '</div></div>';
+
+        m.bindPopup(popHtml, { maxWidth: 260 });
+        m._selectionKey = getSelectionKey('encuesta', parseInt(enc.id, 10));
+        m._selectionItem = {
+            kind: 'encuesta',
+            id: parseInt(enc.id, 10),
+            name: enc.titulo || 'Encuesta',
+            lat: parseFloat(enc.lat),
+            lng: parseFloat(enc.lng),
+            metadata: buildEncuestaMetadata(enc)
+        };
+        m.on('click', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+            toggleSelection(m._selectionItem, m);
+            m.closePopup();
+        });
+        m.on('preclick', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+        });
+        encuestasLayer.addLayer(m);
+        encuestaMarkers.push(m);
+    });
+    refreshSelectionVisuals();
+}
+
+// ─── Trivias Widget ────────────────────────────────────────────────────────────
+function mostrarTriviasWidget(trivias) {
+    const container = document.getElementById('trivias-container');
+    const lista = document.getElementById('trivias-list');
+
+    if (!container || !lista || !trivias || trivias.length === 0) {
+        return;
+    }
+
+    container.style.display = 'block';
+    lista.innerHTML = '';
+
+    trivias.forEach(tri => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            padding: 12px;
+            background: linear-gradient(135deg, #f3e5f5 0%, #e8d4f8 100%);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #9b59b6;
+        `;
+
+        item.onmouseover = () => {
+            item.style.background = 'linear-gradient(135deg, #e8d4f8 0%, #dfc6f0 100%)';
+            item.style.transform = 'translateY(-2px)';
+            item.style.boxShadow = '0 4px 12px rgba(155, 89, 182, 0.2)';
+        };
+
+        item.onmouseout = () => {
+            item.style.background = 'linear-gradient(135deg, #f3e5f5 0%, #e8d4f8 100%)';
+            item.style.transform = 'translateY(0)';
+            item.style.boxShadow = 'none';
+        };
+
+        item.onclick = () => {
+            if (!<?= isset($_SESSION['user_id']) && $_SESSION['user_id'] ? 'true' : 'false' ?>) {
+                alert('Debes iniciar sesión para jugar trivias');
+                window.location.href = '/login';
+                return;
+            }
+            abrirTrivia(tri.id, tri.titulo);
+        };
+
+        const titulo = document.createElement('h4');
+        titulo.textContent = tri.titulo;
+        titulo.style.cssText = 'margin: 0 0 6px 0; font-size: 13px; color: #9b59b6; font-weight: 600;';
+
+        const dif = document.createElement('p');
+        let dificultad = '';
+        if (tri.dificultad === 'facil') dificultad = '⭐ Fácil';
+        else if (tri.dificultad === 'dificil') dificultad = '⭐⭐⭐ Difícil';
+        else dificultad = '⭐⭐ Medio';
+        dif.textContent = dificultad;
+        dif.style.cssText = 'margin: 0; font-size: 11px; color: #7b3fa0; font-weight: 600;';
+
+        item.appendChild(titulo);
+        item.appendChild(dif);
+        lista.appendChild(item);
+    });
+}
+
+function abrirTrivia(triviaId, titulo) {
+    // Crear modal para jugar trivia
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 5000;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    `;
+
+    content.innerHTML = `
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="margin: 0; color: #9b59b6;">🎯 ${titulo}</h2>
+            <button onclick="this.closest('div').parentElement.parentElement.remove()" style="background: none; border: none; font-size: 24px; cursor: pointer; color: #999;">✕</button>
+        </div>
+        <p style="color: #666; margin-bottom: 20px;">Cargando trivia...</p>
+    `;
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    fetch('/api/trivias.php?id=' + triviaId)
+        .then(r => r.json())
+        .then(data => {
+            if (data.success && data.data) {
+                const tri = data.data;
+                let html = `
+                    <h2 style="margin: 0 0 10px 0; color: #9b59b6;">${tri.titulo}</h2>
+                `;
+
+                if (tri.descripcion) {
+                    html += `<p style="color: #666; margin-bottom: 20px;">${tri.descripcion}</p>`;
+                }
+
+                if (tri.preguntas && tri.preguntas.length > 0) {
+                    html += '<form id="trivia-form">';
+                    tri.preguntas.forEach((preg, idx) => {
+                        html += `
+                            <div style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 6px;">
+                                <p style="margin: 0 0 12px 0; font-weight: 600; color: #2c3e50;">${idx + 1}. ${preg.pregunta}</p>
+                                <div style="display: flex; flex-direction: column; gap: 8px;">
+                                    <label style="cursor: pointer;">
+                                        <input type="radio" name="pregunta_${preg.id}" value="A" style="margin-right: 8px;"> A) ${preg.opcion_a}
+                                    </label>
+                                    <label style="cursor: pointer;">
+                                        <input type="radio" name="pregunta_${preg.id}" value="B" style="margin-right: 8px;"> B) ${preg.opcion_b}
+                                    </label>
+                                    <label style="cursor: pointer;">
+                                        <input type="radio" name="pregunta_${preg.id}" value="C" style="margin-right: 8px;"> C) ${preg.opcion_c}
+                                    </label>
+                                    <label style="cursor: pointer;">
+                                        <input type="radio" name="pregunta_${preg.id}" value="D" style="margin-right: 8px;"> D) ${preg.opcion_d}
+                                    </label>
+                                </div>
+                            </div>
+                        `;
+                    });
+
+                    html += `
+                        <button type="button" onclick="verificarTrivia(${tri.id}, ${tri.preguntas.length})" style="width: 100%; padding: 12px; background: #9b59b6; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s;">
+                            ✓ Verificar Respuestas
+                        </button>
+                    </form>
+                    `;
+                } else {
+                    html += '<p style="color: #999; text-align: center;">Esta trivia aún no tiene preguntas.</p>';
+                }
+
+                content.innerHTML = html;
+            }
+        })
+        .catch(e => {
+            console.error('Error cargando trivia', e);
+            content.innerHTML = '<p style="color: #9b59b6;">Error al cargar la trivia.</p>';
+        });
+
+    modal.onclick = (e) => {
+        if (e.target === modal) modal.remove();
+    };
+}
+
+function verificarTrivia(triviaId, totalPreguntas) {
+    const form = document.getElementById('trivia-form');
+    let correctas = 0;
+    const respuestas = {};
+
+    form.querySelectorAll('[name^="pregunta_"]').forEach(input => {
+        if (input.type === 'radio') {
+            const checked = form.querySelector(`[name="${input.name}"]:checked`);
+            if (checked) {
+                respuestas[input.name] = checked.value;
+            }
+        }
+    });
+
+    if (Object.keys(respuestas).length === 0) {
+        alert('Debes responder al menos una pregunta');
+        return;
+    }
+
+    // Calcular puntos (simplificado: 10 puntos por respuesta correcta)
+    correctas = Object.keys(respuestas).length;
+    const puntos = correctas * 10;
+
+    fetch('/api/trivias.php?action=score', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            trivia_id: triviaId,
+            puntos: puntos,
+            respuestas_correctas: correctas
+        })
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            alert(`¡Excelente! Has acertado ${correctas} respuesta(s) y ganado ${puntos} puntos 🎉`);
+            document.querySelector('[onclick*="parentElement"]').closest('div').parentElement.remove();
+        } else {
+            alert('Error al registrar tu puntuación');
+        }
+    })
+    .catch(e => {
+        console.error('Error', e);
+        alert('Error al procesar tu respuesta');
+    });
+}
+
+// ─── NOTICIAS WIDGET ────────────────────────────────────────────────────────────
+function mostrarNoticiasWidget(noticias) {
+    const container = document.getElementById('noticias-container');
+    const lista = document.getElementById('noticias-list');
+
+    if (!container || !lista || !noticias || noticias.length === 0) {
+        return;
+    }
+
+    container.style.display = 'block';
+    lista.innerHTML = '';
+
+    noticias.forEach(noticia => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            padding: 12px;
+            background: linear-gradient(135deg, #eef4ff 0%, #e3e8ff 100%);
+            border-radius: 6px;
+            margin-bottom: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #667eea;
+        `;
+
+        item.onmouseover = () => {
+            item.style.background = 'linear-gradient(135deg, #e3e8ff 0%, #d9deff 100%)';
+            item.style.transform = 'translateY(-2px)';
+            item.style.boxShadow = '0 4px 12px rgba(102, 126, 234, 0.2)';
+        };
+
+        item.onmouseout = () => {
+            item.style.background = 'linear-gradient(135deg, #eef4ff 0%, #e3e8ff 100%)';
+            item.style.transform = 'translateY(0)';
+            item.style.boxShadow = 'none';
+        };
+
+        item.onclick = () => {
+            abrirNoticiaModal(noticia.id, noticia.titulo, noticia);
+        };
+
+        const titulo = document.createElement('h4');
+        titulo.textContent = noticia.titulo.substring(0, 35) + (noticia.titulo.length > 35 ? '...' : '');
+        titulo.style.cssText = 'margin: 0 0 6px 0; font-size: 13px; color: #667eea; font-weight: 600;';
+
+        const categoria = document.createElement('p');
+        categoria.textContent = `📁 ${noticia.categoria}`;
+        categoria.style.cssText = 'margin: 0; font-size: 11px; color: #764ba2; font-weight: 500;';
+
+        const vistas = document.createElement('p');
+        vistas.textContent = `👁️ ${noticia.vistas} vistas`;
+        vistas.style.cssText = 'margin: 4px 0 0 0; font-size: 10px; color: #999;';
+
+        item.appendChild(titulo);
+        item.appendChild(categoria);
+        item.appendChild(vistas);
+        lista.appendChild(item);
+    });
+}
+
+function abrirNoticiaModal(noticiaId, titulo, noticiaData) {
+    const modal = document.createElement('div');
+    modal.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 5000;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    const content = document.createElement('div');
+    content.style.cssText = `
+        background: white;
+        border-radius: 12px;
+        padding: 30px;
+        max-width: 600px;
+        max-height: 80vh;
+        overflow-y: auto;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    `;
+
+    const header = document.createElement('div');
+    header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;';
+
+    const h2 = document.createElement('h2');
+    h2.textContent = '📰 ' + titulo;
+    h2.style.cssText = 'margin: 0; color: #667eea;';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = 'background: none; border: none; font-size: 24px; cursor: pointer; color: #999;';
+    closeBtn.onclick = () => modal.remove();
+
+    header.appendChild(h2);
+    header.appendChild(closeBtn);
+    content.appendChild(header);
+
+    // Categoría y vistas
+    const meta = document.createElement('div');
+    meta.style.cssText = 'display: flex; gap: 15px; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee;';
+    meta.innerHTML = `
+        <span style="font-size: 12px; color: #667eea; font-weight: 600;"><strong>📁 Categoría:</strong> ${noticiaData.categoria || 'General'}</span>
+        <span style="font-size: 12px; color: #999;"><strong>👁️</strong> ${noticiaData.vistas || 0} vistas</span>
+        <span style="font-size: 12px; color: #999;"><strong>📅</strong> ${new Date(noticiaData.fecha_publicacion).toLocaleDateString('es-ES')}</span>
+    `;
+    content.appendChild(meta);
+
+    // Imagen si existe
+    if (noticiaData.imagen) {
+        const img = document.createElement('img');
+        img.src = '/uploads/noticias/' + noticiaData.imagen;
+        img.style.cssText = 'width: 100%; height: 300px; object-fit: cover; border-radius: 8px; margin-bottom: 15px;';
+        img.onerror = () => img.style.display = 'none';
+        content.appendChild(img);
+    }
+
+    // Contenido
+    const body = document.createElement('div');
+    body.style.cssText = 'font-size: 14px; line-height: 1.6; color: #333; margin-bottom: 20px;';
+    body.innerHTML = noticiaData.contenido || '<p>Contenido no disponible</p>';
+    content.appendChild(body);
+
+    // Botón de acción
+    const footer = document.createElement('div');
+    footer.style.cssText = 'display: flex; gap: 10px; padding-top: 20px; border-top: 1px solid #eee;';
+    footer.innerHTML = `
+        <a href="/noticia?id=${noticiaId}" target="_blank" style="flex: 1; padding: 10px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; text-decoration: none; text-align: center; border-radius: 6px; font-weight: 600;">Leer Completo</a>
+        <button onclick="this.closest('div').parentElement.parentElement.remove()" style="padding: 10px 20px; background: #f0f0f0; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">Cerrar</button>
+    `;
+    content.appendChild(footer);
+
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    // Registrar vista
+    fetch('/api/noticias.php?action=view', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: 'id=' + noticiaId
+    }).catch(e => console.log('Vista registrada'));
+}
+
+// ─── Marcadores de Trivias en el mapa ─────────────────────────────────────────
+let triviaMarkers = [];
+function mostrarMarcadoresTrivias(trivias) {
+    triviasLayer.clearLayers();
+    triviaMarkers = [];
+
+    trivias.forEach(tri => {
+        if (!tri.lat || !tri.lng) return;
+
+        const difColors = { facil: '#27ae60', medio: '#f39c12', dificil: '#e74c3c' };
+        const difColor  = difColors[tri.dificultad] || '#9b59b6';
+
+        const svg  = make3dPin('🎯', difColor, 32, 44, '');
+        const icon = L.divIcon({ html: svg, className: '', iconSize: [32, 44], iconAnchor: [16, 44], popupAnchor: [0, -46] });
+        const m    = L.marker([parseFloat(tri.lat), parseFloat(tri.lng)], { icon });
+
+        m.bindTooltip('🎯 ' + tri.titulo, { direction: 'top', offset: [0, -44], opacity: 0.9 });
+
+        const dificultadLabel = { facil: '🟢 Fácil', medio: '🟡 Medio', dificil: '🔴 Difícil' }[tri.dificultad] || tri.dificultad;
+        let popup = '<div style="font-family:inherit;min-width:200px">'
+            + '<div style="background:linear-gradient(135deg,' + difColor + ',#7d3c98);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
+            + '<strong style="font-size:14px;">🎯 ' + tri.titulo + '</strong></div>'
+            + '<div style="padding:0 4px 8px">';
+        if (tri.descripcion) popup += '<p style="margin:4px 0;font-size:12px;color:#555">' + tri.descripcion.substring(0, 100) + (tri.descripcion.length > 100 ? '…' : '') + '</p>';
+        popup += '<p style="margin:6px 0;font-size:12px">📊 Dificultad: ' + dificultadLabel + '</p>';
+        if (tri.tiempo_limite) popup += '<p style="margin:4px 0;font-size:12px">⏱️ Tiempo límite: ' + tri.tiempo_limite + ' seg</p>';
+        if (tri.ubicacion) popup += '<p style="margin:4px 0;font-size:12px">📍 ' + tri.ubicacion + '</p>';
+        popup += '<button onclick="abrirTrivia(' + tri.id + ',\'' + tri.titulo.replace(/'/g, '') + '\')" style="width:100%;padding:8px;background:' + difColor + ';color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;margin-top:8px;">🎯 Jugar trivia</button>';
+        popup += '</div></div>';
+
+        m.bindPopup(popup, { maxWidth: 280 });
+        m._selectionKey = getSelectionKey('trivia', parseInt(tri.id, 10));
+        m._selectionItem = {
+            kind: 'trivia',
+            id: parseInt(tri.id, 10),
+            name: tri.titulo || 'Trivia',
+            lat: parseFloat(tri.lat),
+            lng: parseFloat(tri.lng),
+            metadata: buildTriviaMetadata(tri)
+        };
+        m.on('click', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+            toggleSelection(m._selectionItem, m);
+            m.closePopup();
+        });
+        m.on('preclick', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+        });
+        triviasLayer.addLayer(m);
+        triviaMarkers.push(m);
+    });
+}
+
+// ─── Marcadores de Noticias en el mapa ────────────────────────────────────────
+let noticiaMarkers = [];
+const _noticiaCache = {};  // cache para abrirNoticiaPorId
+
+function abrirNoticiaPorId(id) {
+    const n = _noticiaCache[id];
+    if (n) abrirNoticiaModal(n.id, n.titulo, n);
+}
+
+function mostrarMarcadoresNoticias(noticias) {
+    noticiasLayer.clearLayers();
+    noticiaMarkers = [];
+
+    noticias.forEach(noticia => {
+        _noticiaCache[noticia.id] = noticia;   // guardar para popup
+        if (!noticia.lat || !noticia.lng) return;
+
+        const svg  = make3dPin('📰', '#667eea', 30, 42, '');
+        const icon = L.divIcon({ html: svg, className: '', iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -44] });
+        const m    = L.marker([parseFloat(noticia.lat), parseFloat(noticia.lng)], { icon });
+
+        m.bindTooltip('📰 ' + noticia.titulo, { direction: 'top', offset: [0, -42], opacity: 0.9 });
+
+        const textoPrev = (noticia.contenido || '').replace(/<[^>]*>/g, '').substring(0, 120);
+        let popup = '<div style="font-family:inherit;min-width:200px">'
+            + '<div style="background:linear-gradient(135deg,#667eea,#764ba2);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
+            + '<strong style="font-size:14px;">📰 ' + noticia.titulo + '</strong></div>'
+            + '<div style="padding:0 4px 8px">';
+        if (noticia.categoria) popup += '<p style="margin:4px 0;font-size:11px;background:#f0f2ff;display:inline-block;padding:2px 8px;border-radius:10px;color:#667eea;font-weight:600">' + noticia.categoria + '</p>';
+        if (textoPrev) popup += '<p style="margin:8px 0;font-size:12px;color:#555">' + textoPrev + '…</p>';
+        if (noticia.fecha_publicacion) popup += '<p style="margin:4px 0;font-size:11px;color:#999">📅 ' + noticia.fecha_publicacion.substring(0, 10) + '</p>';
+        if (noticia.ubicacion) popup += '<p style="margin:4px 0;font-size:12px">📍 ' + noticia.ubicacion + '</p>';
+        popup += '<button onclick="abrirNoticiaPorId(' + noticia.id + ')" style="width:100%;padding:8px;background:#667eea;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:700;margin-top:8px;">📰 Leer más</button>';
+        popup += '</div></div>';
+
+        m.bindPopup(popup, { maxWidth: 280 });
+        m._selectionKey = getSelectionKey('noticia', parseInt(noticia.id, 10));
+        m._selectionItem = {
+            kind: 'noticia',
+            id: parseInt(noticia.id, 10),
+            name: noticia.titulo || 'Noticia',
+            lat: parseFloat(noticia.lat),
+            lng: parseFloat(noticia.lng),
+            metadata: buildNoticiaMetadata(noticia)
+        };
+        m.on('click', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+            toggleSelection(m._selectionItem, m);
+            m.closePopup();
+        });
+        m.on('preclick', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+        });
+        noticiasLayer.addLayer(m);
+        noticiaMarkers.push(m);
+    });
+}
+
+// ─── OFERTAS WIDGET ────────────────────────────────────────────────────────────
+function mostrarOfertasWidget(ofertas) {
+    const container = document.getElementById('ofertas-container');
+    const lista     = document.getElementById('ofertas-list');
+    if (!container || !lista || !ofertas || ofertas.length === 0) return;
+
+    container.style.display = 'block';
+    lista.innerHTML = '';
+
+    ofertas.forEach(oferta => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            padding: 10px 12px;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #e74c3c;
+        `;
+        item.onmouseover = () => { item.style.transform = 'translateY(-2px)'; item.style.boxShadow = '0 4px 12px rgba(231,76,60,0.2)'; };
+        item.onmouseout  = () => { item.style.transform = 'translateY(0)'; item.style.boxShadow = 'none'; };
+        item.onclick     = () => abrirOfertaModal(oferta);
+
+        const titulo = document.createElement('h4');
+        titulo.textContent = oferta.nombre.substring(0, 38) + (oferta.nombre.length > 38 ? '…' : '');
+        titulo.style.cssText = 'margin: 0 0 4px 0; font-size: 13px; color: #c0392b; font-weight: 600;';
+
+        const precio = document.createElement('p');
+        if (oferta.precio_oferta) {
+            const old = oferta.precio_normal ? `<span style="text-decoration:line-through;color:#aaa;font-size:11px;margin-right:4px;">$${parseFloat(oferta.precio_normal).toLocaleString()}</span>` : '';
+            precio.innerHTML = old + `<strong style="color:#e74c3c;">$${parseFloat(oferta.precio_oferta).toLocaleString()}</strong>`;
+        } else {
+            precio.textContent = oferta.descripcion ? oferta.descripcion.substring(0, 45) + '…' : '';
+            precio.style.color = '#888';
+            precio.style.fontSize = '12px';
+        }
+        precio.style.margin = '0';
+
+        item.appendChild(titulo);
+        item.appendChild(precio);
+        lista.appendChild(item);
+    });
+}
+
+function abrirOfertaModal(oferta) {
+    const modal   = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.7);display:flex;align-items:center;justify-content:center;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    const pct = oferta.precio_normal && oferta.precio_oferta
+        ? Math.round((1 - oferta.precio_oferta / oferta.precio_normal) * 100)
+        : null;
+
+    modal.innerHTML = `
+        <div style="background:white;border-radius:12px;padding:28px;max-width:440px;width:90%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.25);">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+                <h2 style="margin:0;color:#c0392b;font-size:1.2em;">🏷️ ${oferta.nombre}</h2>
+                ${pct ? `<span style="background:#e74c3c;color:white;padding:4px 10px;border-radius:20px;font-weight:700;font-size:14px;flex-shrink:0;margin-left:8px;">-${pct}%</span>` : ''}
+                <button onclick="this.closest('div').parentElement.parentElement.remove()" style="background:none;border:none;font-size:22px;cursor:pointer;color:#999;margin-left:8px;">✕</button>
+            </div>
+            ${oferta.descripcion ? `<p style="color:#555;line-height:1.55;margin:0 0 16px;">${oferta.descripcion}</p>` : ''}
+            ${(oferta.precio_normal || oferta.precio_oferta) ? `
+            <div style="display:flex;align-items:center;gap:12px;background:#fff5f5;padding:12px;border-radius:8px;margin-bottom:16px;">
+                ${oferta.precio_normal ? `<span style="text-decoration:line-through;color:#aaa;font-size:18px;">$${parseFloat(oferta.precio_normal).toLocaleString()}</span>` : ''}
+                ${oferta.precio_oferta ? `<span style="color:#e74c3c;font-size:28px;font-weight:800;">$${parseFloat(oferta.precio_oferta).toLocaleString()}</span>` : ''}
+            </div>` : ''}
+            ${oferta.fecha_expiracion ? `<p style="font-size:12px;color:#888;margin:0 0 16px;">⏰ Válido hasta: <strong>${oferta.fecha_expiracion}</strong></p>` : ''}
+            <button onclick="this.closest('div').parentElement.parentElement.remove()" style="width:100%;padding:10px;background:linear-gradient(135deg,#e74c3c,#c0392b);color:white;border:none;border-radius:8px;cursor:pointer;font-weight:700;">Cerrar</button>
+        </div>`;
+
+    document.body.appendChild(modal);
+}
+
+// ─── MARCADORES DE OFERTAS ─────────────────────────────────────────────────────
+let ofertaMarkers = [];
+function mostrarMarcadoresOfertas(ofertas) {
+    ofertasLayer.clearLayers();
+    ofertaMarkers = [];
+
+    ofertas.forEach(function(o) {
+        if (!o.lat || !o.lng || parseFloat(o.lat) === 0) return;
+        var svg  = make3dPin('🏷️', '#e74c3c', 30, 42, '');
+        var icon = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
+        var m    = L.marker([parseFloat(o.lat), parseFloat(o.lng)], { icon: icon });
+        m.bindTooltip('🏷️ ' + o.nombre, { direction: 'top', offset: [0,-42], opacity: 0.9 });
+
+        var pct = o.precio_normal && o.precio_oferta
+            ? ' <strong style="color:#e74c3c;">-' + Math.round((1 - o.precio_oferta / o.precio_normal) * 100) + '%</strong>' : '';
+        var popHtml = '<div style="font-family:inherit;min-width:200px">'
+            + '<div style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
+            + '<strong style="font-size:14px;">🏷️ ' + o.nombre + '</strong></div>'
+            + '<div style="padding:0 4px 8px">';
+        if (o.descripcion) popHtml += '<p style="margin:4px 0;font-size:12px;color:#555">' + o.descripcion.substring(0, 80) + '…</p>';
+        if (o.precio_oferta) popHtml += '<p style="margin:6px 0;font-size:16px;font-weight:700;color:#e74c3c">$' + parseFloat(o.precio_oferta).toLocaleString() + pct + '</p>';
+        if (o.fecha_expiracion) popHtml += '<p style="margin:4px 0;font-size:11px;color:#888">⏰ Válido hasta: ' + o.fecha_expiracion + '</p>';
+        popHtml += '</div></div>';
+
+        m.bindPopup(popHtml, { maxWidth: 260 });
+        m._selectionKey = getSelectionKey('oferta', parseInt(o.id, 10));
+        m._selectionItem = {
+            kind: 'oferta',
+            id: parseInt(o.id, 10),
+            name: o.nombre || 'Oferta',
+            lat: parseFloat(o.lat),
+            lng: parseFloat(o.lng),
+            metadata: buildOfertaMetadata(o)
+        };
+        m.on('click', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+            toggleSelection(m._selectionItem, m);
+            m.closePopup();
+        });
+        m.on('preclick', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+        });
+        ofertasLayer.addLayer(m);
+        ofertaMarkers.push(m);
+    });
+}
+
+// ─── TRANSMISIONES WIDGET ──────────────────────────────────────────────────────
+function mostrarTransmisionesWidget(transmisiones) {
+    const container = document.getElementById('transmisiones-container');
+    const lista     = document.getElementById('transmisiones-list');
+    if (!container || !lista || !transmisiones || transmisiones.length === 0) return;
+
+    container.style.display = 'block';
+    lista.innerHTML = '';
+
+    const iconTipo = { youtube_live: '▶', radio_stream: '📻', audio_stream: '🎵', video_stream: '🎬' };
+
+    transmisiones.forEach(tx => {
+        const item = document.createElement('div');
+        item.style.cssText = `
+            padding: 10px 12px;
+            background: linear-gradient(135deg, #fff2f2 0%, #ffe5e5 100%);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid #c0392b;
+        `;
+        item.onmouseover = () => { item.style.transform = 'translateY(-2px)'; item.style.boxShadow = '0 4px 12px rgba(192,57,43,0.2)'; };
+        item.onmouseout  = () => { item.style.transform = 'translateY(0)'; item.style.boxShadow = 'none'; };
+        item.onclick     = () => abrirTransmisionModal(tx);
+
+        const titulo = document.createElement('div');
+        const liveDot = tx.en_vivo
+            ? '<span style="display:inline-block;width:7px;height:7px;background:#e74c3c;border-radius:50%;animation:blink 1s infinite;vertical-align:middle;margin-right:4px;"></span>'
+            : '';
+        titulo.innerHTML = liveDot + `<strong style="font-size:13px;color:#c0392b;">${(iconTipo[tx.tipo] || '📡')} ${tx.titulo.substring(0, 32) + (tx.titulo.length > 32 ? '…' : '')}</strong>`;
+        titulo.style.margin = '0 0 3px 0';
+
+        const sub = document.createElement('p');
+        sub.textContent = tx.en_vivo ? 'EN VIVO ahora' : (tx.descripcion ? tx.descripcion.substring(0, 40) + '…' : tx.tipo);
+        sub.style.cssText = `margin:0;font-size:11px;color:${tx.en_vivo ? '#e74c3c' : '#888'};font-weight:${tx.en_vivo ? '700' : '400'};`;
+
+        item.appendChild(titulo);
+        item.appendChild(sub);
+        lista.appendChild(item);
+    });
+}
+
+function abrirTransmisionModal(tx) {
+    const modal   = document.createElement('div');
+    modal.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;';
+    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+
+    const tipos   = { youtube_live: 'YouTube Live', radio_stream: 'Radio Online', audio_stream: 'Audio Stream', video_stream: 'Video Stream' };
+    const isYT    = tx.tipo === 'youtube_live' && tx.stream_url;
+    const ytEmbed = isYT ? tx.stream_url.replace('youtu.be/', 'www.youtube.com/embed/').replace('watch?v=', 'embed/') : '';
+
+    modal.innerHTML = `
+        <div style="background:white;border-radius:12px;padding:0;max-width:540px;width:95%;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
+            <div style="background:linear-gradient(135deg,#c0392b,#922b21);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <h2 style="margin:0;color:white;font-size:1.15em;">📡 ${tx.titulo}</h2>
+                    <p style="margin:4px 0 0;color:rgba(255,255,255,.7);font-size:.8em;">${tipos[tx.tipo] || tx.tipo}${tx.en_vivo ? ' · <strong style="color:#ff6b6b;">🔴 EN VIVO</strong>' : ''}</p>
+                </div>
+                <button onclick="this.closest('div').parentElement.parentElement.remove()" style="background:rgba(255,255,255,.15);border:none;color:white;font-size:20px;cursor:pointer;border-radius:50%;width:32px;height:32px;line-height:1;">✕</button>
+            </div>
+            <div style="padding:20px 24px;">
+                ${tx.descripcion ? `<p style="color:#555;margin:0 0 16px;line-height:1.5;">${tx.descripcion}</p>` : ''}
+                ${isYT ? `<div style="aspect-ratio:16/9;border-radius:8px;overflow:hidden;margin-bottom:16px;">
+                    <iframe src="${ytEmbed}?autoplay=1" width="100%" height="100%" frameborder="0" allow="autoplay;encrypted-media" allowfullscreen style="display:block;"></iframe>
+                </div>` : ''}
+                ${!isYT && tx.stream_url ? `<a href="${tx.stream_url}" target="_blank" style="display:block;padding:14px;background:linear-gradient(135deg,#c0392b,#922b21);color:white;text-decoration:none;text-align:center;border-radius:8px;font-weight:700;margin-bottom:12px;">🎧 Abrir transmisión</a>` : ''}
+                <button onclick="this.closest('div').parentElement.parentElement.remove()" style="width:100%;padding:10px;background:#f0f0f0;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Cerrar</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(modal);
+}
+
+// ─── MARCADORES DE TRANSMISIONES ───────────────────────────────────────────────
+// Cache para acceder al objeto completo desde el onclick del popup sin serializar en HTML
+const _txCache = new Map();
+
+let transmisionMarkers = [];
+function mostrarMarcadoresTransmisiones(transmisiones) {
+    transmisionesLayer.clearLayers();
+    transmisionMarkers = [];
+
+    transmisiones.forEach(function(tx) {
+        if (!tx.lat || !tx.lng || parseFloat(tx.lat) === 0) return;
+        _txCache.set(tx.id, tx);   // guardar referencia por ID
+        var color = tx.en_vivo ? '#e74c3c' : '#c0392b';
+        var label = tx.en_vivo ? '🔴' : '📡';
+        var svg   = make3dPin(label, color, 30, 42, tx.en_vivo ? 'icon-glow' : '');
+        var icon  = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
+        var m    = L.marker([parseFloat(tx.lat), parseFloat(tx.lng)], { icon: icon });
+        m.bindTooltip((tx.en_vivo ? '🔴 EN VIVO · ' : '📡 ') + tx.titulo, { direction: 'top', offset: [0,-42], opacity: 0.9 });
+
+        var popHtml = '<div style="font-family:inherit;min-width:200px">'
+            + '<div style="background:linear-gradient(135deg,' + color + ',#922b21);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
+            + (tx.en_vivo ? '<span style="background:rgba(255,255,255,.25);padding:2px 6px;border-radius:8px;font-size:11px;margin-right:6px;">🔴 EN VIVO</span>' : '')
+            + '<strong style="font-size:14px;">📡 ' + tx.titulo + '</strong></div>'
+            + '<div style="padding:0 4px 8px">';
+        if (tx.descripcion) popHtml += '<p style="margin:4px 0;font-size:12px;color:#555">' + tx.descripcion.substring(0, 80) + '…</p>';
+        if (tx.stream_url) {
+            popHtml += '<button onclick="abrirTransmisionModal(_txCache.get(' + tx.id + '))" style="width:100%;padding:8px;background:#c0392b;color:white;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;margin-top:8px;">▶ Ver Transmisión</button>';
+        }
+        popHtml += '</div></div>';
+
+        m.bindPopup(popHtml, { maxWidth: 260 });
+        m._selectionKey = getSelectionKey('transmision', parseInt(tx.id, 10));
+        m._selectionItem = {
+            kind: 'transmision',
+            id: parseInt(tx.id, 10),
+            name: tx.titulo || 'Transmisión',
+            lat: parseFloat(tx.lat),
+            lng: parseFloat(tx.lng),
+            metadata: buildTransmisionMetadata(tx)
+        };
+        m.on('click', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+            toggleSelection(m._selectionItem, m);
+            m.closePopup();
+        });
+        m.on('preclick', function(e) {
+            if (!selectionMode) return;
+            stopLeafletEvent(e);
+        });
+        transmisionesLayer.addLayer(m);
+        transmisionMarkers.push(m);
+    });
+}
+
+// ─── BRAND POPUP PREMIUM ────────────────────────────────────────────────────────
+function abrirBrandPopupPremium(brandId, brandName, brandRubro, brandData = {}) {
+    const overlay = document.createElement('div');
+    overlay.className = 'brand-popup-overlay';
+
+    const container = document.createElement('div');
+    container.className = 'brand-popup-container';
+
+    // Cargar datos de la marca
+    fetch(`/api/brand-gallery.php?brand_id=${brandId}`)
+        .then(r => r.json())
+        .then(data => {
+            let images = data.success ? data.data : [];
+
+            let html = `
+                <!-- Sección Galería -->
+                <div class="brand-popup-gallery">
+                    <div id="brand-gallery-main" style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+                        ${images.length > 0
+                            ? `<img src="/uploads/brands/${images[0].filename}" alt="${brandName}" class="brand-gallery-image">`
+                            : `<div class="brand-gallery-placeholder">
+                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                     <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                                     <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                     <path d="M21 15l-5-5L5 21"></path>
+                                 </svg>
+                                 <p>Galería de Marca</p>
+                             </div>`
+                        }
+                    </div>
+                    ${images.length > 0 ? `
+                        <button class="brand-gallery-btn" onclick="cambiarGaleria(-1)" style="margin-left: auto;">←</button>
+                        <button class="brand-gallery-btn" onclick="cambiarGaleria(1)">→</button>
+                        <div class="brand-gallery-thumbnails">
+                            ${images.map((img, idx) => `<div class="brand-gallery-thumb ${idx === 0 ? 'active' : ''}" onclick="irAImagen(${idx})" data-index="${idx}"></div>`).join('')}
+                        </div>
+                    ` : ''}
+                </div>
+
+                <!-- Sección Información -->
+                <div class="brand-popup-info">
+                    <div>
+                        <!-- Header -->
+                        <div class="brand-info-header">
+                            <div class="brand-logo-wrapper">🏢</div>
+                            <div class="brand-header-text">
+                                <h2>${brandName}</h2>
+                                <span class="rubro">${brandRubro || 'Marca'}</span>
+                            </div>
+                        </div>
+
+                        <!-- Info Cards -->
+                        <div class="brand-info-cards">
+                            ${brandData.ubicacion ? `
+                                <div class="brand-info-card">
+                                    <span class="label">📍 Ubicación</span>
+                                    <span class="value">${brandData.ubicacion}</span>
+                                </div>
+                            ` : ''}
+                            ${brandData.estado ? `
+                                <div class="brand-info-card">
+                                    <span class="label">🏛️ Estado</span>
+                                    <span class="value">${brandData.estado}</span>
+                                </div>
+                            ` : ''}
+                        </div>
+
+                        <!-- Description -->
+                        ${brandData.historia ? `
+                            <div class="brand-description">
+                                <span class="label">📖 Historia</span>
+                                <p class="text">${brandData.historia}</p>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="brand-actions">
+                        <a href="/brand_detail?id=${brandId}" class="brand-action-btn brand-action-primary">
+                            Ver Detalles Completos →
+                        </a>
+                        ${(IS_ADMIN || (SESSION_USER_ID && SESSION_USER_ID == brandData.user_id)) ? `
+                        <a href="/brand_edit?id=${brandId}" class="brand-action-btn" style="background:#0ea5e9;color:white;text-decoration:none;text-align:center;">
+                            ✏️ Editar Marca
+                        </a>
+                        <label style="display:block;margin:4px 0 0;cursor:pointer;">
+                            <input type="file" accept="image/jpeg,image/png,image/webp" style="display:none;"
+                                onchange="uploadBrandLogoPopup(this,${brandId})">
+                            <span class="brand-action-btn" style="background:#7c3aed;color:white;display:block;text-align:center;">
+                                🖼️ Subir icono del mapa
+                            </span>
+                        </label>
+                        <div id="brand-logo-msg-${brandId}" style="display:none;font-size:11px;padding:4px 6px;border-radius:4px;margin-top:3px;"></div>
+                        ` : ''}
+                        <button class="brand-action-btn brand-action-secondary" onclick="compartirMarca('${brandName}', '${brandId}')">
+                            📤 Compartir Marca
+                        </button>
+                    </div>
+                    ${buildWTPopupSection('marca', brandId, brandName)}
+                </div>
+
+                <button class="brand-popup-close" onclick="cerrarBrandPopup()">✕</button>
+            `;
+
+            container.innerHTML = html;
+            initWTPanelsInPopup(container);
+
+            // Guardar referencia global para controles
+            window.brandGalleryData = {
+                images: images,
+                currentIndex: 0,
+                brandId: brandId
+            };
+        });
+
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+
+    // Cerrar al hacer click en overlay
+    overlay.onclick = (e) => {
+        if (e.target === overlay) cerrarBrandPopup();
+    };
+
+    // Cerrar con ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') cerrarBrandPopup();
+    }, { once: true });
+}
+
+function cerrarBrandPopup() {
+    const overlay = document.querySelector('.brand-popup-overlay');
+    if (overlay) {
+        stopWtPollingInRoot(overlay);
+        overlay.style.animation = 'fadeOutOverlay 0.3s ease-out forwards';
+        setTimeout(() => overlay.remove(), 300);
+    }
+}
+
+function cambiarGaleria(direcci) {
+    if (!window.brandGalleryData) return;
+
+    const data = window.brandGalleryData;
+    data.currentIndex = (data.currentIndex + direcci + data.images.length) % data.images.length;
+    irAImagen(data.currentIndex);
+}
+
+function irAImagen(index) {
+    if (!window.brandGalleryData) return;
+
+    const data = window.brandGalleryData;
+    const images = data.images;
+
+    if (index < 0 || index >= images.length) return;
+
+    data.currentIndex = index;
+
+    const mainGallery = document.getElementById('brand-gallery-main');
+    if (mainGallery) {
+        mainGallery.innerHTML = `<img src="/uploads/brands/${images[index].filename}" alt="Brand image" class="brand-gallery-image">`;
+    }
+
+    // Actualizar thumbnails
+    document.querySelectorAll('.brand-gallery-thumb').forEach((thumb, idx) => {
+        thumb.classList.toggle('active', idx === index);
+    });
+}
+
+function compartirMarca(brandName, brandId) {
+    const url = `${window.location.origin}/brand_detail?id=${brandId}`;
+    const texto = `¡Mira esta marca: ${brandName} en Mapita! ${url}`;
+
+    if (navigator.share) {
+        navigator.share({
+            title: brandName,
+            text: texto,
+            url: url
+        }).catch(err => console.log('Error compartiendo:', err));
+    } else {
+        // Fallback: copiar al portapapeles
+        navigator.clipboard.writeText(texto).then(() => {
+            alert('¡Enlace copiado al portapapeles!');
+        });
+    }
+}
+</script>
+
+<!-- Photo Gallery Modal -->
+<div id="photo-gallery-modal" style="display:none;position:fixed;z-index:10000;left:0;top:0;width:100%;height:100%;background-color:rgba(0,0,0,0.9);align-items:center;justify-content:center;flex-direction:column;">
+    <div style="position:relative;max-width:800px;width:90%;max-height:85vh;">
+        <img id="photo-gallery-img" src="" style="width:100%;height:auto;border-radius:8px;box-shadow:0 4px 20px rgba(0,0,0,0.5);" alt="Galería de fotos">
+
+        <button id="gallery-prev-btn" onclick="prevPhoto()" style="position:absolute;left:-50px;top:50%;transform:translateY(-50%);background:#667eea;color:white;border:none;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;transition:all 0.2s;">❮</button>
+        <button id="gallery-next-btn" onclick="nextPhoto()" style="position:absolute;right:-50px;top:50%;transform:translateY(-50%);background:#667eea;color:white;border:none;width:40px;height:40px;border-radius:50%;font-size:20px;cursor:pointer;transition:all 0.2s;">❯</button>
+
+        <button onclick="closePhotoGallery()" style="position:absolute;top:-40px;right:0;background:white;color:#333;border:none;width:35px;height:35px;border-radius:50%;font-size:18px;cursor:pointer;transition:all 0.2s;">✕</button>
+
+        <div id="photo-gallery-caption" style="color:white;text-align:center;margin-top:12px;font-size:14px;"></div>
+    </div>
+
+    <div style="color:#999;margin-top:15px;font-size:12px;text-align:center;">
+        Usa ← → para navegar o Esc para cerrar
+    </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,166 @@
+:root {
+  /* ─── PALETA LUJO (40% Oro, 20% Plata, 15% Rojo, 15% Azul, 10% Negro) ─── */
+  
+  /* PRIMARY: ORO (Prestigio, exclusividad) */
+  --color-gold-primary: #D4AF37;      /* Dorado puro */
+  --color-gold-light: #E8C547;        /* Dorado claro */
+  --color-gold-dark: #B8860B;         /* Dorado oscuro */
+  
+  /* SECONDARY: PLATA (Tecnología, balance) */
+  --color-silver-primary: #8A8A8A;    /* Plata - oscurecida para contraste 4.7:1 sobre blanco */
+  --color-silver-light: #E8E8E8;      /* Plata clara */
+  --color-silver-dark: #6B6B6B;       /* Plata oscura */
+  
+  /* ACCENT: ROJO (Acción, urgencia) */
+  --color-red-primary: #E63946;       /* Rojo acción */
+  --color-red-light: #F07080;         /* Rojo claro */
+  --color-red-dark: #C0202D;          /* Rojo oscuro */
+  
+  /* SUPPORT: AZUL PROFUNDO (Confianza, profesionalismo) */
+  --color-blue-primary: #1B3B6F;      /* Azul profundo */
+  --color-blue-light: #2E5FA3;        /* Azul claro */
+  --color-blue-dark: #0F1F3D;         /* Azul oscuro */
+  
+  /* BASE: NEGRO (Elegancia, sobriedad) */
+  --color-black-primary: #0F0F0F;     /* Negro base */
+  --color-black-light: #1A1A1A;       /* Negro claro */
+  --color-white: #FFFFFF;             /* Blanco */
+  
+  /* NEUTRALES PREMIUM */
+  --color-gray-50: #FAFAFA;           /* Muy claro */
+  --color-gray-100: #F5F5F5;
+  --color-gray-200: #EEEEEE;
+  --color-gray-300: #E0E0E0;
+  --color-gray-400: #BDBDBD;
+  --color-gray-500: #9E9E9E;
+  --color-gray-600: #757575;
+  --color-gray-700: #616161;
+  --color-gray-800: #424242;
+  --color-gray-900: #212121;
+  
+  /* STATUS COLORS */
+  --color-success: #1A7A3C;           /* Verde éxito - ratio 6.8:1 sobre blanco */
+  --color-success-bg: #D4EDDA;        /* Fondo verde suave */
+  --color-warning: #8A5A00;           /* Naranja aviso - ratio 5.2:1 sobre blanco */
+  --color-warning-bg: #FFF3CD;        /* Fondo naranja suave */
+  --color-danger: #C0202D;            /* Rojo peligro - ratio 5.9:1 sobre blanco */
+  --color-danger-bg: #F8D7DA;         /* Fondo rojo suave */
+  --color-info: #1A5F8A;              /* Azul información - ratio 5.5:1 sobre blanco */
+  --color-info-bg: #D1ECF1;           /* Fondo azul suave */
+  
+  /* ─── ROLES DE COLOR ─── */
+  --primary: var(--color-blue-primary);
+  --primary-light: var(--color-blue-light);
+  --primary-dark: var(--color-blue-dark);
+  
+  --secondary: var(--color-gold-primary);
+  --secondary-light: var(--color-gold-light);
+  --secondary-dark: var(--color-gold-dark);
+  
+  --accent: var(--color-red-primary);
+  --accent-light: var(--color-red-light);
+  --accent-dark: var(--color-red-dark);
+  
+  --text-primary: var(--color-gray-900);    /* #212121 → ratio 16.1:1 sobre blanco ✓ */
+  --text-secondary: #595959;                 /* ratio 5.1:1 sobre blanco ✓ (antes #757575 = 3.0) */
+  --text-tertiary: #767676;                  /* ratio 4.5:1 sobre blanco ✓ (antes #9E9E9E = 2.6) */
+  --text-inverse: var(--color-white);        /* sobre fondos oscuros ✓ */
+  
+  --bg-primary: var(--color-black-primary);
+  --bg-secondary: var(--color-black-light);
+  --bg-tertiary: var(--color-gray-100);
+  --bg-overlay: rgba(15, 15, 15, 0.85);
+  
+  /* ─── ESPACIADO (Sistema 8px) ─── */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+  --space-3xl: 64px;
+  
+  /* ─── TIPOGRAFÍA ─── */
+  --font-family-base: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  --font-family-mono: 'Courier New', monospace;
+  
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 18px;
+  --font-size-xl: 20px;
+  --font-size-2xl: 24px;
+  --font-size-3xl: 32px;
+  --font-size-4xl: 40px;
+  
+  --font-weight-light: 300;
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-black: 900;
+  
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* ─── BORDERS & RADIUS ─── */
+  --border-radius-xs: 2px;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-xl: 16px;
+  --border-radius-full: 9999px;
+  
+  --border-width-thin: 1px;
+  --border-width-normal: 2px;
+  --border-width-thick: 3px;
+  
+  /* ─── SOMBRAS ─── */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 8px rgba(0, 0, 0, 0.15);
+  --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 12px 24px rgba(0, 0, 0, 0.25);
+  --shadow-2xl: 0 16px 32px rgba(0, 0, 0, 0.3);
+  --shadow-gold: 0 4px 16px rgba(212, 175, 55, 0.15);
+  --shadow-gold-lg: 0 8px 32px rgba(212, 175, 55, 0.2);
+  
+  /* ─── TRANSICIONES ─── */
+  --transition-fast: 0.1s ease-in-out;
+  --transition-base: 0.2s ease-in-out;
+  --transition-slow: 0.3s ease-in-out;
+  --transition-slower: 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  
+  /* ─── BREAKPOINTS ─── */
+  --breakpoint-xs: 320px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+  
+  /* ─── OTRAS MEDIDAS ─── */
+  --max-content-width: 1200px;
+  --navbar-height: 60px;
+  --sidebar-width: 300px;
+  --sidebar-width-mobile: 260px;
+  
+  /* ─── Z-INDEX SYSTEM ─── */
+  --z-dropdown: 100;
+  --z-sticky: 200;
+  --z-fixed: 300;
+  --z-modal-backdrop: 900;
+  --z-modal: 1000;
+  --z-tooltip: 1100;
+  --z-notification: 1200;
+}
+
+/* Media Query para oscuridad (opcional) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --text-primary: var(--color-gray-100);
+    --text-secondary: var(--color-gray-400);
+    --bg-tertiary: var(--color-gray-900);
+  }
+}

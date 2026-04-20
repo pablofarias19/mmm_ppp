@@ -1,0 +1,387 @@
+/* ─── BRAND POPUP PREMIUM STYLING ─────────────────────────────────────── */
+
+.brand-popup-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    animation: fadeInOverlay 0.3s ease-out;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+@keyframes fadeInOverlay {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes fadeOutOverlay {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+.brand-popup-container {
+    background: white;
+    border-radius: 16px;
+    width: 90%;
+    max-width: 900px;
+    height: 80vh;
+    max-height: 600px;
+    display: flex;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideUpPopup 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes slideUpPopup {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ─── GALLERY SECTION ─────────────────────────────────────────────────── */
+.brand-popup-gallery {
+    flex: 1;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e8eaef 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.brand-gallery-image {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    animation: fadeInImage 0.3s ease-out;
+}
+
+@keyframes fadeInImage {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.brand-gallery-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #999;
+    text-align: center;
+}
+
+.brand-gallery-placeholder svg {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 16px;
+    opacity: 0.5;
+}
+
+.brand-gallery-placeholder p {
+    font-size: 14px;
+    margin: 0;
+    font-weight: 500;
+}
+
+.brand-gallery-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    color: #667eea;
+    font-weight: bold;
+}
+
+.brand-gallery-btn:hover {
+    background: white;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.brand-gallery-btn:first-of-type {
+    left: 16px;
+}
+
+.brand-gallery-btn:last-of-type {
+    right: 16px;
+    margin-left: 0;
+}
+
+.brand-gallery-thumbnails {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+}
+
+.brand-gallery-thumb {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 2px solid transparent;
+}
+
+.brand-gallery-thumb:hover {
+    background: white;
+}
+
+.brand-gallery-thumb.active {
+    background: white;
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* ─── INFO SECTION ────────────────────────────────────────────────────── */
+.brand-popup-info {
+    flex: 1;
+    padding: 28px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.brand-popup-info > div {
+    flex: 1;
+}
+
+/* ─── INFO HEADER ─────────────────────────────────────────────────────── */
+.brand-info-header {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.brand-logo-wrapper {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    flex-shrink: 0;
+}
+
+.brand-header-text h2 {
+    margin: 0 0 4px 0;
+    font-size: 20px;
+    color: #2c3e50;
+    line-height: 1.2;
+}
+
+.brand-header-text .rubro {
+    display: block;
+    font-size: 13px;
+    color: #667eea;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* ─── INFO CARDS ──────────────────────────────────────────────────────── */
+.brand-info-cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.brand-info-card {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    border-left: 3px solid #667eea;
+}
+
+.brand-info-card .label {
+    display: block;
+    font-size: 11px;
+    color: #667eea;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 4px;
+}
+
+.brand-info-card .value {
+    display: block;
+    font-size: 13px;
+    color: #2c3e50;
+    font-weight: 500;
+}
+
+/* ─── DESCRIPTION ─────────────────────────────────────────────────────── */
+.brand-description {
+    margin-bottom: 16px;
+}
+
+.brand-description .label {
+    font-size: 11px;
+    color: #667eea;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.brand-description .text {
+    font-size: 13px;
+    line-height: 1.6;
+    color: #555;
+    margin: 0;
+}
+
+/* ─── ACTION BUTTONS ──────────────────────────────────────────────────── */
+.brand-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.brand-action-btn {
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    text-align: center;
+    font-family: inherit;
+}
+
+.brand-action-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.brand-action-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.brand-action-secondary {
+    background: #f0f0f0;
+    color: #2c3e50;
+}
+
+.brand-action-secondary:hover {
+    background: #e0e0e0;
+    transform: translateY(-2px);
+}
+
+/* ─── CLOSE BUTTON ────────────────────────────────────────────────────── */
+.brand-popup-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: rgba(255, 255, 255, 0.9);
+    border: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    color: #666;
+}
+
+.brand-popup-close:hover {
+    background: white;
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* ─── RESPONSIVE ──────────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+    .brand-popup-container {
+        flex-direction: column;
+        height: 90vh;
+        max-height: none;
+    }
+
+    .brand-popup-gallery {
+        min-height: 250px;
+    }
+
+    .brand-popup-info {
+        padding: 20px;
+    }
+
+    .brand-info-cards {
+        grid-template-columns: 1fr;
+    }
+
+    .brand-gallery-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+
+    .brand-gallery-btn:first-of-type {
+        left: 8px;
+    }
+
+    .brand-gallery-btn:last-of-type {
+        right: 8px;
+    }
+}
+
+@media (max-width: 480px) {
+    .brand-popup-container {
+        width: 95%;
+        max-width: 100%;
+        height: 95vh;
+    }
+
+    .brand-popup-info {
+        padding: 16px;
+    }
+
+    .brand-header-text h2 {
+        font-size: 16px;
+    }
+
+    .brand-action-btn {
+        font-size: 12px;
+        padding: 10px 14px;
+    }
+}

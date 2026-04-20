@@ -1,0 +1,4 @@
+# Prevenir la ejecución de scripts en el directorio de subidas
+php_flag engine off
+Options -ExecCGI -Indexes
+AddType text/plain .php .php3 .php4 .php5 .phtml .html .htm

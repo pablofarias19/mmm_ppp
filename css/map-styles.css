@@ -1,0 +1,429 @@
+/* Estilos generales para los elementos de negocio */
+.negocio {
+    margin-bottom: 15px;
+    border-bottom: 1px solid #e0e0e0;
+    padding-bottom: 12px;
+    transition: background-color 0.2s;
+    border-radius: 6px;
+    padding: 10px;
+}
+/* =====================
+   MARCAS - DASHBOARD
+   Apariencia profesional y moderna
+====================== */
+
+body {
+    font-family: 'Segoe UI', 'Arial', sans-serif;
+    background: #f8fafc;
+    color: #222;
+    margin: 0;
+    padding: 0;
+}
+
+h1, h2, h3 {
+    color: #1a365d;
+    font-weight: 600;
+    margin-bottom: 18px;
+}
+
+
+    color: #2563eb;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+a:hover {
+    color: #1e40af;
+    text-decoration: underline;
+}
+
+table {
+    border-collapse: collapse;
+    width: 98%;
+    margin: 20px auto 30px auto;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border-radius: 8px;
+    overflow: hidden;
+}
+th, td {
+    padding: 12px 16px;
+    text-align: left;
+}
+th {
+    background: #e3e8f0;
+    color: #1a365d;
+    font-size: 15px;
+    border-bottom: 2px solid #cbd5e1;
+}
+tr:nth-child(even) {
+    background: #f1f5f9;
+}
+tr:hover {
+    background: #e0e7ef;
+}
+
+button, input[type="submit"] {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 5px;
+    padding: 8px 18px;
+    font-size: 15px;
+    cursor: pointer;
+    margin-top: 8px;
+    transition: background 0.2s;
+}
+button:hover, input[type="submit"]:hover {
+    background: #1e40af;
+}
+
+form {
+    background: #fff;
+    padding: 24px 28px;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    max-width: 480px;
+    margin: 30px auto;
+}
+label {
+    font-weight: 500;
+    color: #1a365d;
+}
+input[type="text"], input[type="number"], select, textarea {
+    width: 100%;
+    padding: 8px 10px;
+    margin-top: 4px;
+    margin-bottom: 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 5px;
+    font-size: 15px;
+    background: #f8fafc;
+    color: #222;
+    box-sizing: border-box;
+    transition: border 0.2s;
+}
+input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
+    border: 1.5px solid #2563eb;
+    outline: none;
+}
+
+.brand-actions a, .brand-actions button {
+    margin-right: 8px;
+    margin-bottom: 4px;
+    display: inline-block;
+}
+
+.brand-detail-list {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    padding: 24px 32px;
+    max-width: 500px;
+    margin: 30px auto 20px auto;
+    font-size: 16px;
+}
+.brand-detail-list li {
+    margin-bottom: 10px;
+    color: #1a365d;
+}
+
+.brand-nav {
+    margin: 18px auto 0 auto;
+    text-align: center;
+}
+.brand-nav a {
+    margin: 0 8px;
+    font-weight: 500;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    form, .brand-detail-list {
+        padding: 12px 6px;
+        max-width: 98vw;
+    }
+    table {
+        font-size: 13px;
+    }
+    th, td {
+        padding: 7px 6px;
+    }
+}
+.negocio:hover {
+    background-color: #f5f5f5;
+}
+
+/* Título del negocio */
+.negocio strong, .leaflet-popup-content strong {
+    font-size: 16px;
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 5px;
+}
+
+/* Datos principales */
+.info-principal {
+    margin-bottom: 8px;
+}
+
+.direccion {
+    color: #34495e;
+    margin-bottom: 5px;
+    display: block;
+}
+
+/* Iconos y datos secundarios */
+.info-contacto, .info-comercio, .info-extra {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+    font-size: 14px;
+}
+
+.item-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 5px;
+}
+
+.icono {
+    min-width: 20px;
+    text-align: center;
+}
+
+/* Colores específicos para cada tipo de información */
+.telefono .icono { color: #3498db; }
+.web .icono { color: #2ecc71; }
+.descripcion { 
+    font-style: italic;
+    color: #7f8c8d;
+    margin: 8px 0;
+    padding-left: 5px;
+    border-left: 2px solid #e0e0e0;
+}
+.tipo-comercio .icono { color: #e74c3c; }
+.horario .icono { color: #f39c12; }
+.dias-cierre .icono { color: #9b59b6; }
+.categorias .icono { color: #1abc9c; }
+
+/* Estilo para la etiqueta de tipo y distancia */
+.meta-info {
+    font-size: 12px;
+    color: #7f8c8d;
+    margin-top: 8px;
+    display: block;
+}
+
+/* Estilos para los popups de Leaflet */
+.leaflet-popup-content {
+    min-width: 200px;
+    max-width: 280px;
+}
+
+.leaflet-popup-content .item-info {
+    margin-bottom: 2px;
+}
+
+.leaflet-popup-content .descripcion {
+    max-height: 60px;
+    overflow-y: auto;
+    margin: 5px 0;
+}
+
+/* Diseño responsivo */
+@media (max-width: 768px) {
+    .negocio {
+        padding: 8px;
+    }
+
+    .leaflet-popup-content {
+        max-width: 220px;
+    }
+}
+
+/* ── Mapita Icon 3D Animations ──────────────────────────────────────────────── */
+
+/* Pulse: para eventos próximos (próximas 24h) */
+@keyframes iconPulse {
+    0%, 100% { transform: scale(1)    translateY(0);   }
+    50%       { transform: scale(1.14) translateY(-4px); }
+}
+.mapita-icon.icon-pulse {
+    animation: iconPulse 2.2s ease-in-out infinite;
+    transform-origin: bottom center;
+}
+
+/* Glow: para transmisiones en vivo */
+@keyframes iconGlow {
+    0%, 100% { filter: drop-shadow(0 0 3px rgba(231,76,60,0.55)); }
+    50%       { filter: drop-shadow(0 0 10px rgba(231,76,60,0.90)); }
+}
+.mapita-icon.icon-glow {
+    animation: iconGlow 1.6s ease-in-out infinite;
+}
+
+/* Hover lift: todos los marcadores */
+.leaflet-marker-icon:hover .mapita-icon {
+    transform: scale(1.16) translateY(-5px);
+    transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: brightness(1.08);
+}
+
+.mapita-selected-marker .mapita-icon {
+    filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.95));
+}
+
+.mapita-selected-marker {
+    filter: drop-shadow(0 0 8px rgba(0, 212, 255, 0.95));
+    transform: scale(1.08);
+    transition: transform 0.16s ease;
+    z-index: 1200 !important;
+}
+
+#map.selection-mode-active,
+#map.selection-mode-active .leaflet-container {
+    cursor: crosshair !important;
+}
+
+.selection-panel {
+    position: relative;
+    left: auto;
+    bottom: auto;
+    z-index: 1;
+    width: auto;
+    margin-top: 10px;
+    border-radius: 12px;
+    background: #102a43;
+    color: #fff;
+    padding: 12px;
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+}
+
+.selection-panel__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.selection-panel__title {
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.selection-panel__close {
+    border: 0;
+    width: 24px;
+    height: 24px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.14);
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+}
+
+.selection-panel__close:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
+.selection-panel__intro {
+    font-size: 11px;
+    color: #c7d8ff;
+    line-height: 1.35;
+    margin-top: 4px;
+}
+
+.selection-panel__summary {
+    font-size: 12px;
+    color: #d6e9ff;
+    margin-top: 6px;
+}
+
+.selection-panel__step {
+    font-size: 11px;
+    margin-top: 6px;
+    color: #9dd7ff;
+}
+
+.selection-panel__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.selection-panel__actions button {
+    border: 0;
+    border-radius: 8px;
+    padding: 6px 10px;
+    background: #4f6dff;
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.selection-panel__actions button:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.selection-panel__result {
+    margin-top: 8px;
+    font-size: 12px;
+    color: #c7ffeb;
+}
+
+.selection-panel__details {
+    margin-top: 10px;
+    max-height: 180px;
+    overflow-y: auto;
+    display: grid;
+    gap: 8px;
+}
+
+.selection-panel__details--hidden {
+    display: none;
+}
+
+.selection-panel__hint {
+    font-size: 11px;
+    color: #8cb4e0;
+    margin-top: 4px;
+    line-height: 1.4;
+}
+
+.selection-mode-toast {
+    position: fixed;
+    top: 70px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 24, 52, 0.94);
+    color: #d6e9ff;
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 4000;
+    pointer-events: none;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+
+.selection-meta-item {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 11px;
+    line-height: 1.35;
+    color: #e8f3ff;
+}
+
+.selection-meta-item__title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+}

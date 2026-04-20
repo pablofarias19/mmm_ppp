@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapita v1.2.0 - Estado del Sistema</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 600px;
+            width: 100%;
+            padding: 40px;
+        }
+
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: #f5f6fa;
+            border-radius: 8px;
+            border-left: 4px solid #ddd;
+        }
+
+        .status-item.loading {
+            border-left-color: #f39c12;
+        }
+
+        .status-item.success {
+            border-left-color: #2ecc71;
+            background: #f0fdf4;
+        }
+
+        .status-item.error {
+            border-left-color: #e74c3c;
+            background: #fef2f2;
+        }
+
+        .status-icon {
+            font-size: 20px;
+            margin-right: 12px;
+            min-width: 24px;
+        }
+
+        .status-content {
+            flex: 1;
+        }
+
+        .status-label {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 14px;
+        }
+
+        .status-message {
+            color: #667eea;
+            font-size: 12px;
+            margin-top: 2px;
+        }
+
+        .status-item.error .status-message {
+            color: #e74c3c;
+        }
+
+        .status-item.success .status-message {
+            color: #2ecc71;
+        }
+
+        .section {
+            margin-top: 30px;
+        }
+
+        .section-title {
+            font-weight: 700;
+            color: #2c3e50;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .action-button {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 600;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .action-button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+
+        .action-button.secondary {
+            background: #6c757d;
+            margin-left: 10px;
+        }
+
+        .action-button.secondary:hover {
+            background: #5a6268;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f39c12;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .summary {
+            background: #f0fdf4;
+            border: 1px solid #2ecc71;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .summary.show {
+            display: block;
+        }
+
+        .summary h3 {
+            color: #2ecc71;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .summary p {
+            color: #2c3e50;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .error-summary {
+            background: #fef2f2;
+            border-color: #e74c3c;
+        }
+
+        .error-summary h3 {
+            color: #e74c3c;
+        }
+
+        .code-block {
+            background: #2c3e50;
+            color: #ecf0f1;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗺️ Mapita v1.2.0</h1>
+        <p class="subtitle">Estado del Sistema</p>
+
+        <div class="section">
+            <div class="section-title">Diagnóstico de Base de Datos</div>
+            <div id="api-status" class="status-item loading">
+                <div class="status-icon"><span class="spinner"></span></div>
+                <div class="status-content">
+                    <div class="status-label">Conectando a API de diagnósticos...</div>
+                    <div class="status-message">Verificando estado de la BD</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="section" id="tables-section" style="display: none;">
+            <div class="section-title">Tablas de Base de Datos</div>
+            <div id="tables-list"></div>
+        </div>
+
+        <div class="section">
+            <div class="section-title">Archivos Locales</div>
+            <div id="files-list"></div>
+        </div>
+
+        <div id="summary" class="summary">
+            <h3>✅ Sistema Listo para Producción</h3>
+            <p>Todas las tablas están creadas y los datos se cargarán correctamente.</p>
+        </div>
+
+        <div id="error-summary" class="summary error-summary">
+            <h3>⚠️ Acción Requerida</h3>
+            <p id="error-text"></p>
+        </div>
+
+        <div>
+            <button class="action-button" onclick="location.reload()">🔄 Recargar</button>
+            <a class="action-button secondary" href="api/api_diagnostics.php" target="_blank">📊 Ver JSON</a>
+        </div>
+    </div>
+
+    <script>
+        // Verificar archivos locales
+        function checkLocalFiles() {
+            const files = [
+                { name: 'api_iconos.php', path: '/api/api_iconos.php' },
+                { name: 'popup-redesign.css', path: '/css/popup-redesign.css' },
+                { name: 'brand-popup-premium.css', path: '/css/brand-popup-premium.css' }
+            ];
+
+            const listDiv = document.getElementById('files-list');
+            files.forEach(file => {
+                fetch(file.path, { method: 'HEAD' })
+                    .then(r => {
+                        const item = document.createElement('div');
+                        item.className = 'status-item success';
+                        item.innerHTML = `
+                            <div class="status-icon">✅</div>
+                            <div class="status-content">
+                                <div class="status-label">${file.name}</div>
+                                <div class="status-message">Archivo encontrado</div>
+                            </div>
+                        `;
+                        listDiv.appendChild(item);
+                    })
+                    .catch(e => {
+                        const item = document.createElement('div');
+                        item.className = 'status-item error';
+                        item.innerHTML = `
+                            <div class="status-icon">❌</div>
+                            <div class="status-content">
+                                <div class="status-label">${file.name}</div>
+                                <div class="status-message">No encontrado</div>
+                            </div>
+                        `;
+                        listDiv.appendChild(item);
+                    });
+            });
+        }
+
+        // Verificar API de diagnósticos
+        async function checkAPI() {
+            try {
+                const response = await fetch('api/api_diagnostics.php', {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+
+                if (!response.ok) throw new Error('HTTP ' + response.status);
+
+                const data = await response.json();
+
+                // Actualizar status principal
+                const statusDiv = document.getElementById('api-status');
+                const ready = data.ready_for_production;
+
+                if (ready) {
+                    statusDiv.className = 'status-item success';
+                    statusDiv.innerHTML = `
+                        <div class="status-icon">✅</div>
+                        <div class="status-content">
+                            <div class="status-label">Base de Datos</div>
+                            <div class="status-message">${data.database.name || 'Conectado'}</div>
+                        </div>
+                    `;
+                    document.getElementById('summary').classList.add('show');
+                } else {
+                    statusDiv.className = 'status-item error';
+                    statusDiv.innerHTML = `
+                        <div class="status-icon">❌</div>
+                        <div class="status-content">
+                            <div class="status-label">Base de Datos</div>
+                            <div class="status-message">${data.status}</div>
+                        </div>
+                    `;
+
+                    if (data.errors && data.errors.length > 0) {
+                        const errorSummary = document.getElementById('error-summary');
+                        const errorText = document.getElementById('error-text');
+
+                        errorText.innerHTML = `
+                            <strong>Problemas detectados:</strong><br>
+                            ${data.errors.map(e => '• ' + e).join('<br>')}
+                            <br><br>
+                            <strong>Solución:</strong><br>
+                            Ejecuta el script de migración SQL en phpMyAdmin:<br>
+                            <code>config/migration.sql</code>
+                        `;
+                        errorSummary.classList.add('show');
+                    }
+                }
+
+                // Mostrar lista de tablas
+                if (data.tables) {
+                    const tablesSection = document.getElementById('tables-section');
+                    const tablesList = document.getElementById('tables-list');
+                    tablesSection.style.display = 'block';
+
+                    Object.entries(data.tables).forEach(([tableName, tableStatus]) => {
+                        const item = document.createElement('div');
+                        item.className = tableStatus.exists ? 'status-item success' : 'status-item error';
+
+                        const icon = tableStatus.exists ? '✅' : '❌';
+                        const rows = tableStatus.exists ? ` (${tableStatus.rows} registros)` : '';
+
+                        item.innerHTML = `
+                            <div class="status-icon">${icon}</div>
+                            <div class="status-content">
+                                <div class="status-label">${tableName}</div>
+                                <div class="status-message">${tableStatus.exists ? 'Existe' : 'No existe'}${rows}</div>
+                            </div>
+                        `;
+                        tablesList.appendChild(item);
+                    });
+                }
+
+            } catch (error) {
+                const statusDiv = document.getElementById('api-status');
+                statusDiv.className = 'status-item error';
+                statusDiv.innerHTML = `
+                    <div class="status-icon">❌</div>
+                    <div class="status-content">
+                        <div class="status-label">Error de Conexión</div>
+                        <div class="status-message">${error.message}</div>
+                    </div>
+                `;
+
+                const errorSummary = document.getElementById('error-summary');
+                const errorText = document.getElementById('error-text');
+                errorText.innerHTML = `
+                    <strong>No se puede acceder a api_diagnostics.php</strong><br>
+                    ${error.message}<br><br>
+                    Esto podría significar:<br>
+                    • El archivo no existe en el servidor<br>
+                    • Hay un error en la base de datos<br>
+                    • El servidor no está respondiendo
+                `;
+                errorSummary.classList.add('show');
+            }
+        }
+
+        // Ejecutar al cargar página
+        window.addEventListener('load', () => {
+            checkAPI();
+            checkLocalFiles();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,656 @@
+<?php
+/**
+ * Procesamiento de negocios
+ * Funciones para agregar, actualizar y eliminar negocios
+ */
+
+// Incluir archivos necesarios
+require_once __DIR__ . '/../includes/db_helper.php';
+require_once __DIR__ . '/../core/helpers.php';
+
+// Si existe el modelo Business, úsalo
+if (class_exists('\\App\\Models\\Business')) {
+    // Importar namespace
+    class_alias('\\App\\Models\\Business', 'Business');
+}
+
+function isMissingMapitaColumnError(PDOException $e): bool {
+    $sqlState = $e->getCode();
+    $driverCode = (int)($e->errorInfo[1] ?? 0);
+    if ($sqlState === '42S22' || $driverCode === 1054) {
+        return true;
+    }
+    return stripos($e->getMessage(), 'mapita_id') !== false;
+}
+
+// ─── Input validation ─────────────────────────────────────────────────────────
+
+/**
+ * Valida y saneando los datos de un negocio.
+ * @param array $data Datos crudos del formulario.
+ * @return array ['valid' => bool, 'errors' => string[], 'data' => array]
+ */
+function validateBusinessData(array $data): array {
+    $errors = [];
+    $clean  = [];
+
+    // Nombre (obligatorio, 1-255 chars)
+    $name = trim($data['name'] ?? '');
+    if ($name === '') {
+        $errors[] = 'El nombre del negocio es obligatorio.';
+    } elseif (mb_strlen($name) > 255) {
+        $errors[] = 'El nombre no puede superar los 255 caracteres.';
+    }
+    $clean['name'] = $name;
+
+    // Dirección (obligatorio, 1-500 chars)
+    $address = trim($data['address'] ?? '');
+    if ($address === '') {
+        $errors[] = 'La dirección es obligatoria.';
+    } elseif (mb_strlen($address) > 500) {
+        $errors[] = 'La dirección no puede superar los 500 caracteres.';
+    }
+    $clean['address'] = $address;
+
+    // Tipo de negocio (obligatorio, lista permitida)
+    $allowedTypes = [
+        'restaurante','cafeteria','bar','panaderia','heladeria','pizzeria',
+        'supermercado','comercio','autos_venta','motos_venta','indumentaria','ferreteria','electronica','muebleria','floristeria','libreria',
+        'farmacia','hospital','odontologia','veterinaria','optica',
+        'salon_belleza','barberia','spa','gimnasio',
+        'banco','inmobiliaria','seguros','abogado','contador','taller','construccion','remate',
+        'academia','escuela','hotel','turismo','cine',
+        'otros',
+    ];
+    $businessType = trim($data['business_type'] ?? '');
+    if (!in_array($businessType, $allowedTypes, true)) {
+        $errors[] = 'El tipo de negocio no es válido.';
+    }
+    $clean['business_type'] = $businessType;
+
+    // Latitud y Longitud (obligatorios, numéricos y en rango)
+    $lat = $data['lat'] ?? '';
+    $lng = $data['lng'] ?? '';
+    if ($lat === '' || $lng === '') {
+        $errors[] = 'Las coordenadas son obligatorias. Haz clic en el mapa para seleccionar la ubicación.';
+    } else {
+        $latF = filter_var($lat, FILTER_VALIDATE_FLOAT);
+        $lngF = filter_var($lng, FILTER_VALIDATE_FLOAT);
+        if ($latF === false || $latF < -90 || $latF > 90) {
+            $errors[] = 'La latitud no es válida (debe estar entre -90 y 90).';
+        }
+        if ($lngF === false || $lngF < -180 || $lngF > 180) {
+            $errors[] = 'La longitud no es válida (debe estar entre -180 y 180).';
+        }
+        $clean['lat'] = $latF;
+        $clean['lng'] = $lngF;
+    }
+
+    // Teléfono (opcional, máx 30 chars, solo caracteres permitidos)
+    $phone = trim($data['phone'] ?? '');
+    if ($phone !== '' && !preg_match('/^[\d\s\+\-\(\)\.]{1,30}$/', $phone)) {
+        $errors[] = 'El teléfono contiene caracteres no válidos (máx. 30 dígitos/símbolos).';
+    }
+    $clean['phone'] = $phone ?: null;
+
+    // Email (opcional, formato válido, máx 255)
+    $email = trim($data['email'] ?? '');
+    if ($email !== '') {
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL) || mb_strlen($email) > 255) {
+            $errors[] = 'El correo electrónico no es válido.';
+        }
+    }
+    $clean['email'] = $email ?: null;
+
+    // Sitio web (opcional, URL válida, máx 500)
+    $website = trim($data['website'] ?? '');
+    if ($website !== '') {
+        if (!filter_var($website, FILTER_VALIDATE_URL) || mb_strlen($website) > 500) {
+            $errors[] = 'El sitio web no es una URL válida.';
+        }
+    }
+    $clean['website'] = $website ?: null;
+
+    // Descripción (opcional, máx 2000 chars)
+    $description = trim($data['description'] ?? '');
+    if (mb_strlen($description) > 2000) {
+        $errors[] = 'La descripción no puede superar los 2000 caracteres.';
+    }
+    $clean['description'] = $description ?: null;
+
+    // Mapita ID (opcional)
+    $mapitaId = trim($data['mapita_id'] ?? '');
+    if ($mapitaId !== '' && mb_strlen($mapitaId) > 64) {
+        $errors[] = 'Mapita ID no puede superar 64 caracteres.';
+    }
+    $clean['mapita_id'] = $mapitaId ?: null;
+
+    // Rango de precio — campo interno, no expuesto en el formulario (default 3)
+    $priceRange = (int)($data['price_range'] ?? 3);
+    if ($priceRange < 1 || $priceRange > 5) $priceRange = 3;
+    $clean['price_range'] = $priceRange;
+
+    // Redes sociales
+    $instagram = trim($data['instagram'] ?? '');
+    if ($instagram !== '' && mb_strlen($instagram) > 100) {
+        $errors[] = 'El usuario de Instagram no puede superar 100 caracteres.';
+    }
+    $clean['instagram'] = $instagram ?: null;
+
+    $facebook = trim($data['facebook'] ?? '');
+    if ($facebook !== '' && mb_strlen($facebook) > 100) {
+        $errors[] = 'El usuario de Facebook no puede superar 100 caracteres.';
+    }
+    $clean['facebook'] = $facebook ?: null;
+
+    $tiktok = trim($data['tiktok'] ?? '');
+    if ($tiktok !== '' && mb_strlen($tiktok) > 100) {
+        $errors[] = 'El usuario de TikTok no puede superar 100 caracteres.';
+    }
+    $clean['tiktok'] = $tiktok ?: null;
+
+    // Certificaciones
+    $certifications = trim($data['certifications'] ?? '');
+    if (mb_strlen($certifications) > 500) {
+        $errors[] = 'Las certificaciones no pueden superar 500 caracteres.';
+    }
+    $clean['certifications'] = $certifications ?: null;
+
+    // Checkboxes (booleanos)
+    $clean['has_delivery']      = isset($data['has_delivery']) && $data['has_delivery'] ? 1 : 0;
+    $clean['has_card_payment']  = isset($data['has_card_payment']) && $data['has_card_payment'] ? 1 : 0;
+    $clean['is_franchise']      = isset($data['is_franchise']) && $data['is_franchise'] ? 1 : 0;
+    $clean['verified']          = isset($data['verified']) && $data['verified'] ? 1 : 0;
+
+    // Campos de horario, sub-tipo y categorías — válidos para todos los tipos de negocio
+    $clean['tipo_comercio']        = mb_substr(trim($data['tipo_comercio']        ?? ''), 0, 255) ?: null;
+    $clean['horario_apertura']     = trim($data['horario_apertura']     ?? '') ?: null;
+    $clean['horario_cierre']       = trim($data['horario_cierre']       ?? '') ?: null;
+    $clean['dias_cierre']          = mb_substr(trim($data['dias_cierre']          ?? ''), 0, 255) ?: null;
+    $clean['categorias_productos'] = mb_substr(trim($data['categorias_productos'] ?? ''), 0, 500) ?: null;
+
+    return [
+        'valid'  => empty($errors),
+        'errors' => $errors,
+        'data'   => $clean,
+    ];
+}
+
+/**
+ * Agrega un nuevo negocio a la base de datos
+ * @param array $data Datos del negocio
+ * @param int $userId ID del usuario
+ * @return array Resultado de la operación
+ */
+function addBusiness($data, $userId) {
+    try {
+        $validation = validateBusinessData($data);
+        if (!$validation['valid']) {
+            return ['success' => false, 'message' => implode(' ', $validation['errors'])];
+        }
+        $data = $validation['data'];
+
+        $db = getDbConnection();
+
+        // Comenzar transacción
+        $db->beginTransaction();
+
+        // Insertar negocio básico
+        $stmt = $db->prepare("
+            INSERT INTO businesses (
+                name, address, lat, lng, business_type, phone,
+                email, website, description, price_range, user_id, visible,
+                instagram, facebook, tiktok, certifications, has_delivery,
+                has_card_payment, is_franchise, verified, mapita_id, created_at
+            ) VALUES (
+                :name, :address, :lat, :lng, :business_type, :phone,
+                :email, :website, :description, :price_range, :user_id, 1,
+                :instagram, :facebook, :tiktok, :certifications, :has_delivery,
+                :has_card_payment, :is_franchise, :verified, :mapita_id, NOW()
+            )
+        ");
+
+        try {
+            $stmt->execute([
+                ':name'              => $data['name'],
+                ':address'           => $data['address'],
+                ':lat'               => $data['lat'] ?? null,
+                ':lng'               => $data['lng'] ?? null,
+                ':business_type'     => $data['business_type'],
+                ':phone'             => $data['phone'],
+                ':email'             => $data['email'],
+                ':website'           => $data['website'],
+                ':description'       => $data['description'],
+                ':price_range'       => $data['price_range'],
+                ':user_id'           => (int)$userId,
+                ':instagram'         => $data['instagram'],
+                ':facebook'          => $data['facebook'],
+                ':tiktok'            => $data['tiktok'],
+                ':certifications'    => $data['certifications'],
+                ':has_delivery'      => $data['has_delivery'],
+                ':has_card_payment'  => $data['has_card_payment'],
+                ':is_franchise'      => $data['is_franchise'],
+                ':verified'          => $data['verified'],
+                ':mapita_id'         => $data['mapita_id'],
+            ]);
+        } catch (PDOException $e) {
+            if (!isMissingMapitaColumnError($e)) {
+                throw $e;
+            }
+            $stmt = $db->prepare("
+                INSERT INTO businesses (
+                    name, address, lat, lng, business_type, phone,
+                    email, website, description, price_range, user_id, visible,
+                    instagram, facebook, tiktok, certifications, has_delivery,
+                    has_card_payment, is_franchise, verified, created_at
+                ) VALUES (
+                    :name, :address, :lat, :lng, :business_type, :phone,
+                    :email, :website, :description, :price_range, :user_id, 1,
+                    :instagram, :facebook, :tiktok, :certifications, :has_delivery,
+                    :has_card_payment, :is_franchise, :verified, NOW()
+                )
+            ");
+            $stmt->execute([
+                ':name'              => $data['name'],
+                ':address'           => $data['address'],
+                ':lat'               => $data['lat'] ?? null,
+                ':lng'               => $data['lng'] ?? null,
+                ':business_type'     => $data['business_type'],
+                ':phone'             => $data['phone'],
+                ':email'             => $data['email'],
+                ':website'           => $data['website'],
+                ':description'       => $data['description'],
+                ':price_range'       => $data['price_range'],
+                ':user_id'           => (int)$userId,
+                ':instagram'         => $data['instagram'],
+                ':facebook'          => $data['facebook'],
+                ':tiktok'            => $data['tiktok'],
+                ':certifications'    => $data['certifications'],
+                ':has_delivery'      => $data['has_delivery'],
+                ':has_card_payment'  => $data['has_card_payment'],
+                ':is_franchise'      => $data['is_franchise'],
+                ':verified'          => $data['verified'],
+            ]);
+        }
+
+        $businessId = $db->lastInsertId();
+
+        // Guardar horarios, sub-tipo y categorías para todos los tipos de negocio
+        $hasExtended = $data['tipo_comercio'] || $data['horario_apertura'] || $data['horario_cierre']
+                       || $data['dias_cierre'] || $data['categorias_productos'];
+        if ($hasExtended) {
+            $db->prepare("
+                INSERT INTO comercios (
+                    business_id, tipo_comercio, horario_apertura, horario_cierre,
+                    dias_cierre, categorias_productos
+                ) VALUES (
+                    :business_id, :tipo_comercio, :horario_apertura, :horario_cierre,
+                    :dias_cierre, :categorias_productos
+                )
+            ")->execute([
+                ':business_id'          => $businessId,
+                ':tipo_comercio'        => $data['tipo_comercio']        ?? null,
+                ':horario_apertura'     => $data['horario_apertura']     ?? null,
+                ':horario_cierre'       => $data['horario_cierre']       ?? null,
+                ':dias_cierre'          => $data['dias_cierre']          ?? null,
+                ':categorias_productos' => $data['categorias_productos'] ?? null,
+            ]);
+        }
+
+        // Confirmar transacción
+        $db->commit();
+
+        return [
+            'success'     => true,
+            'message'     => 'Negocio agregado correctamente',
+            'business_id' => $businessId,
+        ];
+
+    } catch (Exception $e) {
+        if (isset($db) && $db->inTransaction()) {
+            $db->rollBack();
+        }
+        error_log("Error en addBusiness: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Error al agregar negocio.'];
+    }
+}
+
+/**
+ * Actualiza un negocio existente.
+ * @param int   $businessId ID del negocio a actualizar
+ * @param array $data       Nuevos datos del formulario
+ * @param int   $userId     ID del usuario (para verificar propiedad)
+ * @return array Resultado de la operación
+ */
+function updateBusiness($businessId, $data, $userId) {
+    try {
+        $businessId = (int)$businessId;
+        $userId     = (int)$userId;
+
+        $validation = validateBusinessData($data);
+        if (!$validation['valid']) {
+            return ['success' => false, 'message' => implode(' ', $validation['errors'])];
+        }
+        $data = $validation['data'];
+
+        $db = getDbConnection();
+
+        // Verificar propiedad
+        $stmt = $db->prepare("SELECT user_id, business_type FROM businesses WHERE id = ?");
+        $stmt->execute([$businessId]);
+        $business = $stmt->fetch();
+
+        if (!$business) {
+            return ['success' => false, 'message' => 'Negocio no encontrado.'];
+        }
+        if ((int)$business['user_id'] !== $userId) {
+            return ['success' => false, 'message' => 'No tienes permiso para editar este negocio.'];
+        }
+
+        $db->beginTransaction();
+
+        // Actualizar negocio básico
+        $stmt = $db->prepare("
+            UPDATE businesses
+            SET name = :name, address = :address, lat = :lat, lng = :lng,
+                business_type = :business_type, phone = :phone, email = :email,
+                website = :website, description = :description,
+                price_range = :price_range, instagram = :instagram,
+                facebook = :facebook, tiktok = :tiktok,
+                certifications = :certifications, has_delivery = :has_delivery,
+                has_card_payment = :has_card_payment, is_franchise = :is_franchise,
+                verified = :verified, mapita_id = :mapita_id, updated_at = NOW()
+            WHERE id = :id
+        ");
+
+        try {
+            $stmt->execute([
+                ':name'              => $data['name'],
+                ':address'           => $data['address'],
+                ':lat'               => $data['lat'] ?? null,
+                ':lng'               => $data['lng'] ?? null,
+                ':business_type'     => $data['business_type'],
+                ':phone'             => $data['phone'],
+                ':email'             => $data['email'],
+                ':website'           => $data['website'],
+                ':description'       => $data['description'],
+                ':price_range'       => $data['price_range'],
+                ':instagram'         => $data['instagram'],
+                ':facebook'          => $data['facebook'],
+                ':tiktok'            => $data['tiktok'],
+                ':certifications'    => $data['certifications'],
+                ':has_delivery'      => $data['has_delivery'],
+                ':has_card_payment'  => $data['has_card_payment'],
+                ':is_franchise'      => $data['is_franchise'],
+                ':verified'          => $data['verified'],
+                ':mapita_id'         => $data['mapita_id'],
+                ':id'                => $businessId,
+            ]);
+        } catch (PDOException $e) {
+            if (!isMissingMapitaColumnError($e)) {
+                throw $e;
+            }
+            $stmt = $db->prepare("
+                UPDATE businesses
+                SET name = :name, address = :address, lat = :lat, lng = :lng,
+                    business_type = :business_type, phone = :phone, email = :email,
+                    website = :website, description = :description,
+                    price_range = :price_range, instagram = :instagram,
+                    facebook = :facebook, tiktok = :tiktok,
+                    certifications = :certifications, has_delivery = :has_delivery,
+                    has_card_payment = :has_card_payment, is_franchise = :is_franchise,
+                    verified = :verified, updated_at = NOW()
+                WHERE id = :id
+            ");
+            $stmt->execute([
+                ':name'              => $data['name'],
+                ':address'           => $data['address'],
+                ':lat'               => $data['lat'] ?? null,
+                ':lng'               => $data['lng'] ?? null,
+                ':business_type'     => $data['business_type'],
+                ':phone'             => $data['phone'],
+                ':email'             => $data['email'],
+                ':website'           => $data['website'],
+                ':description'       => $data['description'],
+                ':price_range'       => $data['price_range'],
+                ':instagram'         => $data['instagram'],
+                ':facebook'          => $data['facebook'],
+                ':tiktok'            => $data['tiktok'],
+                ':certifications'    => $data['certifications'],
+                ':has_delivery'      => $data['has_delivery'],
+                ':has_card_payment'  => $data['has_card_payment'],
+                ':is_franchise'      => $data['is_franchise'],
+                ':verified'          => $data['verified'],
+                ':id'                => $businessId,
+            ]);
+        }
+
+        // Upsert en comercios — se guarda para todos los tipos de negocio
+        $check = $db->prepare("SELECT id FROM comercios WHERE business_id = ?");
+        $check->execute([$businessId]);
+        if ($check->fetch()) {
+            $stmtC = $db->prepare("
+                UPDATE comercios
+                SET tipo_comercio = :tipo_comercio, horario_apertura = :horario_apertura,
+                    horario_cierre = :horario_cierre, dias_cierre = :dias_cierre,
+                    categorias_productos = :categorias_productos
+                WHERE business_id = :business_id
+            ");
+        } else {
+            $stmtC = $db->prepare("
+                INSERT INTO comercios (
+                    business_id, tipo_comercio, horario_apertura, horario_cierre,
+                    dias_cierre, categorias_productos
+                ) VALUES (
+                    :business_id, :tipo_comercio, :horario_apertura, :horario_cierre,
+                    :dias_cierre, :categorias_productos
+                )
+            ");
+        }
+        $stmtC->execute([
+            ':business_id'          => $businessId,
+            ':tipo_comercio'        => $data['tipo_comercio']        ?? null,
+            ':horario_apertura'     => $data['horario_apertura']     ?? null,
+            ':horario_cierre'       => $data['horario_cierre']       ?? null,
+            ':dias_cierre'          => $data['dias_cierre']          ?? null,
+            ':categorias_productos' => $data['categorias_productos'] ?? null,
+        ]);
+
+        $db->commit();
+
+        return ['success' => true, 'message' => 'Negocio actualizado correctamente.'];
+
+    } catch (Exception $e) {
+        if (isset($db) && $db->inTransaction()) {
+            $db->rollBack();
+        }
+        error_log("Error en updateBusiness: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Error al actualizar negocio.'];
+    }
+}
+
+/**
+ * Elimina un negocio
+ * @param int $businessId ID del negocio
+ * @param int $userId ID del usuario (para verificar propiedad)
+ * @return array Resultado de la operación
+ */
+function deleteBusiness($businessId, $userId) {
+    try {
+        $businessId = (int)$businessId;
+        $userId     = (int)$userId;
+
+        $db = getDbConnection();
+
+        // Verificar que el usuario sea propietario del negocio
+        $stmt = $db->prepare("SELECT user_id FROM businesses WHERE id = ?");
+        $stmt->execute([$businessId]);
+        $business = $stmt->fetch();
+
+        if (!$business) {
+            return ['success' => false, 'message' => 'Negocio no encontrado'];
+        }
+
+        if ((int)$business['user_id'] !== $userId) {
+            return ['success' => false, 'message' => 'No tienes permiso para eliminar este negocio'];
+        }
+
+        $db->beginTransaction();
+
+        // Eliminar datos de comercio si existen
+        $db->prepare("DELETE FROM comercios WHERE business_id = ?")->execute([$businessId]);
+
+        // Eliminar negocio
+        $db->prepare("DELETE FROM businesses WHERE id = ?")->execute([$businessId]);
+
+        $db->commit();
+
+        return ['success' => true, 'message' => 'Negocio eliminado correctamente'];
+
+    } catch (Exception $e) {
+        if (isset($db) && $db->inTransaction()) {
+            $db->rollBack();
+        }
+        error_log("Error en deleteBusiness: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Error al eliminar negocio.'];
+    }
+}
+
+/**
+ * Cambia la visibilidad de un negocio.
+ * @param int $businessId ID del negocio
+ * @param int $userId     ID del usuario propietario
+ * @return array Resultado de la operación
+ */
+function toggleBusinessVisibility($businessId, $userId) {
+    try {
+        $businessId = (int)$businessId;
+        $userId     = (int)$userId;
+
+        $db = getDbConnection();
+
+        $stmt = $db->prepare("SELECT user_id, visible FROM businesses WHERE id = ?");
+        $stmt->execute([$businessId]);
+        $business = $stmt->fetch();
+
+        if (!$business) {
+            return ['success' => false, 'message' => 'Negocio no encontrado.'];
+        }
+        if ((int)$business['user_id'] !== $userId) {
+            return ['success' => false, 'message' => 'No tienes permiso para modificar este negocio.'];
+        }
+
+        $newVisible = $business['visible'] ? 0 : 1;
+        $db->prepare("UPDATE businesses SET visible = ?, updated_at = NOW() WHERE id = ?")
+           ->execute([$newVisible, $businessId]);
+
+        return [
+            'success' => true,
+            'message' => $newVisible ? 'Negocio publicado.' : 'Negocio ocultado.',
+            'visible' => $newVisible,
+        ];
+
+    } catch (Exception $e) {
+        error_log("Error en toggleBusinessVisibility: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Error al cambiar visibilidad.'];
+    }
+}
+
+/**
+ * Obtiene datos específicos de un comercio
+ * @param int $businessId ID del negocio
+ * @return array|null Datos del comercio o null si no existe
+ */
+function getComercioData($businessId) {
+    try {
+        $db   = getDbConnection();
+        $stmt = $db->prepare("SELECT * FROM comercios WHERE business_id = ?");
+        $stmt->execute([(int)$businessId]);
+        return $stmt->fetch() ?: null;
+    } catch (Exception $e) {
+        error_log("Error al obtener datos de comercio: " . $e->getMessage());
+        return null;
+    }
+}
+
+// ─── Image upload ─────────────────────────────────────────────────────────────
+
+/**
+ * Procesa la subida de hasta 3 imágenes para un negocio.
+ *
+ * @param int   $businessId ID del negocio.
+ * @param array $files      Array de archivos (e.g. $_FILES['images']).
+ * @param int   $userId     ID del usuario (para verificar propiedad).
+ * @return array ['success' => bool, 'message' => string, 'paths' => string[]]
+ */
+function uploadBusinessImages(int $businessId, array $files, int $userId): array {
+    $db   = getDbConnection();
+    $stmt = $db->prepare("SELECT user_id FROM businesses WHERE id = ?");
+    $stmt->execute([$businessId]);
+    $biz  = $stmt->fetch();
+
+    if (!$biz) {
+        return ['success' => false, 'message' => 'Negocio no encontrado.'];
+    }
+    if ((int)$biz['user_id'] !== $userId) {
+        return ['success' => false, 'message' => 'No tienes permiso para subir imágenes a este negocio.'];
+    }
+
+    $allowedMime = ['image/jpeg', 'image/png', 'image/webp'];
+    $maxSize     = 5 * 1024 * 1024; // 5 MB por imagen
+    $maxImages   = 3;
+    $uploadDir   = dirname(__DIR__) . '/uploads/businesses/' . $businessId . '/';
+    $saved       = [];
+
+    if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+    }
+
+    // Normalizar la estructura de $_FILES para múltiples archivos
+    $normalized = [];
+    if (isset($files['name']) && is_array($files['name'])) {
+        for ($i = 0; $i < min(count($files['name']), $maxImages); $i++) {
+            if ($files['error'][$i] === UPLOAD_ERR_OK) {
+                $normalized[] = [
+                    'name'     => $files['name'][$i],
+                    'tmp_name' => $files['tmp_name'][$i],
+                    'size'     => $files['size'][$i],
+                    'error'    => $files['error'][$i],
+                ];
+            }
+        }
+    } elseif (isset($files['tmp_name']) && $files['error'] === UPLOAD_ERR_OK) {
+        $normalized[] = $files;
+    }
+
+    foreach ($normalized as $file) {
+        if ($file['size'] > $maxSize) {
+            return ['success' => false, 'message' => 'Una de las imágenes supera el tamaño máximo de 5 MB.'];
+        }
+
+        $finfo    = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+
+        if (!in_array($mimeType, $allowedMime, true)) {
+            return ['success' => false, 'message' => 'Tipo de imagen no permitido. Use JPEG, PNG o WebP.'];
+        }
+
+        $extMap   = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'image/webp' => 'webp'];
+        $ext      = $extMap[$mimeType] ?? 'jpg';
+        $filename = bin2hex(random_bytes(8)) . '.' . $ext;
+        $destPath = $uploadDir . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+            return ['success' => false, 'message' => 'Error al guardar la imagen.'];
+        }
+
+        $saved[] = 'uploads/businesses/' . $businessId . '/' . $filename;
+    }
+
+    return [
+        'success' => true,
+        'message' => count($saved) . ' imagen(es) subida(s) correctamente.',
+        'paths'   => $saved,
+    ];
+}
