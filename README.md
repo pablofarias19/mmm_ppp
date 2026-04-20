@@ -99,6 +99,26 @@ Para habilitar Walkie Talkie (WT) en popups ejecutar:
 source migrations/002_wt_tables.sql
 ```
 
+## Migración de delegaciones por entidad
+
+Para habilitar delegación administrativa y transferencias de titularidad ejecutar:
+
+```sql
+source migrations/008_entity_delegations.sql
+```
+
+## API de delegaciones y transferencias
+
+- `POST /api/business_delegations/create.php` (`business_id`, `user_id`) → agrega delegado admin (máx. 3)
+- `POST /api/business_delegations/revoke.php` (`business_id`, `user_id`) → revoca delegado
+- `GET /api/business_delegations/list.php?business_id=...` → lista delegados
+- `POST /api/brand_delegations/create.php` (`brand_id`, `user_id`) → agrega delegado admin (máx. 3)
+- `POST /api/brand_delegations/revoke.php` (`brand_id`, `user_id`) → revoca delegado
+- `GET /api/brand_delegations/list.php?brand_id=...` → lista delegados
+- `POST /api/ownership_transfers/initiate.php` (`entity_type`, `entity_id`, `to_user_id`) → inicia transferencia (pending)
+- `POST /api/ownership_transfers/accept.php` (`transfer_id`) → acepta y cambia titularidad
+- `POST /api/ownership_transfers/reject.php` (`transfer_id`) → rechaza transferencia
+
 ## Seguridad
 
 - Contraseñas hasheadas con `password_hash(PASSWORD_DEFAULT)`

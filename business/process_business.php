@@ -335,7 +335,7 @@ function updateBusiness($businessId, $data, $userId) {
 
         $db = getDbConnection();
 
-        // Verificar propiedad
+        // Verificar permisos (owner, delegado admin o superadmin)
         $stmt = $db->prepare("SELECT user_id, business_type FROM businesses WHERE id = ?");
         $stmt->execute([$businessId]);
         $business = $stmt->fetch();
@@ -343,7 +343,7 @@ function updateBusiness($businessId, $data, $userId) {
         if (!$business) {
             return ['success' => false, 'message' => 'Negocio no encontrado.'];
         }
-        if ((int)$business['user_id'] !== $userId) {
+        if (!canManageBusiness($userId, $businessId)) {
             return ['success' => false, 'message' => 'No tienes permiso para editar este negocio.'];
         }
 
@@ -482,7 +482,7 @@ function deleteBusiness($businessId, $userId) {
 
         $db = getDbConnection();
 
-        // Verificar que el usuario sea propietario del negocio
+        // Verificar permisos (owner, delegado admin o superadmin)
         $stmt = $db->prepare("SELECT user_id FROM businesses WHERE id = ?");
         $stmt->execute([$businessId]);
         $business = $stmt->fetch();
@@ -491,7 +491,7 @@ function deleteBusiness($businessId, $userId) {
             return ['success' => false, 'message' => 'Negocio no encontrado'];
         }
 
-        if ((int)$business['user_id'] !== $userId) {
+        if (!canManageBusiness($userId, $businessId)) {
             return ['success' => false, 'message' => 'No tienes permiso para eliminar este negocio'];
         }
 
@@ -536,7 +536,7 @@ function toggleBusinessVisibility($businessId, $userId) {
         if (!$business) {
             return ['success' => false, 'message' => 'Negocio no encontrado.'];
         }
-        if ((int)$business['user_id'] !== $userId) {
+        if (!canManageBusiness($userId, $businessId)) {
             return ['success' => false, 'message' => 'No tienes permiso para modificar este negocio.'];
         }
 

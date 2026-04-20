@@ -30,10 +30,12 @@ $msgType  = '';
 if ($editing) {
     try {
         $db   = getDbConnection();
-        $cond = $isAdmin ? 'WHERE id = ?' : 'WHERE id = ? AND user_id = ?';
-        $args = $isAdmin ? [$brandId] : [$brandId, $userId];
-        $stmt = $db->prepare("SELECT * FROM brands $cond");
-        $stmt->execute($args);
+        if (!$isAdmin && !canManageBrand($userId, $brandId)) {
+            header('Location: /marcas');
+            exit;
+        }
+        $stmt = $db->prepare("SELECT * FROM brands WHERE id = ?");
+        $stmt->execute([$brandId]);
         $brand = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$brand) { header('Location: /marcas'); exit; }
     } catch (Exception $e) {

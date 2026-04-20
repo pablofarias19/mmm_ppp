@@ -31,18 +31,8 @@ $method = $_SERVER['REQUEST_METHOD'];
 // ── Verificar propiedad ───────────────────────────────────────────────────────
 function verifyBrandOwnership(int $brandId, int $userId, bool $isAdmin): bool {
     try {
-        $db = getDbConnection();
         if ($isAdmin) return true;
-
-        // Verificar en tabla brands
-        $stmt = $db->prepare("SELECT id FROM brands WHERE id = ? AND user_id = ?");
-        $stmt->execute([$brandId, $userId]);
-        if ($stmt->fetch()) return true;
-
-        // Verificar en tabla marcas
-        $stmt = $db->prepare("SELECT id FROM marcas WHERE id = ? AND usuario_id = ?");
-        $stmt->execute([$brandId, $userId]);
-        return (bool)$stmt->fetch();
+        return canManageBrand($userId, $brandId);
     } catch (Exception $e) {
         return false;
     }

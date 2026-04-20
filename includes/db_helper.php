@@ -71,3 +71,103 @@ function respondError($message = "Ha ocurrido un error") {
         exit;
     }
 }
+
+if (!function_exists('mapitaTableExists')) {
+    function mapitaTableExists(PDO $db, string $table): bool {
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
+            return false;
+        }
+        try {
+            $stmt = $db->prepare('SELECT 1 FROM information_schema.tables WHERE table_schema = DATABASE() AND table_name = ? LIMIT 1');
+            $stmt->execute([$table]);
+            return (bool)$stmt->fetchColumn();
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+}
+
+if (!function_exists('isBusinessOwner')) {
+    function isBusinessOwner(int $currentUserId, int $businessId): bool {
+        $db = getDbConnection();
+        if (!$db || $currentUserId <= 0 || $businessId <= 0 || !mapitaTableExists($db, 'businesses')) {
+            return false;
+        }
+        $stmt = $db->prepare('SELECT 1 FROM businesses WHERE id = ? AND user_id = ? LIMIT 1');
+        $stmt->execute([$businessId, $currentUserId]);
+        return (bool)$stmt->fetchColumn();
+    }
+}
+
+if (!function_exists('isBrandOwner')) {
+    function isBrandOwner(int $currentUserId, int $brandId): bool {
+        $db = getDbConnection();
+        if (!$db || $currentUserId <= 0 || $brandId <= 0) {
+            return false;
+        }
+
+        if (mapitaTableExists($db, 'brands')) {
+            $stmt = $db->prepare('SELECT 1 FROM brands WHERE id = ? AND user_id = ? LIMIT 1');
+            $stmt->execute([$brandId, $currentUserId]);
+            if ($stmt->fetchColumn()) {
+                return true;
+            }
+        }
+
+        if (mapitaTableExists($db, 'marcas')) {
+            $stmt = $db->prepare('SELECT 1 FROM marcas WHERE id = ? AND usuario_id = ? LIMIT 1');
+            $stmt->execute([$brandId, $currentUserId]);
+            if ($stmt->fetchColumn()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+}
+
+if (!function_exists('canManageBusiness')) {
+    function canManageBusiness(int $currentUserId, int $businessId): bool {
+        if ($currentUserId <= 0 || $businessId <= 0) {
+            return false;
+        }
+        if (isAdmin()) {
+            return true;
+        }
+        if (isBusinessOwner($currentUserId, $businessId)) {
+            return true;
+        }
+
+        $db = getDbConnection();
+        if (!$db || !mapitaTableExists($db, 'business_delegations')) {
+            return false;
+        }
+
+        $stmt = $db->prepare("SELECT 1 FROM business_delegations WHERE business_id = ? AND user_id = ? AND role = 'admin' LIMIT 1");
+        $stmt->execute([$businessId, $currentUserId]);
+        return (bool)$stmt->fetchColumn();
+    }
+}
+
+if (!function_exists('canManageBrand')) {
+    function canManageBrand(int $currentUserId, int $brandId): bool {
+        if ($currentUserId <= 0 || $brandId <= 0) {
+            return false;
+        }
+        if (isAdmin()) {
+            return true;
+        }
+        if (isBrandOwner($currentUserId, $brandId)) {
+            return true;
+        }
+
+        $db = getDbConnection();
+        if (!$db || !mapitaTableExists($db, 'brand_delegations')) {
+            return false;
+        }
+
+        $stmt = $db->prepare("SELECT 1 FROM brand_delegations WHERE brand_id = ? AND user_id = ? AND role = 'admin' LIMIT 1");
+        $stmt->execute([$brandId, $currentUserId]);
+        return (bool)$stmt->fetchColumn();
+    }
+}

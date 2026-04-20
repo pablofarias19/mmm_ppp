@@ -58,8 +58,7 @@ if ($method === 'GET') {
             // Ocultos solo visibles para dueño o admin
             if (!$negocio['visible']) {
                 if (empty($_SESSION['user_id'])
-                        || ((int)$negocio['user_id'] !== (int)$_SESSION['user_id']
-                            && empty($_SESSION['is_admin']))) {
+                        || !canManageBusiness((int)$_SESSION['user_id'], (int)$id)) {
                     respond_error('Negocio no encontrado.', 404);
                 }
             }
