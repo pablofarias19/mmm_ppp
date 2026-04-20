@@ -1010,7 +1010,7 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
             <div style="font-size:2.5em;flex-shrink:0;">🖼️</div>
             <div>
                 <p style="margin:0 0 8px;color:#374151;font-size:.9em;line-height:1.6;">
-                    Podés subir hasta <strong>5 fotos de galería</strong> y una <strong>foto para compartir en redes</strong> (WhatsApp, Facebook, etc.).
+                    Podés subir hasta <strong>3 fotos de galería</strong> y una <strong>foto para compartir en redes</strong> (WhatsApp, Facebook, etc.).
                 </p>
                 <p style="margin:0;font-size:.82em;color:#6b7280;background:#f3f4f6;padding:10px 14px;border-radius:8px;border-left:3px solid #667eea;">
                     📌 Esta opción estará disponible en <strong>"Editar negocio"</strong> una vez que guardes el registro.
@@ -1029,7 +1029,7 @@ const BIZ_ID         = <?php echo $businessId ?: 'null'; ?>;
 const INITIAL_LAT    = <?php echo $editing ? (float)($business['lat'] ?? -34.6037) : -34.6037; ?>;
 const INITIAL_LNG    = <?php echo $editing ? (float)($business['lng'] ?? -58.3816) : -58.3816; ?>;
 const GALLERY_COUNT  = <?php echo count($galleryPhotos); ?>;
-const MAX_GALLERY    = 5;
+const MAX_GALLERY    = 3;
 
 // Tags iniciales (pre-cargados en edición)
 let currentTags = <?php echo json_encode(array_values($currentTags)); ?>;
@@ -1254,6 +1254,31 @@ function updateGalleryBadge() {
     if (badge) badge.textContent = galleryCount + '/' + MAX_GALLERY;
 }
 
+function ensureGalleryDropzone() {
+    const grid = document.getElementById('gallery-grid');
+    if (!grid) return null;
+
+    let drop = document.getElementById('gallery-drop');
+    if (!drop && galleryCount < MAX_GALLERY) {
+        drop = document.createElement('div');
+        drop.className = 'gallery-dropzone';
+        drop.id = 'gallery-drop';
+        drop.onclick = () => document.getElementById('gallery-input').click();
+        drop.ondragover = (event) => { event.preventDefault(); drop.classList.add('drag-over'); };
+        drop.ondragleave = () => drop.classList.remove('drag-over');
+        drop.ondrop = handleGalleryDrop;
+        drop.innerHTML = '<span style="font-size:2em;">📷</span>' +
+            '<span style="font-size:.8em;font-weight:600;color:#4b5563;">Agregar foto</span>' +
+            '<span style="font-size:.72em;color:#9ca3af;">Arrastrá o hacé clic</span>';
+        grid.appendChild(drop);
+    }
+
+    if (drop) {
+        drop.style.display = galleryCount >= MAX_GALLERY ? 'none' : '';
+    }
+    return drop;
+}
+
 function uploadGalleryPhoto(file) {
     if (!file) return;
     if (galleryCount >= MAX_GALLERY) {
@@ -1265,7 +1290,7 @@ function uploadGalleryPhoto(file) {
     fd.append('action', 'upload');
     fd.append('photo', file);
 
-    const drop = document.getElementById('gallery-drop');
+    const drop = ensureGalleryDropzone();
     if (drop) { drop.style.opacity = '.5'; drop.style.pointerEvents = 'none'; }
 
     fetch('/api/upload_business_gallery.php', { method: 'POST', body: fd })
@@ -1277,9 +1302,7 @@ function uploadGalleryPhoto(file) {
                 galleryCount++;
                 updateGalleryBadge();
                 addGalleryItem(data.filename, data.url);
-                if (galleryCount >= MAX_GALLERY && drop) {
-                    drop.style.display = 'none';
-                }
+                ensureGalleryDropzone();
             } else {
                 galleryMsg('❌ ' + data.message, false);
             }
@@ -1318,15 +1341,9 @@ function deleteGalleryPhoto(filename) {
                 galleryMsg('🗑️ Foto eliminada.', true);
                 const item = document.getElementById('gi_' + filename);
                 if (item) item.remove();
-                galleryCount--;
+                galleryCount = Math.max(0, galleryCount - 1);
                 updateGalleryBadge();
-                // Re-mostrar el botón de agregar si había desaparecido
-                const drop = document.getElementById('gallery-drop');
-                if (drop) { drop.style.display = ''; }
-                else if (galleryCount < MAX_GALLERY) {
-                    // Recargar para mostrar el botón de agregar
-                    location.reload();
-                }
+                ensureGalleryDropzone();
             } else {
                 galleryMsg('❌ ' + data.message, false);
             }
