@@ -5,13 +5,14 @@ El archivo generado se sube desde el panel Admin → pestaña Negocios o Marcas 
 
 ---
 
-## PROMPT PARA NEGOCIOS
+## PROMPT PARA NEGOCIOS (IMPORTACIÓN MASIVA)
 
 ```
 Generá un array JSON de negocios para la plataforma Mapita.
 El resultado debe ser un array JSON válido con uno o varios objetos.
+No incluyas texto adicional, comentarios ni bloque markdown: solo JSON puro.
 
-CAMPOS OBLIGATORIOS:
+CAMPOS OBLIGATORIOS POR OBJETO:
 - "name": nombre del negocio (string, máx. 255 chars)
 - "business_type": tipo exacto de la siguiente lista:
   restaurante, cafeteria, bar, panaderia, heladeria, pizzeria,
@@ -42,6 +43,13 @@ CAMPOS OPCIONALES:
 - "location_city": ciudad (string)
 - "style": estilo o concepto del negocio (string)
 
+REGLAS IMPORTANTES:
+- El JSON debe ser un array en la raíz: `[ { ... }, { ... } ]`
+- "business_type" debe coincidir exactamente con la lista permitida (sin mayúsculas ni variantes).
+- "lat" y "lng" deben ser números decimales válidos.
+- Los campos booleanos deben enviarse como `0` o `1`.
+- "price_range" se recomienda entre 1 y 5.
+
 EJEMPLO DE SALIDA:
 [
   {
@@ -66,13 +74,14 @@ EJEMPLO DE SALIDA:
 
 ---
 
-## PROMPT PARA MARCAS
+## PROMPT PARA MARCAS (IMPORTACIÓN MASIVA)
 
 ```
 Generá un array JSON de marcas para la plataforma Mapita.
 El resultado debe ser un array JSON válido con uno o varios objetos.
+No incluyas texto adicional, comentarios ni bloque markdown: solo JSON puro.
 
-CAMPOS OBLIGATORIOS:
+CAMPOS OBLIGATORIOS POR OBJETO:
 - "nombre": nombre de la marca (string, máx. 255 chars)
 - "rubro": rubro o industria de la marca (string, ej: "Indumentaria", "Alimentos", "Tecnología")
 
@@ -107,6 +116,11 @@ CAMPOS OPCIONALES:
 - "zona_radius_km": radio de zona en km (número entero)
 - "tiene_licencia": tiene modelo de licencia (0 o 1)
 - "estado": "Activa" o "Inactiva"
+
+REGLAS IMPORTANTES:
+- El JSON debe ser un array en la raíz: `[ { ... }, { ... } ]`
+- "lat" y "lng" son opcionales, pero si se envían deben ser números decimales válidos.
+- Los campos booleanos deben enviarse como `0` o `1`.
 
 EJEMPLO DE SALIDA:
 [
@@ -147,3 +161,20 @@ EJEMPLO DE SALIDA:
 4. Si algún elemento falla la validación, los demás se importan igualmente y los errores se muestran en pantalla.
 5. El campo `lat`/`lng` es opcional para marcas; para negocios es obligatorio.
 6. Los tipos de negocio deben coincidir exactamente con la lista indicada en el prompt.
+
+---
+
+## Modo de consumo de datos (Admin + API)
+
+1. Desde **Admin → pestaña Negocios o Marcas**, usá la sección **Importar en masa (JSON)**.
+2. El frontend envía `multipart/form-data` a `POST /api/bulk_import.php` con:
+   - `file`: archivo JSON
+   - `type`: `businesses` o `brands`
+3. La API procesa cada elemento del array de forma independiente (importación parcial si hay errores).
+4. Respuesta esperada:
+   - `success` (bool)
+   - `imported` (cantidad importada)
+   - `total` (cantidad total en el array)
+   - `errors` (lista de errores por fila)
+   - `message` (resumen para UI)
+5. Si `errors` tiene elementos, se muestran en pantalla y el resto de registros válidos igualmente se guarda.
