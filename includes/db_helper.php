@@ -87,6 +87,21 @@ if (!function_exists('mapitaTableExists')) {
     }
 }
 
+if (!function_exists('mapitaColumnExists')) {
+    function mapitaColumnExists(PDO $db, string $table, string $column): bool {
+        if (!preg_match('/^[a-zA-Z0-9_]+$/', $table) || !preg_match('/^[a-zA-Z0-9_]+$/', $column)) {
+            return false;
+        }
+        try {
+            $stmt = $db->prepare('SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ? LIMIT 1');
+            $stmt->execute([$table, $column]);
+            return (bool)$stmt->fetchColumn();
+        } catch (Throwable $e) {
+            return false;
+        }
+    }
+}
+
 if (!function_exists('isBusinessOwner')) {
     function isBusinessOwner(int $currentUserId, int $businessId): bool {
         $db = getDbConnection();

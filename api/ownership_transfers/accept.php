@@ -41,20 +41,26 @@ if ((int)$transfer['to_user_id'] !== $currentUserId) {
 try {
     $db->beginTransaction();
 
+    $entityId   = (int)$transfer['entity_id'];
+    $fromUserId = (int)$transfer['from_user_id'];
+    $toUserId   = (int)$transfer['to_user_id'];
     $affected = 0;
     if ($transfer['entity_type'] === 'business') {
         $stmt = $db->prepare('UPDATE businesses SET user_id = ?, updated_at = NOW() WHERE id = ? AND user_id = ?');
-        $stmt->execute([(int)$transfer['to_user_id'], (int)$transfer['entity_id'], (int)$transfer['from_user_id']]);
+        $stmt->execute([$toUserId, $entityId, $fromUserId]);
         $affected = $stmt->rowCount();
     } else {
         if (mapitaTableExists($db, 'brands')) {
             $stmt = $db->prepare('UPDATE brands SET user_id = ?, updated_at = NOW() WHERE id = ? AND user_id = ?');
-            $stmt->execute([(int)$transfer['to_user_id'], (int)$transfer['entity_id'], (int)$transfer['from_user_id']]);
+            $stmt->execute([$toUserId, $entityId, $fromUserId]);
             $affected += $stmt->rowCount();
         }
         if (mapitaTableExists($db, 'marcas')) {
-            $stmt = $db->prepare('UPDATE marcas SET usuario_id = ? WHERE id = ? AND usuario_id = ?');
-            $stmt->execute([(int)$transfer['to_user_id'], (int)$transfer['entity_id'], (int)$transfer['from_user_id']]);
+            $sql = mapitaColumnExists($db, 'marcas', 'updated_at')
+                ? 'UPDATE marcas SET usuario_id = ?, updated_at = NOW() WHERE id = ? AND usuario_id = ?'
+                : 'UPDATE marcas SET usuario_id = ? WHERE id = ? AND usuario_id = ?';
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$toUserId, $entityId, $fromUserId]);
             $affected += $stmt->rowCount();
         }
     }

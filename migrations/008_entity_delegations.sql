@@ -31,6 +31,8 @@ CREATE TABLE IF NOT EXISTS brand_delegations (
     UNIQUE KEY uq_brand_delegate (brand_id, user_id),
     KEY idx_brand_delegations_brand (brand_id),
     KEY idx_brand_delegations_user (user_id),
+    CONSTRAINT fk_brand_delegations_brand
+        FOREIGN KEY (brand_id) REFERENCES brands(id) ON DELETE CASCADE,
     CONSTRAINT fk_brand_delegations_user
         FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     CONSTRAINT fk_brand_delegations_created_by

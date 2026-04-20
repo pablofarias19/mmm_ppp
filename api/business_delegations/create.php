@@ -41,16 +41,31 @@ if (delegationIsSuperadminUser($targetUser)) {
 
 $stmt = $db->prepare('SELECT 1 FROM business_delegations WHERE business_id = ? AND user_id = ? LIMIT 1');
 $stmt->execute([$businessId, $delegateUserId]);
-if (!$stmt->fetchColumn() && delegationCountBusinessAdmins($db, $businessId) >= 3) {
-    respond_error('Solo se permiten hasta 3 admins delegados por negocio.');
+$alreadyDelegated = (bool)$stmt->fetchColumn();
+$delegatedAdmins  = delegationCountBusinessAdmins($db, $businessId);
+if ($delegatedAdmins >= MAX_DELEGATED_ADMINS_PER_ENTITY && !$alreadyDelegated) {
+    respond_error('Solo se permiten hasta ' . MAX_DELEGATED_ADMINS_PER_ENTITY . ' admins delegados por negocio.');
 }
 
-$stmt = $db->prepare("
-    INSERT INTO business_delegations (business_id, user_id, role, created_by)
-    VALUES (?, ?, 'admin', ?)
-    ON DUPLICATE KEY UPDATE role = VALUES(role), created_by = VALUES(created_by)
-");
-$stmt->execute([$businessId, $delegateUserId, $currentUserId]);
+try {
+    $stmt = $db->prepare("
+        INSERT INTO business_delegations (business_id, user_id, role, created_by)
+        VALUES (?, ?, 'admin', ?)
+    ");
+    $stmt->execute([$businessId, $delegateUserId, $currentUserId]);
+} catch (PDOException $e) {
+    // SQLSTATE 23000 cubre constraint violations y 1062 identifica duplicado en MySQL/MariaDB.
+    $isDuplicate = $e->getCode() === '23000' || ((int)($e->errorInfo[1] ?? 0) === 1062);
+    if (!$isDuplicate) {
+        throw $e;
+    }
+    $stmt = $db->prepare("
+        UPDATE business_delegations
+        SET role = 'admin', created_by = ?
+        WHERE business_id = ? AND user_id = ?
+    ");
+    $stmt->execute([$currentUserId, $businessId, $delegateUserId]);
+}
 
 respond_success([
     'business_id' => $businessId,

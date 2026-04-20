@@ -6,6 +6,10 @@ if (session_status() === PHP_SESSION_NONE) {
 require_once __DIR__ . '/../includes/db_helper.php';
 require_once __DIR__ . '/../core/helpers.php';
 
+if (!defined('MAX_DELEGATED_ADMINS_PER_ENTITY')) {
+    define('MAX_DELEGATED_ADMINS_PER_ENTITY', 3);
+}
+
 if (!function_exists('delegationRequireAuthUserId')) {
     function delegationRequireAuthUserId(): int {
         if (empty($_SESSION['user_id'])) {
@@ -34,7 +38,7 @@ if (!function_exists('delegationUserInfo')) {
 
 if (!function_exists('delegationIsSuperadminUser')) {
     function delegationIsSuperadminUser(array $userRow): bool {
-        return !empty($userRow['is_admin']) || (($userRow['username'] ?? '') === 'Pablo_Farias');
+        return !empty($userRow['is_admin']);
     }
 }
 
