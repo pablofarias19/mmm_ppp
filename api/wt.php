@@ -67,6 +67,100 @@ function wt_is_preset($message, array $presets) {
     return in_array((string)$message, $presets, true);
 }
 
+/**
+ * Carga las preferencias WT de un usuario registrado.
+ * Si no existen, devuelve el modo 'open' por defecto.
+ */
+function wt_load_user_prefs(\PDO $db, int $uid): array {
+    if ($uid <= 0) {
+        return ['wt_mode' => 'open', 'areas' => []];
+    }
+    try {
+        $stmt = $db->prepare("SELECT wt_mode, areas FROM wt_user_preferences WHERE user_id = ?");
+        $stmt->execute([$uid]);
+        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+    } catch (\PDOException $e) {
+        // Tabla aún no existe; tratar como 'open'
+        return ['wt_mode' => 'open', 'areas' => []];
+    }
+    if (!$row) {
+        return ['wt_mode' => 'open', 'areas' => []];
+    }
+    $areas = [];
+    if (!empty($row['areas'])) {
+        $decoded = json_decode($row['areas'], true);
+        $areas = is_array($decoded) ? $decoded : [];
+    }
+    return ['wt_mode' => $row['wt_mode'], 'areas' => $areas];
+}
+
+/**
+ * Comprueba si existe un bloqueo entre dos usuarios registrados (en cualquier dirección).
+ */
+function wt_is_blocked(\PDO $db, int $uidA, int $uidB): bool {
+    if ($uidA <= 0 || $uidB <= 0) return false;
+    try {
+        $stmt = $db->prepare(
+            "SELECT 1 FROM wt_user_blocks
+              WHERE (blocker_user_id = ? AND blocked_user_id = ?)
+                 OR (blocker_user_id = ? AND blocked_user_id = ?)
+              LIMIT 1"
+        );
+        $stmt->execute([$uidA, $uidB, $uidB, $uidA]);
+        return (bool)$stmt->fetchColumn();
+    } catch (\PDOException $e) {
+        return false;
+    }
+}
+
+/**
+ * Determina si un canal WT puede abrirse entre dos usuarios.
+ *
+ * Reglas:
+ *  - closed (cualquiera) → false
+ *  - open + open         → true
+ *  - open + selective    → true (usuario 'open' pasa cualquier filtro de áreas)
+ *  - selective + selective → true solo si comparten al menos un área
+ *
+ * @return array ['allowed' => bool, 'status' => string, 'reason' => string]
+ *   status: 'open' | 'blocked' | 'restricted' | 'self_closed'
+ */
+function wt_channel_status(\PDO $db, int $senderUserId, int $ownerUserId): array {
+    // Usuarios anónimos: permitido (fallback open)
+    $senderPrefs = wt_load_user_prefs($db, $senderUserId);
+    $ownerPrefs  = wt_load_user_prefs($db, $ownerUserId);
+
+    // Bloqueo mutuo
+    if (wt_is_blocked($db, $senderUserId, $ownerUserId)) {
+        return ['allowed' => false, 'status' => 'blocked', 'reason' => 'Canal bloqueado'];
+    }
+
+    // Alguno tiene WT cerrado
+    if ($senderPrefs['wt_mode'] === 'closed') {
+        return ['allowed' => false, 'status' => 'self_closed', 'reason' => 'Tu WT está desactivado'];
+    }
+    if ($ownerPrefs['wt_mode'] === 'closed') {
+        return ['allowed' => false, 'status' => 'closed', 'reason' => 'El propietario desactivó WT'];
+    }
+
+    // Ambos 'open' o uno 'open'
+    if ($senderPrefs['wt_mode'] === 'open' || $ownerPrefs['wt_mode'] === 'open') {
+        return ['allowed' => true, 'status' => 'open', 'reason' => ''];
+    }
+
+    // Ambos 'selective': deben compartir al menos un área
+    $sharedAreas = array_intersect($senderPrefs['areas'], $ownerPrefs['areas']);
+    if (!empty($sharedAreas)) {
+        return ['allowed' => true, 'status' => 'open', 'reason' => 'Áreas en común: ' . implode(', ', $sharedAreas)];
+    }
+
+    return [
+        'allowed' => false,
+        'status'  => 'restricted',
+        'reason'  => 'Sin áreas en común — configurá tus preferencias WT',
+    ];
+}
+
 $db = null;
 try {
     $db = \Core\Database::getInstance()->getConnection();
@@ -106,6 +200,18 @@ try {
 if ($method === 'GET') {
     if ($action === 'presets') {
         wt_success(['presets' => $presets], 'Presets WT');
+    }
+
+    // Nuevo: estado del canal WT entre el visitante y el propietario de la entidad
+    if ($action === 'status') {
+        $entityType = trim((string)($_GET['entity_type'] ?? ''));
+        $entityId = (int)($_GET['entity_id'] ?? 0);
+        if (!wt_is_valid_entity($entityType, $entityId)) wt_error('Entidad inválida', 400);
+        [$senderUserId, ,] = wt_get_identity();
+        $owner = wt_get_business_owner($db, $entityType, $entityId);
+        $ownerUserId = $owner ? (int)($owner['user_id'] ?? 0) : 0;
+        $channelInfo = wt_channel_status($db, $senderUserId, $ownerUserId);
+        wt_success($channelInfo, 'Estado canal WT');
     }
 
     if ($action === 'list') {
@@ -191,6 +297,16 @@ if ($method === 'POST') {
         $message = trim((string)($input['message'] ?? ''));
         if ($message === '') wt_error('Mensaje vacío', 400);
         if (mb_strlen($message) > WT_MAX_MESSAGE_LEN) wt_error('Máximo ' . WT_MAX_MESSAGE_LEN . ' caracteres', 400);
+
+        // Verificar compatibilidad del canal WT (solo entre usuarios registrados)
+        $owner = wt_get_business_owner($db, $entityType, $entityId);
+        $ownerUserId = $owner ? (int)($owner['user_id'] ?? 0) : 0;
+        if ($userId > 0 && $ownerUserId > 0 && $userId !== $ownerUserId) {
+            $channelInfo = wt_channel_status($db, $userId, $ownerUserId);
+            if (!$channelInfo['allowed']) {
+                wt_error('Canal WT no disponible: ' . ($channelInfo['reason'] ?? 'Acceso restringido'), 403);
+            }
+        }
 
         $rateStmt = $db->prepare("SELECT COUNT(*) FROM wt_messages WHERE sender_key = ? AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MINUTE)");
         $rateStmt->execute([$senderKey]);

@@ -90,6 +90,12 @@ mapita/
 | GET | `/api/wt.php?action=list&entity_type=negocio&entity_id=10` | Lista mensajes WT por entidad | No |
 | POST | `/api/wt.php` + `action=send` | Enviar mensaje WT (máx. 140, 5/min por usuario) | No |
 | POST | `/api/wt.php` + `action=heartbeat` | Presencia WT (heartbeat 20s) | No |
+| GET | `/api/wt.php?action=status&entity_type=negocio&entity_id=10` | Estado del canal WT entre viewer y propietario | No |
+| GET | `/api/wt_preferences.php` | Preferencias WT del usuario logueado | Sí |
+| POST | `/api/wt_preferences.php` + `action=save` | Guardar modo WT + áreas | Sí |
+| POST | `/api/wt_preferences.php` + `action=block` | Bloquear usuario WT (`user_id`) | Sí |
+| POST | `/api/wt_preferences.php` + `action=unblock` | Desbloquear usuario WT (`user_id`) | Sí |
+| GET | `/api/wt_preferences.php?action=blocks` | Listar usuarios bloqueados | Sí |
 
 ## Migraciones nuevas (WT)
 
@@ -98,6 +104,24 @@ Para habilitar Walkie Talkie (WT) en popups ejecutar:
 ```sql
 source migrations/002_wt_tables.sql
 ```
+
+## WT Canales Selectivos
+
+Para habilitar los canales selectivos WT (preferencias + bloqueos) ejecutar:
+
+```sql
+source migrations/011_wt_preferences.sql
+```
+
+### Modos de canal WT por usuario
+
+| Modo | Comportamiento |
+|------|----------------|
+| `open` (defecto) | Cualquier usuario puede enviar mensajes WT |
+| `selective` | Solo usuarios con al menos un área en común |
+| `closed` | WT desactivado; nadie puede enviar mensajes |
+
+Los usuarios pueden gestionar sus preferencias en `/views/wt_preferences.php`.
 
 ## Migración de delegaciones por entidad
 
