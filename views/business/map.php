@@ -39,6 +39,109 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             50%       { opacity: 0.2; }
         }
 
+        /* ── LEYENDA DINÁMICA ───────────────────────────────────────── */
+        #map-legend-btn {
+            position: absolute;
+            bottom: 28px;
+            right: 10px;
+            z-index: 1001;
+            background: rgba(255,255,255,0.97);
+            border: none;
+            border-radius: 10px;
+            padding: 7px 12px;
+            font-size: 13px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #1B3B6F;
+            transition: box-shadow 0.2s, transform 0.15s;
+        }
+        #map-legend-btn:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.22); transform: translateY(-1px); }
+        #map-legend {
+            position: absolute;
+            bottom: 70px;
+            right: 10px;
+            z-index: 1001;
+            background: rgba(255,255,255,0.97);
+            border-radius: 12px;
+            padding: 14px 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.18);
+            max-width: 240px;
+            min-width: 190px;
+            max-height: 60vh;
+            overflow-y: auto;
+            display: none;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            animation: legendFadeIn 0.2s ease;
+        }
+        @keyframes legendFadeIn {
+            from { opacity:0; transform:translateY(6px); }
+            to   { opacity:1; transform:translateY(0);   }
+        }
+        #map-legend h4 { margin: 0 0 8px; font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.6px; font-weight: 700; }
+        .legend-item { display:flex; align-items:center; gap:8px; padding:3px 0; font-size:12px; color:#374151; }
+        .legend-rel-line { width:22px; height:0; flex-shrink:0; }
+        hr.legend-divider { border:none; border-top:1px solid #e5e7eb; margin:8px 0; }
+
+        /* ── TEMPORAL BADGES ────────────────────────────────────────── */
+        .mapita-temporal-wrapper { position:relative; display:inline-block; }
+        .mapita-temporal-badge {
+            position: absolute;
+            top: -5px;
+            right: -6px;
+            background: #e74c3c;
+            color: white;
+            border-radius: 7px;
+            padding: 1px 5px;
+            font-size: 8px;
+            font-weight: 800;
+            line-height: 14px;
+            white-space: nowrap;
+            border: 1.5px solid white;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+            pointer-events: none;
+            letter-spacing: 0.3px;
+        }
+        .mapita-temporal-badge.urgent { background:#e74c3c; animation:badgePulse 1.4s infinite; }
+        .mapita-temporal-badge.soon   { background:#f39c12; }
+        .mapita-temporal-badge.info   { background:#667eea; }
+        @keyframes badgePulse {
+            0%, 100% { transform:scale(1); opacity:1; }
+            50%      { transform:scale(1.12); opacity:0.85; }
+        }
+
+        /* ── MINI HOVER CONTEXT PANEL ───────────────────────────────── */
+        #map-ctx-panel {
+            position: fixed;
+            z-index: 1100;
+            background: rgba(15,23,42,0.91);
+            color: white;
+            border-radius: 10px;
+            padding: 9px 13px;
+            font-size: 12px;
+            pointer-events: none;
+            max-width: 210px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.32);
+            transition: opacity 0.15s;
+            opacity: 0;
+            line-height: 1.5;
+        }
+        #map-ctx-panel.visible { opacity: 1; }
+        #map-ctx-panel .ctx-name { font-weight:700; font-size:13px; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        #map-ctx-panel .ctx-type { font-size:10px; color:rgba(255,255,255,0.6); margin-bottom:4px; }
+        #map-ctx-panel .ctx-badge {
+            display:inline-block;
+            background:rgba(255,255,255,0.14);
+            border-radius:5px;
+            padding:1px 6px;
+            font-size:10px;
+            margin:2px 2px 0 0;
+        }
+
         /* Variables locales del mapa — solo las que variables-luxury.css no define */
         :root {
             --success:     #2ecc71;
@@ -778,6 +881,21 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
 
 <div id="map"></div>
 
+<!-- ── Leyenda dinámica del mapa ───────────────────────────────── -->
+<button id="map-legend-btn" aria-expanded="false" aria-controls="map-legend" onclick="toggleMapLegend()" title="Mostrar leyenda del mapa">
+    🗺️ Leyenda
+</button>
+<div id="map-legend" role="complementary" aria-label="Leyenda del mapa">
+    <h4>Capas activas</h4>
+    <div id="legend-layers"></div>
+    <hr class="legend-divider">
+    <h4>Tipo de relación</h4>
+    <div id="legend-relations"></div>
+</div>
+
+<!-- ── Panel de contexto flotante (aparece al hacer hover sobre un marcador) ── -->
+<div id="map-ctx-panel" aria-hidden="true" aria-live="polite"></div>
+
 <script>
 // ─── State ──────────────────────────────────────────────────────────────────────
 const IS_ADMIN       = <?= isAdmin() ? 'true' : 'false' ?>;
@@ -1067,6 +1185,172 @@ function make3dPin(emoji, color, w, h, extraClass) {
             text-anchor="middle" dominant-baseline="middle"
             font-size="${(w*0.46).toFixed(0)}">${emoji}</text>
     </svg>`;
+}
+
+// ─── TEMPORAL STATES ─────────────────────────────────────────────────────────
+/**
+ * Returns { label, urgency } for a marker that is time-sensitive, or null.
+ * urgency: 'urgent' | 'soon'
+ */
+function getEntityTemporalState(entity, entityType) {
+    const now = Date.now();
+    if (entityType === 'evento') {
+        const dateStr = entity.fecha || entity.fecha_inicio;
+        const timeStr = entity.hora || '';
+        if (!dateStr) return null;
+        try {
+            const isoStr = dateStr.includes('T') ? dateStr : dateStr + 'T' + (timeStr ? timeStr.substring(0,8).padEnd(8,'0') : '00:00:00');
+            const dt   = new Date(isoStr);
+            const diff = dt - now;
+            if (diff < 0)           return null;
+            if (diff < 86400000)    return { label: '🔴 HOY',   urgency: 'urgent' };
+            if (diff < 604800000)   return { label: '⚡ PRONTO', urgency: 'soon'   };
+        } catch (_) { /* ignore */ }
+        return null;
+    }
+    if (entityType === 'encuesta' || entityType === 'oferta') {
+        const expStr = entity.fecha_expiracion;
+        if (!expStr) return null;
+        try {
+            const isoExp = expStr.includes('T') ? expStr : expStr + 'T00:00:00';
+            const diffDays = (new Date(isoExp) - now) / 86400000;
+            if (diffDays < 0)  return null;
+            if (diffDays < 1)  return { label: '⏰ HOY',    urgency: 'urgent' };
+            if (diffDays < 3)  return { label: '⏳ PRONTO', urgency: 'soon'   };
+        } catch (_) { /* ignore */ }
+        return null;
+    }
+    return null;
+}
+
+/** Wraps a raw SVG/HTML pin string with a temporal badge overlay. */
+function wrapPinWithTemporalBadge(svgHtml, temporalState) {
+    if (!temporalState) return svgHtml;
+    return `<div class="mapita-temporal-wrapper">${svgHtml}<span class="mapita-temporal-badge ${temporalState.urgency}">${temporalState.label}</span></div>`;
+}
+
+// ─── MINI HOVER CONTEXT PANEL ────────────────────────────────────────────────
+const _CTX_PANEL_TYPE_LABELS = {
+    business: '🏪 Negocio', brand: '🏷️ Marca', evento: '🎉 Evento',
+    encuesta: '📋 Encuesta', noticia: '📰 Noticia', trivia: '🎯 Trivia',
+    oferta: '💰 Oferta', transmision: '📡 Transmisión'
+};
+
+const CTX_PANEL_WIDTH  = 210;
+const CTX_PANEL_OFFSET = 14;
+
+function getEntityDisplayName(entity) {
+    return entity.nombre || entity.name || entity.titulo || 'Sin nombre';
+}
+
+/** Returns icon size array [w, h] adjusted when a temporal badge overlay is present. */
+function calcBadgeIconSize(baseW, baseH, hasBadge) {
+    return hasBadge ? [baseW + 10, baseH + 10] : [baseW, baseH];
+}
+
+let _ctxHideTimer = null;
+
+function getCtxPanel() {
+    return document.getElementById('map-ctx-panel');
+}
+
+function showCtxPanel(marker, entity, entityType) {
+    if (_ctxHideTimer) { clearTimeout(_ctxHideTimer); _ctxHideTimer = null; }
+    const panel = getCtxPanel();
+    if (!panel || !mapa) return;
+    const latlng = marker.getLatLng ? marker.getLatLng() : null;
+    if (!latlng) return;
+
+    const name      = escapeHtml(getEntityDisplayName(entity));
+    const typeLabel = _CTX_PANEL_TYPE_LABELS[entityType] || entityType;
+
+    const badges = [];
+    if (entity.ciudad)        badges.push('📍 ' + escapeHtml(entity.ciudad));
+    else if (entity.ubicacion) badges.push('📍 ' + escapeHtml(String(entity.ubicacion).substring(0,30)));
+    if (entityType === 'evento'  && entity.fecha)         badges.push('📅 ' + entity.fecha.substring(0,10));
+    if (entityType === 'oferta'  && entity.precio_oferta) badges.push('💲 $' + parseFloat(entity.precio_oferta).toLocaleString());
+    if (entityType === 'transmision' && entity.en_vivo)   badges.push('🔴 EN VIVO');
+    if (entity.tipo_comercio)  badges.push('🔹 ' + escapeHtml(entity.tipo_comercio));
+    if (entityType === 'trivia' && entity.dificultad)     badges.push('🎯 ' + entity.dificultad);
+
+    const badgesHtml = badges.length > 0
+        ? '<div style="margin-top:4px;">' + badges.map(b => `<span class="ctx-badge">${b}</span>`).join('') + '</div>'
+        : '';
+
+    panel.innerHTML = `<div class="ctx-name">${name}</div><div class="ctx-type">${typeLabel}</div>${badgesHtml}`;
+
+    // Position relative to map container
+    const mapDiv = document.getElementById('map');
+    if (!mapDiv) return;
+    const rect   = mapDiv.getBoundingClientRect();
+    const pt     = mapa.latLngToContainerPoint(latlng);
+    let x = rect.left + pt.x + CTX_PANEL_OFFSET;
+    let y = rect.top  + pt.y - 72;
+    if (x + CTX_PANEL_WIDTH > window.innerWidth)  x = rect.left + pt.x - CTX_PANEL_WIDTH - CTX_PANEL_OFFSET;
+    if (y < 8)                                     y = rect.top  + pt.y + 22;
+    panel.style.left = x + 'px';
+    panel.style.top  = y + 'px';
+    panel.classList.add('visible');
+    panel.setAttribute('aria-hidden', 'false');
+}
+
+function hideCtxPanel() {
+    _ctxHideTimer = setTimeout(() => {
+        const panel = getCtxPanel();
+        if (panel) {
+            panel.classList.remove('visible');
+            panel.setAttribute('aria-hidden', 'true');
+        }
+    }, 120);
+}
+
+// ─── LEYENDA DINÁMICA ────────────────────────────────────────────────────────
+const LEGEND_LAYER_CONFIG = [
+    { emoji: '📍', label: 'Negocios'         },
+    { emoji: '🏷️', label: 'Marcas'           },
+    { emoji: '🎉', label: 'Eventos'          },
+    { emoji: '📋', label: 'Encuestas'        },
+    { emoji: '📰', label: 'Noticias'         },
+    { emoji: '🎯', label: 'Trivias'          },
+    { emoji: '💰', label: 'Ofertas'          },
+    { emoji: '📡', label: 'Transmisiones'    },
+];
+const LEGEND_RELATION_CONFIG = [
+    { color: '#00b894', dash: '6 4',  label: 'Vinculado / Alianza'  },
+    { color: '#e67e22', dash: '2 6',  label: 'Promociona / Destaca' },
+    { color: '#8e44ad', dash: '10 4', label: 'Provee / Depende'     },
+    { color: '#1B3B6F', dash: '6 6',  label: 'General'              },
+];
+
+function buildMapLegend() {
+    const layersEl    = document.getElementById('legend-layers');
+    const relationsEl = document.getElementById('legend-relations');
+    if (!layersEl || !relationsEl) return;
+
+    layersEl.innerHTML = LEGEND_LAYER_CONFIG.map(l =>
+        `<div class="legend-item"><span style="font-size:16px;line-height:1;">${l.emoji}</span><span>${l.label}</span></div>`
+    ).join('');
+
+    relationsEl.innerHTML = LEGEND_RELATION_CONFIG.map(r =>
+        `<div class="legend-item">
+            <svg width="22" height="8" style="flex-shrink:0;" aria-hidden="true">
+                <line x1="0" y1="4" x2="22" y2="4"
+                      stroke="${r.color}" stroke-width="2.5"
+                      stroke-dasharray="${r.dash}" stroke-linecap="round"/>
+            </svg>
+            <span>${r.label}</span>
+        </div>`
+    ).join('');
+}
+
+function toggleMapLegend() {
+    const panel = document.getElementById('map-legend');
+    const btn   = document.getElementById('map-legend-btn');
+    if (!panel) return;
+    const open = panel.style.display === 'block';
+    panel.style.display = open ? 'none' : 'block';
+    if (btn) btn.setAttribute('aria-expanded', String(!open));
+    if (!open) buildMapLegend();
 }
 
 // ─── FASE 1: Cargar iconos dinámicamente desde API ──────────────────────────────
@@ -2335,6 +2619,8 @@ function mostrarMarcadores(lista) {
             metadata: isMarca ? buildMarcaMetadata(n) : buildNegocioMetadata(n)
         };
 
+        marker.on('mouseover', function() { showCtxPanel(marker, n, isMarca ? 'brand' : 'business'); });
+        marker.on('mouseout',  function() { hideCtxPanel(); });
         marker.on('click', function(e) {
             if (selectionMode) {
                 stopLeafletEvent(e);
@@ -2611,19 +2897,19 @@ function getVisibleMarkersWithMeta() {
 function getRelationVisual(relationType = '') {
     const type = String(relationType || '').toLowerCase();
     const relationVisuals = {
-        vinculado: { color: '#00b894', dashArray: '6,4' },
-        asociado: { color: '#00b894', dashArray: '6,4' },
-        asociacion: { color: '#00b894', dashArray: '6,4' },
-        alianza: { color: '#00b894', dashArray: '6,4' },
-        promociona: { color: '#e67e22', dashArray: '2,6' },
-        difunde: { color: '#e67e22', dashArray: '2,6' },
-        destaca: { color: '#e67e22', dashArray: '2,6' },
-        depende: { color: '#8e44ad', dashArray: '10,4' },
-        provee: { color: '#8e44ad', dashArray: '10,4' },
-        abastece: { color: '#8e44ad', dashArray: '10,4' }
+        vinculado:   { color: '#00b894', dashArray: '6,4',  weight: 3,   opacity: 0.85 },
+        asociado:    { color: '#00b894', dashArray: '6,4',  weight: 3,   opacity: 0.85 },
+        asociacion:  { color: '#00b894', dashArray: '6,4',  weight: 3,   opacity: 0.85 },
+        alianza:     { color: '#00b894', dashArray: '6,4',  weight: 3,   opacity: 0.85 },
+        promociona:  { color: '#e67e22', dashArray: '2,6',  weight: 2,   opacity: 0.75 },
+        difunde:     { color: '#e67e22', dashArray: '2,6',  weight: 2,   opacity: 0.75 },
+        destaca:     { color: '#e67e22', dashArray: '2,6',  weight: 2,   opacity: 0.75 },
+        depende:     { color: '#8e44ad', dashArray: '10,4', weight: 2,   opacity: 0.65 },
+        provee:      { color: '#8e44ad', dashArray: '10,4', weight: 2,   opacity: 0.65 },
+        abastece:    { color: '#8e44ad', dashArray: '10,4', weight: 2,   opacity: 0.65 }
     };
     if (relationVisuals[type]) return relationVisuals[type];
-    return { color: '#1B3B6F', dashArray: '6,6' };
+    return { color: '#1B3B6F', dashArray: '6,6', weight: 1.5, opacity: 0.60 };
 }
 
 function findMarkerByEntity(entityType, entityId, mapitaId) {
@@ -2662,18 +2948,18 @@ async function drawRelationLinesForPopup(sourceMarker) {
             const relVisual = getRelationVisual(rel.relation_type);
             const line = L.polyline([sourceLL, targetLL], {
                 color: relVisual.color,
-                weight: 2,
-                opacity: 0.75,
+                weight: relVisual.weight,
+                opacity: relVisual.opacity,
                 dashArray: relVisual.dashArray
             }).addTo(mapa);
             const relLabel = [rel.relation_type, rel.descripcion].filter(Boolean).join(' · ');
             if (relLabel) line.bindTooltip(relLabel, { sticky: true, opacity: 0.92 });
             const targetDot = L.circleMarker(targetLL, {
-                radius: 4,
+                radius: Math.max(3, Math.round(relVisual.weight) + 1),
                 color: '#fff',
-                weight: 1,
+                weight: 1.5,
                 fillColor: relVisual.color,
-                fillOpacity: 1
+                fillOpacity: relVisual.opacity
             }).addTo(mapa);
             activeRelationLines.push(line);
             activeRelationLines.push(targetDot);
@@ -3174,6 +3460,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         setTimeout(() => toast.remove(), 3500);
     }
     updateSelectionPanel();
+    // Initialize legend content (pre-populated so it's ready before user clicks)
+    buildMapLegend();
 
 });
 
@@ -3726,8 +4014,11 @@ function mostrarMarcadoresEventos(eventos) {
             var diff   = evDate - Date.now();
             isPulse    = diff >= 0 && diff < 86400000;
         }
-        var svg  = make3dPin(evEmoji, evColor, 32, 44, isPulse ? 'icon-pulse' : '');
-        var icon = L.divIcon({ html: svg, className: '', iconSize: [32,44], iconAnchor: [16,44], popupAnchor: [0,-46] });
+        var svgRaw   = make3dPin(evEmoji, evColor, 32, 44, isPulse ? 'icon-pulse' : '');
+        var temporal = getEntityTemporalState(evt, 'evento');
+        var iconHtml = wrapPinWithTemporalBadge(svgRaw, temporal);
+        var iconSize = calcBadgeIconSize(32, 44, !!temporal);
+        var icon = L.divIcon({ html: iconHtml, className: '', iconSize: iconSize, iconAnchor: [iconSize[0]/2, iconSize[1]], popupAnchor: [0, -(iconSize[1]+2)] });
         var m = L.marker([parseFloat(evt.lat), parseFloat(evt.lng)], { icon: icon });
         m._mapitaMeta = { entity_type: 'evento', entity_id: evt.id || null, mapita_id: evt.mapita_id || null };
         m.bindTooltip('🎉 ' + evt.titulo, { direction: 'top', offset: [0,-44], opacity: 0.9 });
@@ -3756,6 +4047,8 @@ function mostrarMarcadoresEventos(eventos) {
             lng: parseFloat(evt.lng),
             metadata: buildEventoMetadata(evt)
         };
+        m.on('mouseover', function() { showCtxPanel(m, evt, 'evento'); });
+        m.on('mouseout',  function() { hideCtxPanel(); });
         m.on('click', function(e) {
             if (!selectionMode) return;
             stopLeafletEvent(e);
@@ -3779,8 +4072,11 @@ function mostrarMarcadoresEncuestas(encuestas) {
 
     encuestas.forEach(function(enc) {
         if (!enc.lat || !enc.lng || enc.lat == 0) return;
-        var svg  = make3dPin('📋', '#f39c12', 30, 42, '');
-        var icon = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
+        var temporal = getEntityTemporalState(enc, 'encuesta');
+        var svgRaw   = make3dPin('📋', '#f39c12', 30, 42, '');
+        var iconHtml = wrapPinWithTemporalBadge(svgRaw, temporal);
+        var iconSize = calcBadgeIconSize(30, 42, !!temporal);
+        var icon = L.divIcon({ html: iconHtml, className: '', iconSize: iconSize, iconAnchor: [iconSize[0]/2, iconSize[1]], popupAnchor: [0,-44] });
         var m = L.marker([parseFloat(enc.lat), parseFloat(enc.lng)], { icon: icon });
         m._mapitaMeta = { entity_type: 'encuesta', entity_id: enc.id || null, mapita_id: enc.mapita_id || null };
         m.bindTooltip('📋 ' + enc.titulo, { direction: 'top', offset: [0,-42], opacity: 0.9 });
@@ -3809,6 +4105,8 @@ function mostrarMarcadoresEncuestas(encuestas) {
             lng: parseFloat(enc.lng),
             metadata: buildEncuestaMetadata(enc)
         };
+        m.on('mouseover', function() { showCtxPanel(m, enc, 'encuesta'); });
+        m.on('mouseout',  function() { hideCtxPanel(); });
         m.on('click', function(e) {
             if (!selectionMode) return;
             stopLeafletEvent(e);
@@ -4220,6 +4518,8 @@ function mostrarMarcadoresTrivias(trivias) {
             lng: parseFloat(tri.lng),
             metadata: buildTriviaMetadata(tri)
         };
+        m.on('mouseover', function() { showCtxPanel(m, tri, 'trivia'); });
+        m.on('mouseout',  function() { hideCtxPanel(); });
         m.on('click', function(e) {
             if (!selectionMode) return;
             stopLeafletEvent(e);
@@ -4281,6 +4581,8 @@ function mostrarMarcadoresNoticias(noticias) {
             lng: parseFloat(noticia.lng),
             metadata: buildNoticiaMetadata(noticia)
         };
+        m.on('mouseover', function() { showCtxPanel(m, noticia, 'noticia'); });
+        m.on('mouseout',  function() { hideCtxPanel(); });
         m.on('click', function(e) {
             if (!selectionMode) return;
             stopLeafletEvent(e);
@@ -4378,8 +4680,11 @@ function mostrarMarcadoresOfertas(ofertas) {
 
     ofertas.forEach(function(o) {
         if (!o.lat || !o.lng || parseFloat(o.lat) === 0) return;
-        var svg  = make3dPin('🏷️', '#e74c3c', 30, 42, '');
-        var icon = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
+        var temporal = getEntityTemporalState(o, 'oferta');
+        var svgRaw   = make3dPin('🏷️', '#e74c3c', 30, 42, '');
+        var iconHtml = wrapPinWithTemporalBadge(svgRaw, temporal);
+        var iconSize = calcBadgeIconSize(30, 42, !!temporal);
+        var icon = L.divIcon({ html: iconHtml, className: '', iconSize: iconSize, iconAnchor: [iconSize[0]/2, iconSize[1]], popupAnchor: [0,-44] });
         var m    = L.marker([parseFloat(o.lat), parseFloat(o.lng)], { icon: icon });
         m._mapitaMeta = { entity_type: 'oferta', entity_id: o.id || null, mapita_id: o.mapita_id || null };
         m.bindTooltip('🏷️ ' + o.nombre, { direction: 'top', offset: [0,-42], opacity: 0.9 });
@@ -4405,6 +4710,8 @@ function mostrarMarcadoresOfertas(ofertas) {
             lng: parseFloat(o.lng),
             metadata: buildOfertaMetadata(o)
         };
+        m.on('mouseover', function() { showCtxPanel(m, o, 'oferta'); });
+        m.on('mouseout',  function() { hideCtxPanel(); });
         m.on('click', function(e) {
             if (!selectionMode) return;
             stopLeafletEvent(e);
@@ -4535,6 +4842,8 @@ function mostrarMarcadoresTransmisiones(transmisiones) {
             lng: parseFloat(tx.lng),
             metadata: buildTransmisionMetadata(tx)
         };
+        m.on('mouseover', function() { showCtxPanel(m, tx, 'transmision'); });
+        m.on('mouseout',  function() { hideCtxPanel(); });
         m.on('click', function(e) {
             if (!selectionMode) return;
             stopLeafletEvent(e);
