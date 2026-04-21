@@ -8,6 +8,7 @@
  */
 
 require_once __DIR__ . '/db_helper.php';
+require_once __DIR__ . '/rate_limiter.php';
 
 /**
  * Escribe una entrada en audit_log.
@@ -24,7 +25,7 @@ function auditLog(string $action, string $entityType = '', ?int $entityId = null
 
         $userId    = isset($_SESSION['user_id'])   ? (int)$_SESSION['user_id']        : null;
         $username  = isset($_SESSION['user_name']) ? (string)$_SESSION['user_name']   : null;
-        $ip        = $_SERVER['REMOTE_ADDR'] ?? null;
+        $ip        = getClientIp();
         $ua        = mb_substr($_SERVER['HTTP_USER_AGENT'] ?? '', 0, 255);
         $detailsJson = $details ? json_encode($details, JSON_UNESCAPED_UNICODE) : null;
 

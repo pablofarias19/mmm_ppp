@@ -40,7 +40,8 @@ class Report {
 
             // Prevenir reportes duplicados del mismo IP/usuario sobre el mismo contenido (últimas 24h)
             $dupSql = "SELECT id FROM content_reports
-                       WHERE content_type = ? AND content_id = ? AND status IN ('pending','reviewing')
+                       WHERE content_type = ? AND content_id = ?
+                         AND status IN ('pending','reviewing')
                          AND created_at > DATE_SUB(NOW(), INTERVAL 24 HOUR)
                          AND (reporter_ip = ?";
             $params = [$contentType, $contentId, $reporterIp];

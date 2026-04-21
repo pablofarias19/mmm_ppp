@@ -44,7 +44,7 @@ if ($method === 'POST') {
         respond_error('Se requiere content_type, content_id y reason.');
     }
 
-    $ip             = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    $ip             = getClientIp();
     $reporterUserId = !empty($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : null;
 
     $result = Report::create($reporterUserId, $ip, $contentType, $contentId, $reason, $description);

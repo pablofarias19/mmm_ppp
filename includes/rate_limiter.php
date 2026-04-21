@@ -65,7 +65,7 @@ function checkRateLimit(string $endpoint, int $maxHits = 10, int $windowSec = 60
  */
 function getClientIp(): string {
     // Usar solo cabeceras de proxy si viene de un proxy interno (configurable)
-    $trustedProxy = $_ENV['TRUSTED_PROXY'] ?? getenv('TRUSTED_PROXY') ?: '';
+    $trustedProxy = $_ENV['TRUSTED_PROXY'] ?? getenv('TRUSTED_PROXY') ?? '';
 
     $remoteAddr = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
