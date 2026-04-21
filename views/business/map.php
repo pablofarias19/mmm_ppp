@@ -574,7 +574,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 font-size:9.5px;color:#8292aa;letter-spacing:0.6px;
                 font-weight:600;text-transform:uppercase;margin-top:1px;
                 white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                Negocios · Marcas · Mapa
+                Negocios y Marcas
             </div>
         </div>
     </div>
