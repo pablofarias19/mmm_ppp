@@ -106,9 +106,21 @@ if (($type === 'business' && $id > 0) || ($type === 'brand' && $brandId > 0)) {
 
         // ── MARCA ─────────────────────────────────────────────────────────────
         } elseif ($type === 'brand' && $brandId > 0) {
-            $stmt = $db->prepare("SELECT nombre, rubro, ubicacion, descripcion FROM marcas WHERE id = ?");
-            $stmt->execute([$brandId]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $row = null;
+            $hasTableCheck = function_exists('mapitaTableExists');
+            $hasBrandsTable = $hasTableCheck && mapitaTableExists($db, 'brands');
+            $hasMarcasTable = $hasTableCheck && mapitaTableExists($db, 'marcas');
+
+            if ($hasBrandsTable) {
+                $stmt = $db->prepare("SELECT nombre, rubro, ubicacion, description AS descripcion FROM brands WHERE id = ?");
+                $stmt->execute([$brandId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+            if (!$row && $hasMarcasTable) {
+                $stmt = $db->prepare("SELECT nombre, rubro, ubicacion, descripcion FROM marcas WHERE id = ?");
+                $stmt->execute([$brandId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
 
             if ($row) {
                 $titulo    = $row['nombre'];
