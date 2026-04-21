@@ -13,7 +13,7 @@
 --   areas: array JSON de slugs de áreas elegidas (solo relevante en modo 'selective')
 -- ──────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS wt_user_preferences (
-    user_id    INT UNSIGNED NOT NULL,
+    user_id    INT(11) NOT NULL,
     wt_mode    ENUM('open','selective','closed') NOT NULL DEFAULT 'open',
     areas      JSON NULL COMMENT 'Array de slugs de áreas, usado cuando wt_mode=selective',
     updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -28,8 +28,8 @@ CREATE TABLE IF NOT EXISTS wt_user_preferences (
 -- ──────────────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS wt_user_blocks (
     id               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-    blocker_user_id  INT UNSIGNED NOT NULL,
-    blocked_user_id  INT UNSIGNED NOT NULL,
+    blocker_user_id  INT(11) NOT NULL,
+    blocked_user_id  INT(11) NOT NULL,
     created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_wt_block (blocker_user_id, blocked_user_id),
