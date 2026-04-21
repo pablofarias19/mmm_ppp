@@ -428,6 +428,13 @@ function chanChk($brand, $val) {
         }
         .msg.success { background: #eafaf1; color: #1a7a47; border-left: 4px solid var(--success); }
         .msg.error   { background: #fdecea; color: #9b1c1c; border-left: 4px solid var(--danger); }
+        .deleg-list { display:grid; gap:10px; }
+        .deleg-item { border:1px solid #e5e7eb; border-radius:10px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:10px; flex-wrap:wrap; }
+        .deleg-item strong { color:#111827; font-size:13px; }
+        .deleg-item small { color:var(--gray4); font-size:12px; }
+        .deleg-empty { color:var(--gray4); font-size:12px; }
+        .deleg-btn { border:1px solid #fca5a5; background:#fff; color:#b91c1c; border-radius:8px; padding:7px 10px; font-size:12px; font-weight:700; cursor:pointer; }
+        .deleg-btn:hover { background:#fff1f2; }
 
         /* Secciones */
         .section {
@@ -660,6 +667,7 @@ function chanChk($brand, $val) {
         <a href="#sec-logo">🏷️ Logo / Icono</a>
         <a href="#sec-galeria">🖼️ Galería</a>
         <a href="#sec-og">📲 Foto redes</a>
+        <a href="#sec-delegacion">👥 Delegación</a>
         <?php endif; ?>
         <div class="nav-sep"></div>
         <a href="/marcas">← Volver</a>
@@ -1318,6 +1326,34 @@ function chanChk($brand, $val) {
             </div>
         </div>
 
+        <div class="section" id="sec-delegacion">
+            <div class="section-head">
+                <div class="icon">👥</div>
+                <div>
+                    <h2>Delegación</h2>
+                    <p>Administradores delegados (nivel A/admin)</p>
+                </div>
+            </div>
+            <p class="hint" style="margin:0 0 12px;">Ingresá username o email del destinatario y confirmá con tu password para delegar o revocar.</p>
+            <div id="brand-deleg-msg" class="msg success" style="display:none;margin-bottom:12px;"></div>
+            <div class="fgrid">
+                <div class="field">
+                    <label for="brand-delegate-query">Username o email del destinatario</label>
+                    <input type="text" id="brand-delegate-query" maxlength="120" placeholder="ej: usuario o mail@dominio.com">
+                </div>
+                <div class="field">
+                    <label for="brand-delegate-password">Tu password de confirmación</label>
+                    <input type="password" id="brand-delegate-password" maxlength="255" autocomplete="current-password" placeholder="••••••••">
+                </div>
+            </div>
+            <div style="margin-top:12px;">
+                <button type="button" class="btn btn-save" onclick="delegateBrandAdmin()">Delegar</button>
+            </div>
+            <div class="hr"></div>
+            <div id="brand-deleg-empty" class="deleg-empty">Cargando delegados…</div>
+            <div id="brand-deleg-list" class="deleg-list"></div>
+        </div>
+
         <?php endif; ?>
 
     </div><!-- /form-body -->
@@ -1679,6 +1715,165 @@ window.deleteOg = () => {
         }
     });
 };
+
+function delegationCsrfToken() {
+    const field = document.querySelector('input[name="csrf_token"]');
+    return field ? field.value : '';
+}
+
+function brandDelegMsg(text, ok) {
+    const el = document.getElementById('brand-deleg-msg');
+    if (!el) return;
+    el.style.display = 'block';
+    el.className = 'msg ' + (ok ? 'success' : 'error');
+    el.textContent = (ok ? '✅ ' : '❌ ') + text;
+}
+
+function brandDelegPassword() {
+    const field = document.getElementById('brand-delegate-password');
+    const value = (field?.value || '').trim();
+    if (!value) {
+        brandDelegMsg('Debés ingresar tu password para confirmar.', false);
+        return null;
+    }
+    return value;
+}
+
+async function lookupDelegateUser(query) {
+    const r = await fetch('/api/users/lookup.php?query=' + encodeURIComponent(query));
+    const data = await r.json();
+    if (!r.ok || !data.success || !data.data?.user) {
+        throw new Error(data.message || 'No se pudo encontrar el usuario.');
+    }
+    return data.data.user;
+}
+
+function renderBrandDelegations(items) {
+    const list = document.getElementById('brand-deleg-list');
+    const empty = document.getElementById('brand-deleg-empty');
+    if (!list || !empty) return;
+
+    list.innerHTML = '';
+    if (!items.length) {
+        empty.style.display = '';
+        empty.textContent = 'No hay delegados administrativos.';
+        return;
+    }
+
+    empty.style.display = 'none';
+    items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'deleg-item';
+
+        const meta = document.createElement('div');
+        const username = document.createElement('strong');
+        username.textContent = item.username || ('Usuario #' + item.user_id);
+        const email = document.createElement('small');
+        email.textContent = item.email || '';
+        meta.appendChild(username);
+        meta.appendChild(document.createElement('br'));
+        meta.appendChild(email);
+
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'deleg-btn';
+        action.textContent = 'Revocar';
+        action.onclick = () => revokeBrandDelegation(item.user_id, item.username || item.email || ('#' + item.user_id));
+
+        row.appendChild(meta);
+        row.appendChild(action);
+        list.appendChild(row);
+    });
+}
+
+async function loadBrandDelegations() {
+    try {
+        const r = await fetch('/api/brand_delegations/list.php?brand_id=' + encodeURIComponent(brandId));
+        const data = await r.json();
+        if (!r.ok || !data.success) {
+            throw new Error(data.message || 'No se pudieron cargar las delegaciones.');
+        }
+        renderBrandDelegations(data.data?.delegations || []);
+    } catch (error) {
+        renderBrandDelegations([]);
+        brandDelegMsg(error.message || 'No se pudieron cargar las delegaciones.', false);
+    }
+}
+
+async function delegateBrandAdmin() {
+    const query = (document.getElementById('brand-delegate-query')?.value || '').trim();
+    if (!query) {
+        brandDelegMsg('Ingresá username o email.', false);
+        return;
+    }
+    const password = brandDelegPassword();
+    if (!password) return;
+
+    try {
+        const user = await lookupDelegateUser(query);
+        if (Number(user.id) === Number(<?= json_encode($userId) ?>)) {
+            brandDelegMsg('No podés delegarte a vos mismo.', false);
+            return;
+        }
+
+        const payload = new URLSearchParams();
+        payload.append('brand_id', String(brandId));
+        payload.append('user_id', String(user.id));
+        payload.append('password', password);
+        payload.append('csrf_token', delegationCsrfToken());
+
+        const r = await fetch('/api/brand_delegations/create.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: payload.toString()
+        });
+        const data = await r.json();
+        if (!r.ok || !data.success) {
+            throw new Error(data.message || 'No se pudo delegar.');
+        }
+
+        brandDelegMsg(data.message || 'Delegación creada.', true);
+        document.getElementById('brand-delegate-query').value = '';
+        document.getElementById('brand-delegate-password').value = '';
+        await loadBrandDelegations();
+    } catch (error) {
+        brandDelegMsg(error.message || 'No se pudo delegar.', false);
+    }
+}
+
+async function revokeBrandDelegation(userId, label) {
+    const password = brandDelegPassword();
+    if (!password) return;
+    if (!confirm('¿Revocar delegación de ' + label + '?')) return;
+
+    try {
+        const payload = new URLSearchParams();
+        payload.append('brand_id', String(brandId));
+        payload.append('user_id', String(userId));
+        payload.append('password', password);
+        payload.append('csrf_token', delegationCsrfToken());
+
+        const r = await fetch('/api/brand_delegations/revoke.php', {
+            method: 'POST',
+            headers: {'Content-Type':'application/x-www-form-urlencoded'},
+            body: payload.toString()
+        });
+        const data = await r.json();
+        if (!r.ok || !data.success) {
+            throw new Error(data.message || 'No se pudo revocar.');
+        }
+
+        brandDelegMsg(data.message || 'Delegación revocada.', true);
+        document.getElementById('brand-delegate-password').value = '';
+        await loadBrandDelegations();
+    } catch (error) {
+        brandDelegMsg(error.message || 'No se pudo revocar.', false);
+    }
+}
+
+if (typeof brandId !== 'undefined' && brandId) {
+    loadBrandDelegations();
+}
 
 <?php endif; ?>
 </script>

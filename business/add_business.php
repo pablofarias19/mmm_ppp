@@ -505,6 +505,13 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
         .msg-success { background: #d1fae5; color: #065f46; border: 1px solid #6ee7b7; }
         .msg-error   { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
         .msg-info    { background: #dbeafe; color: #1e40af; border: 1px solid #93c5fd; }
+        .deleg-list { display: grid; gap: 10px; }
+        .deleg-item { border: 1px solid #e5e7eb; border-radius: 10px; padding: 10px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .deleg-item strong { color: #111827; font-size: .92em; }
+        .deleg-item small { color: #6b7280; }
+        .deleg-empty { color: #6b7280; font-size: .88em; }
+        .deleg-btn { border: 1px solid #fca5a5; background: #fff; color: #b91c1c; border-radius: 8px; padding: 7px 10px; font-size: .8em; font-weight: 700; cursor: pointer; }
+        .deleg-btn:hover { background: #fff1f2; }
 
         #subtype-section { transition: all .3s; }
         .divider { height: 1px; background: #f0f0f0; margin: 18px 0; }
@@ -1022,6 +1029,38 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
     </div>
     <?php endif; ?>
 
+    <?php if ($editing): ?>
+    <div class="form-section">
+        <div class="section-head">
+            <span class="section-icon">👥</span>
+            <div>
+                <div class="section-title">Delegación</div>
+                <div class="section-desc">Administradores delegados (nivel A/admin)</div>
+            </div>
+        </div>
+        <div class="section-body">
+            <p class="hint" style="margin:0 0 12px;">Ingresá username o email del destinatario y confirmá con tu password para delegar o revocar.</p>
+            <div id="biz-deleg-msg" class="message msg-info" style="display:none;margin:0 0 12px;"></div>
+            <div class="field-grid">
+                <div class="field">
+                    <label for="biz-delegate-query">Username o email del destinatario</label>
+                    <input type="text" id="biz-delegate-query" maxlength="120" placeholder="ej: usuario o mail@dominio.com">
+                </div>
+                <div class="field">
+                    <label for="biz-delegate-password">Tu password de confirmación</label>
+                    <input type="password" id="biz-delegate-password" maxlength="255" autocomplete="current-password" placeholder="••••••••">
+                </div>
+            </div>
+            <div style="margin-top:12px;">
+                <button type="button" class="btn-save" style="width:auto;padding:10px 18px;" onclick="delegateBusinessAdmin()">Delegar</button>
+            </div>
+            <div class="divider"></div>
+            <div id="biz-deleg-empty" class="deleg-empty">Cargando delegados…</div>
+            <div id="biz-deleg-list" class="deleg-list"></div>
+        </div>
+    </div>
+    <?php endif; ?>
+
 </div><!-- /main -->
 
 <script>
@@ -1427,6 +1466,165 @@ function deleteOgPhoto() {
             if (btn) btn.closest('div').style.display = 'none';
         }
     });
+}
+
+function delegationCsrfToken() {
+    const field = document.querySelector('input[name="csrf_token"]');
+    return field ? field.value : '';
+}
+
+function bizDelegMsg(text, ok) {
+    const el = document.getElementById('biz-deleg-msg');
+    if (!el) return;
+    el.style.display = 'block';
+    el.className = 'message ' + (ok ? 'msg-success' : 'msg-error');
+    el.textContent = (ok ? '✅ ' : '❌ ') + text;
+}
+
+function bizDelegPassword() {
+    const field = document.getElementById('biz-delegate-password');
+    const value = (field?.value || '').trim();
+    if (!value) {
+        bizDelegMsg('Debés ingresar tu password para confirmar.', false);
+        return null;
+    }
+    return value;
+}
+
+async function lookupDelegateUser(query) {
+    const r = await fetch('/api/users/lookup.php?query=' + encodeURIComponent(query));
+    const data = await r.json();
+    if (!r.ok || !data.success || !data.data?.user) {
+        throw new Error(data.message || 'No se pudo encontrar el usuario.');
+    }
+    return data.data.user;
+}
+
+function renderBusinessDelegations(items) {
+    const list  = document.getElementById('biz-deleg-list');
+    const empty = document.getElementById('biz-deleg-empty');
+    if (!list || !empty) return;
+
+    list.innerHTML = '';
+    if (!items.length) {
+        empty.style.display = '';
+        empty.textContent = 'No hay delegados administrativos.';
+        return;
+    }
+
+    empty.style.display = 'none';
+    items.forEach(item => {
+        const row = document.createElement('div');
+        row.className = 'deleg-item';
+
+        const meta = document.createElement('div');
+        const username = document.createElement('strong');
+        username.textContent = item.username || ('Usuario #' + item.user_id);
+        const email = document.createElement('small');
+        email.textContent = item.email || '';
+        meta.appendChild(username);
+        meta.appendChild(document.createElement('br'));
+        meta.appendChild(email);
+
+        const action = document.createElement('button');
+        action.type = 'button';
+        action.className = 'deleg-btn';
+        action.textContent = 'Revocar';
+        action.onclick = () => revokeBusinessDelegation(item.user_id, item.username || item.email || ('#' + item.user_id));
+
+        row.appendChild(meta);
+        row.appendChild(action);
+        list.appendChild(row);
+    });
+}
+
+async function loadBusinessDelegations() {
+    try {
+        const r = await fetch('/api/business_delegations/list.php?business_id=' + encodeURIComponent(BIZ_ID));
+        const data = await r.json();
+        if (!r.ok || !data.success) {
+            throw new Error(data.message || 'No se pudieron cargar las delegaciones.');
+        }
+        renderBusinessDelegations(data.data?.delegations || []);
+    } catch (error) {
+        renderBusinessDelegations([]);
+        bizDelegMsg(error.message || 'No se pudieron cargar las delegaciones.', false);
+    }
+}
+
+async function delegateBusinessAdmin() {
+    const query = (document.getElementById('biz-delegate-query')?.value || '').trim();
+    if (!query) {
+        bizDelegMsg('Ingresá username o email.', false);
+        return;
+    }
+    const password = bizDelegPassword();
+    if (!password) return;
+
+    try {
+        const user = await lookupDelegateUser(query);
+        if (Number(user.id) === Number(<?php echo json_encode($userId); ?>)) {
+            bizDelegMsg('No podés delegarte a vos mismo.', false);
+            return;
+        }
+
+        const payload = new URLSearchParams();
+        payload.append('business_id', String(BIZ_ID));
+        payload.append('user_id', String(user.id));
+        payload.append('password', password);
+        payload.append('csrf_token', delegationCsrfToken());
+
+        const r = await fetch('/api/business_delegations/create.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: payload.toString()
+        });
+        const data = await r.json();
+        if (!r.ok || !data.success) {
+            throw new Error(data.message || 'No se pudo delegar.');
+        }
+
+        bizDelegMsg(data.message || 'Delegación creada.', true);
+        document.getElementById('biz-delegate-query').value = '';
+        document.getElementById('biz-delegate-password').value = '';
+        await loadBusinessDelegations();
+    } catch (error) {
+        bizDelegMsg(error.message || 'No se pudo delegar.', false);
+    }
+}
+
+async function revokeBusinessDelegation(userId, label) {
+    const password = bizDelegPassword();
+    if (!password) return;
+    if (!confirm('¿Revocar delegación de ' + label + '?')) return;
+
+    try {
+        const payload = new URLSearchParams();
+        payload.append('business_id', String(BIZ_ID));
+        payload.append('user_id', String(userId));
+        payload.append('password', password);
+        payload.append('csrf_token', delegationCsrfToken());
+
+        const r = await fetch('/api/business_delegations/revoke.php', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: payload.toString()
+        });
+        const data = await r.json();
+        if (!r.ok || !data.success) {
+            throw new Error(data.message || 'No se pudo revocar.');
+        }
+
+        bizDelegMsg(data.message || 'Delegación revocada.', true);
+        document.getElementById('biz-delegate-password').value = '';
+        await loadBusinessDelegations();
+    } catch (error) {
+        bizDelegMsg(error.message || 'No se pudo revocar.', false);
+    }
+}
+
+if (EDITING && BIZ_ID) {
+    loadBusinessDelegations();
 }
 <?php endif; ?>
 </script>
