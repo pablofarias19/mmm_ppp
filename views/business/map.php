@@ -459,6 +459,11 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             <option value="muebleria">🛋️ Mueblería</option>
             <option value="floristeria">💐 Floristería</option>
             <option value="libreria">📖 Librería</option>
+            <option value="productora_audiovisual">🎥 Productora audiovisual</option>
+            <option value="escuela_musicos">🎼 Escuela de músicos</option>
+            <option value="taller_artes">🎨 Taller de artes</option>
+            <option value="biodecodificacion">🧬 Biodecodificación</option>
+            <option value="libreria_cristiana">📚 Librería cristiana</option>
             <option value="kiosco">🏪 Kiosco</option>
             <option value="optica">👓 Óptica</option>
         </optgroup>
@@ -1523,9 +1528,14 @@ function renderSelectionMetaItem(item) {
 function buildNegocioMetadata(n) {
     return buildSelectionMetadata({
         'Tipo': n.business_type,
+        'Especialidad': n.tipo_comercio,
+        'Productos/Servicios': n.categorias_productos,
+        'Horario': (n.horario_apertura && n.horario_cierre) ? `${String(n.horario_apertura).substring(0,5)} a ${String(n.horario_cierre).substring(0,5)}` : null,
         'Dirección': n.address || n.ubicacion,
         'Ciudad': n.ciudad,
         'Teléfono': n.phone,
+        'Email': n.email,
+        'Web': n.website,
         'Mapita ID': n.mapita_id
     });
 }
@@ -1544,6 +1554,7 @@ function buildEventoMetadata(evt) {
     return buildSelectionMetadata({
         'Fecha': evt.fecha,
         'Hora': evt.hora,
+        'Categoría': evt.categoria,
         'Ubicación': evt.ubicacion,
         'Organizador': evt.organizador,
         'Mapita ID': evt.mapita_id
@@ -1553,7 +1564,10 @@ function buildEventoMetadata(evt) {
 function buildEncuestaMetadata(enc) {
     return buildSelectionMetadata({
         'Descripción': enc.descripcion,
+        'Estado': Number(enc.activo) === 1 ? 'Activa' : 'Inactiva',
+        'Creación': enc.fecha_creacion,
         'Vencimiento': enc.fecha_expiracion,
+        'Ubicación': enc.ubicacion,
         'Link': enc.link,
         'Mapita ID': enc.mapita_id
     });
@@ -1562,6 +1576,7 @@ function buildEncuestaMetadata(enc) {
 function buildNoticiaMetadata(n) {
     return buildSelectionMetadata({
         'Categoría': n.categoria,
+        'Vistas': n.vistas,
         'Fecha': n.fecha_publicacion ? String(n.fecha_publicacion).substring(0, 10) : null,
         'Ubicación': n.ubicacion,
         'Mapita ID': n.mapita_id
@@ -2575,17 +2590,21 @@ function clearRelationLines() {
 
 function getVisibleMarkersWithMeta() {
     const out = [];
-    if (clusterGroup && clusterGroup.eachLayer) {
-        clusterGroup.eachLayer(layer => {
+    [clusterGroup, eventosLayer, encuestasLayer, noticiasLayer, triviasLayer, ofertasLayer, transmisionesLayer].forEach(layerGroup => {
+        if (!layerGroup || !layerGroup.eachLayer) return;
+        layerGroup.eachLayer(layer => {
             if (layer && layer._mapitaMeta) out.push(layer);
         });
-    }
-    if (eventosLayer && eventosLayer.eachLayer) {
-        eventosLayer.eachLayer(layer => {
-            if (layer && layer._mapitaMeta) out.push(layer);
-        });
-    }
+    });
     return out;
+}
+
+function getRelationVisual(relationType = '') {
+    const type = String(relationType || '').toLowerCase();
+    if (['vinculado', 'asociado', 'asociacion', 'alianza'].includes(type)) return { color: '#00b894', dashArray: '6,4' };
+    if (['promociona', 'difunde', 'destaca'].includes(type)) return { color: '#e67e22', dashArray: '2,6' };
+    if (['depende', 'provee', 'abastece'].includes(type)) return { color: '#8e44ad', dashArray: '10,4' };
+    return { color: '#1B3B6F', dashArray: '6,6' };
 }
 
 function findMarkerByEntity(entityType, entityId, mapitaId) {
@@ -2621,13 +2640,24 @@ async function drawRelationLinesForPopup(sourceMarker) {
             if (!targetMarker || !targetMarker.getLatLng) return;
             const targetLL = targetMarker.getLatLng();
             if (!targetLL) return;
+            const relVisual = getRelationVisual(rel.relation_type);
             const line = L.polyline([sourceLL, targetLL], {
-                color: '#1B3B6F',
+                color: relVisual.color,
                 weight: 2,
                 opacity: 0.75,
-                dashArray: '6,6'
+                dashArray: relVisual.dashArray
+            }).addTo(mapa);
+            const relLabel = [rel.relation_type, rel.descripcion].filter(Boolean).join(' · ');
+            if (relLabel) line.bindTooltip(relLabel, { sticky: true, opacity: 0.92 });
+            const targetDot = L.circleMarker(targetLL, {
+                radius: 4,
+                color: '#fff',
+                weight: 1,
+                fillColor: relVisual.color,
+                fillOpacity: 1
             }).addTo(mapa);
             activeRelationLines.push(line);
+            activeRelationLines.push(targetDot);
         });
     } catch (err) {
         console.warn('Relaciones no disponibles:', err);
@@ -3733,6 +3763,7 @@ function mostrarMarcadoresEncuestas(encuestas) {
         var svg  = make3dPin('📋', '#f39c12', 30, 42, '');
         var icon = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
         var m = L.marker([parseFloat(enc.lat), parseFloat(enc.lng)], { icon: icon });
+        m._mapitaMeta = { entity_type: 'encuesta', entity_id: enc.id || null, mapita_id: enc.mapita_id || null };
         m.bindTooltip('📋 ' + enc.titulo, { direction: 'top', offset: [0,-42], opacity: 0.9 });
 
         var popHtml = '<div style="font-family:inherit;min-width:200px">'
@@ -4144,6 +4175,7 @@ function mostrarMarcadoresTrivias(trivias) {
         const svg  = make3dPin('🎯', difColor, 32, 44, '');
         const icon = L.divIcon({ html: svg, className: '', iconSize: [32, 44], iconAnchor: [16, 44], popupAnchor: [0, -46] });
         const m    = L.marker([parseFloat(tri.lat), parseFloat(tri.lng)], { icon });
+        m._mapitaMeta = { entity_type: 'trivia', entity_id: tri.id || null, mapita_id: tri.mapita_id || null };
 
         m.bindTooltip('🎯 ' + tri.titulo, { direction: 'top', offset: [0, -44], opacity: 0.9 });
 
@@ -4204,6 +4236,7 @@ function mostrarMarcadoresNoticias(noticias) {
         const svg  = make3dPin('📰', '#667eea', 30, 42, '');
         const icon = L.divIcon({ html: svg, className: '', iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -44] });
         const m    = L.marker([parseFloat(noticia.lat), parseFloat(noticia.lng)], { icon });
+        m._mapitaMeta = { entity_type: 'noticia', entity_id: noticia.id || null, mapita_id: noticia.mapita_id || null };
 
         m.bindTooltip('📰 ' + noticia.titulo, { direction: 'top', offset: [0, -42], opacity: 0.9 });
 
@@ -4329,6 +4362,7 @@ function mostrarMarcadoresOfertas(ofertas) {
         var svg  = make3dPin('🏷️', '#e74c3c', 30, 42, '');
         var icon = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
         var m    = L.marker([parseFloat(o.lat), parseFloat(o.lng)], { icon: icon });
+        m._mapitaMeta = { entity_type: 'oferta', entity_id: o.id || null, mapita_id: o.mapita_id || null };
         m.bindTooltip('🏷️ ' + o.nombre, { direction: 'top', offset: [0,-42], opacity: 0.9 });
 
         var pct = o.precio_normal && o.precio_oferta
@@ -4458,6 +4492,7 @@ function mostrarMarcadoresTransmisiones(transmisiones) {
         var svg   = make3dPin(label, color, 30, 42, tx.en_vivo ? 'icon-glow' : '');
         var icon  = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
         var m    = L.marker([parseFloat(tx.lat), parseFloat(tx.lng)], { icon: icon });
+        m._mapitaMeta = { entity_type: 'transmision', entity_id: tx.id || null, mapita_id: tx.mapita_id || null };
         m.bindTooltip((tx.en_vivo ? '🔴 EN VIVO · ' : '📡 ') + tx.titulo, { direction: 'top', offset: [0,-42], opacity: 0.9 });
 
         var popHtml = '<div style="font-family:inherit;min-width:200px">'
