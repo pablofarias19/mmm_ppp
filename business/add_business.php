@@ -31,10 +31,12 @@ $isAdmin = isAdmin();
 
 if ($editing) {
     $db   = getDbConnection();
-    $cond = $isAdmin ? 'WHERE id = ?' : 'WHERE id = ? AND user_id = ?';
-    $args = $isAdmin ? [$businessId] : [$businessId, $userId];
-    $stmt = $db->prepare("SELECT * FROM businesses $cond");
-    $stmt->execute($args);
+    if (!$isAdmin && !canManageBusiness($userId, $businessId)) {
+        header("Location: /mis-negocios");
+        exit();
+    }
+    $stmt = $db->prepare("SELECT * FROM businesses WHERE id = ?");
+    $stmt->execute([$businessId]);
     $business = $stmt->fetch();
     if (!$business) {
         header("Location: /mis-negocios");
@@ -65,8 +67,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $result = updateBusiness($businessId, $_POST, $userId);
         if ($result['success']) {
             $db   = getDbConnection();
-            $stmt = $db->prepare("SELECT * FROM businesses WHERE id = ? AND user_id = ?");
-            $stmt->execute([$businessId, $userId]);
+            $stmt = $db->prepare("SELECT * FROM businesses WHERE id = ?");
+            $stmt->execute([$businessId]);
             $business     = $stmt->fetch();
             $comercioData = getComercioData($businessId);
         }

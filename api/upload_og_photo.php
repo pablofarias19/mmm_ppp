@@ -46,22 +46,7 @@ if ($entityId <= 0) {
 try {
     $db = getDbConnection();
     if ($isBrand) {
-        $isOwner = false;
-        if (!empty($_SESSION['is_admin'])) {
-            $isOwner = true;
-        } else {
-            // brands table uses user_id, marcas table uses usuario_id
-            $stmt = $db->prepare("SELECT id FROM brands WHERE id = ? AND user_id = ?");
-            $stmt->execute([$brandId, $userId]);
-            if ($stmt->fetch()) {
-                $isOwner = true;
-            } else {
-                $stmt = $db->prepare("SELECT id FROM marcas WHERE id = ? AND usuario_id = ?");
-                $stmt->execute([$brandId, $userId]);
-                if ($stmt->fetch()) $isOwner = true;
-            }
-        }
-        if (!$isOwner) {
+        if (!canManageBrand($userId, $brandId)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Sin permiso para esta marca.']);
             exit;
@@ -69,13 +54,7 @@ try {
         $uploadDir  = __DIR__ . '/../uploads/brands/' . $brandId . '/';
         $publicBase = '/uploads/brands/' . $brandId . '/';
     } else {
-        $isOwner = !empty($_SESSION['is_admin']);
-        if (!$isOwner) {
-            $stmt = $db->prepare("SELECT id FROM businesses WHERE id = ? AND user_id = ?");
-            $stmt->execute([$businessId, $userId]);
-            $isOwner = (bool)$stmt->fetch();
-        }
-        if (!$isOwner) {
+        if (!canManageBusiness($userId, $businessId)) {
             http_response_code(403);
             echo json_encode(['success' => false, 'message' => 'Sin permiso para este negocio.']);
             exit;
