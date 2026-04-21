@@ -106,7 +106,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $linkedin                 = trim($_POST['linkedin']  ?? '');
     $youtube                  = trim($_POST['youtube']   ?? '');
     $whatsapp                 = trim($_POST['whatsapp']  ?? '');
-    $mapitaId                 = trim($_POST['mapita_id'] ?? '');
 
     if (!$nombre || !$rubro) {
         $message = 'El nombre y rubro son obligatorios.';
@@ -136,7 +135,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         propuesta_valor = ?,
                         instagram = ?, facebook = ?, tiktok = ?,
                         twitter = ?, linkedin = ?, youtube = ?, whatsapp = ?,
-                        mapita_id = ?,
                         updated_at = NOW()
                     WHERE id = ?
                 ");
@@ -158,7 +156,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $propuesta_valor ?: null,
                         $instagram ?: null, $facebook ?: null, $tiktok ?: null,
                         $twitter ?: null, $linkedin ?: null, $youtube ?: null, $whatsapp ?: null,
-                        $mapitaId ?: null,
                         $brandId
                     ]);
                 } catch (PDOException $e) {
@@ -230,11 +227,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         inpi_clases_registradas, inpi_tipo,
                         historia_marca, target_audience, propuesta_valor,
                         instagram, facebook, tiktok, twitter, linkedin, youtube, whatsapp,
-                        mapita_id,
                         created_at
                     ) VALUES (
                         ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
-                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW()
+                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW()
                     )
                 ");
                 try {
@@ -254,8 +250,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $inpi_clases_registradas ?: null, $inpi_tipo ?: null,
                         $historia_marca ?: null, $target_audience ?: null, $propuesta_valor ?: null,
                         $instagram ?: null, $facebook ?: null, $tiktok ?: null,
-                        $twitter ?: null, $linkedin ?: null, $youtube ?: null, $whatsapp ?: null,
-                        $mapitaId ?: null
+                        $twitter ?: null, $linkedin ?: null, $youtube ?: null, $whatsapp ?: null
                     ]);
                 } catch (PDOException $e) {
                     if (!isMissingMapitaColumnErrorBrand($e)) throw $e;
@@ -718,10 +713,6 @@ function chanChk($brand, $val) {
                 <div class="field">
                     <label>Ubicación (dirección)</label>
                     <input type="text" name="ubicacion" placeholder="Ej: Av. Corrientes 1234, CABA" value="<?= val($brand,'ubicacion') ?>">
-                </div>
-                <div class="field">
-                    <label>Mapita ID</label>
-                    <input type="text" name="mapita_id" maxlength="64" placeholder="Ej: BR-001" value="<?= val($brand,'mapita_id') ?>">
                 </div>
             </div>
         </div>

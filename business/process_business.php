@@ -119,13 +119,6 @@ function validateBusinessData(array $data): array {
     }
     $clean['description'] = $description ?: null;
 
-    // Mapita ID (opcional)
-    $mapitaId = trim($data['mapita_id'] ?? '');
-    if ($mapitaId !== '' && mb_strlen($mapitaId) > 64) {
-        $errors[] = 'Mapita ID no puede superar 64 caracteres.';
-    }
-    $clean['mapita_id'] = $mapitaId ?: null;
-
     // Rango de precio — campo interno, no expuesto en el formulario (default 3)
     $priceRange = (int)($data['price_range'] ?? 3);
     if ($priceRange < 1 || $priceRange > 5) $priceRange = 3;
@@ -202,77 +195,35 @@ function addBusiness($data, $userId) {
                 name, address, lat, lng, business_type, phone,
                 email, website, description, price_range, user_id, visible,
                 instagram, facebook, tiktok, certifications, has_delivery,
-                has_card_payment, is_franchise, verified, mapita_id, created_at
+                has_card_payment, is_franchise, verified, created_at
             ) VALUES (
                 :name, :address, :lat, :lng, :business_type, :phone,
                 :email, :website, :description, :price_range, :user_id, 1,
                 :instagram, :facebook, :tiktok, :certifications, :has_delivery,
-                :has_card_payment, :is_franchise, :verified, :mapita_id, NOW()
+                :has_card_payment, :is_franchise, :verified, NOW()
             )
         ");
-
-        try {
-            $stmt->execute([
-                ':name'              => $data['name'],
-                ':address'           => $data['address'],
-                ':lat'               => $data['lat'] ?? null,
-                ':lng'               => $data['lng'] ?? null,
-                ':business_type'     => $data['business_type'],
-                ':phone'             => $data['phone'],
-                ':email'             => $data['email'],
-                ':website'           => $data['website'],
-                ':description'       => $data['description'],
-                ':price_range'       => $data['price_range'],
-                ':user_id'           => (int)$userId,
-                ':instagram'         => $data['instagram'],
-                ':facebook'          => $data['facebook'],
-                ':tiktok'            => $data['tiktok'],
-                ':certifications'    => $data['certifications'],
-                ':has_delivery'      => $data['has_delivery'],
-                ':has_card_payment'  => $data['has_card_payment'],
-                ':is_franchise'      => $data['is_franchise'],
-                ':verified'          => $data['verified'],
-                ':mapita_id'         => $data['mapita_id'],
-            ]);
-        } catch (PDOException $e) {
-            if (!isMissingMapitaColumnError($e)) {
-                throw $e;
-            }
-            $stmt = $db->prepare("
-                INSERT INTO businesses (
-                    name, address, lat, lng, business_type, phone,
-                    email, website, description, price_range, user_id, visible,
-                    instagram, facebook, tiktok, certifications, has_delivery,
-                    has_card_payment, is_franchise, verified, created_at
-                ) VALUES (
-                    :name, :address, :lat, :lng, :business_type, :phone,
-                    :email, :website, :description, :price_range, :user_id, 1,
-                    :instagram, :facebook, :tiktok, :certifications, :has_delivery,
-                    :has_card_payment, :is_franchise, :verified, NOW()
-                )
-            ");
-            $stmt->execute([
-                ':name'              => $data['name'],
-                ':address'           => $data['address'],
-                ':lat'               => $data['lat'] ?? null,
-                ':lng'               => $data['lng'] ?? null,
-                ':business_type'     => $data['business_type'],
-                ':phone'             => $data['phone'],
-                ':email'             => $data['email'],
-                ':website'           => $data['website'],
-                ':description'       => $data['description'],
-                ':price_range'       => $data['price_range'],
-                ':user_id'           => (int)$userId,
-                ':instagram'         => $data['instagram'],
-                ':facebook'          => $data['facebook'],
-                ':tiktok'            => $data['tiktok'],
-                ':certifications'    => $data['certifications'],
-                ':has_delivery'      => $data['has_delivery'],
-                ':has_card_payment'  => $data['has_card_payment'],
-                ':is_franchise'      => $data['is_franchise'],
-                ':verified'          => $data['verified'],
-            ]);
-        }
+        $stmt->execute([
+            ':name'              => $data['name'],
+            ':address'           => $data['address'],
+            ':lat'               => $data['lat'] ?? null,
+            ':lng'               => $data['lng'] ?? null,
+            ':business_type'     => $data['business_type'],
+            ':phone'             => $data['phone'],
+            ':email'             => $data['email'],
+            ':website'           => $data['website'],
+            ':description'       => $data['description'],
+            ':price_range'       => $data['price_range'],
+            ':user_id'           => (int)$userId,
+            ':instagram'         => $data['instagram'],
+            ':facebook'          => $data['facebook'],
+            ':tiktok'            => $data['tiktok'],
+            ':certifications'    => $data['certifications'],
+            ':has_delivery'      => $data['has_delivery'],
+            ':has_card_payment'  => $data['has_card_payment'],
+            ':is_franchise'      => $data['is_franchise'],
+            ':verified'          => $data['verified'],
+        ]);
 
         $businessId = $db->lastInsertId();
 
@@ -360,71 +311,30 @@ function updateBusiness($businessId, $data, $userId) {
                 facebook = :facebook, tiktok = :tiktok,
                 certifications = :certifications, has_delivery = :has_delivery,
                 has_card_payment = :has_card_payment, is_franchise = :is_franchise,
-                verified = :verified, mapita_id = :mapita_id, updated_at = NOW()
+                verified = :verified, updated_at = NOW()
             WHERE id = :id
         ");
-
-        try {
-            $stmt->execute([
-                ':name'              => $data['name'],
-                ':address'           => $data['address'],
-                ':lat'               => $data['lat'] ?? null,
-                ':lng'               => $data['lng'] ?? null,
-                ':business_type'     => $data['business_type'],
-                ':phone'             => $data['phone'],
-                ':email'             => $data['email'],
-                ':website'           => $data['website'],
-                ':description'       => $data['description'],
-                ':price_range'       => $data['price_range'],
-                ':instagram'         => $data['instagram'],
-                ':facebook'          => $data['facebook'],
-                ':tiktok'            => $data['tiktok'],
-                ':certifications'    => $data['certifications'],
-                ':has_delivery'      => $data['has_delivery'],
-                ':has_card_payment'  => $data['has_card_payment'],
-                ':is_franchise'      => $data['is_franchise'],
-                ':verified'          => $data['verified'],
-                ':mapita_id'         => $data['mapita_id'],
-                ':id'                => $businessId,
-            ]);
-        } catch (PDOException $e) {
-            if (!isMissingMapitaColumnError($e)) {
-                throw $e;
-            }
-            $stmt = $db->prepare("
-                UPDATE businesses
-                SET name = :name, address = :address, lat = :lat, lng = :lng,
-                    business_type = :business_type, phone = :phone, email = :email,
-                    website = :website, description = :description,
-                    price_range = :price_range, instagram = :instagram,
-                    facebook = :facebook, tiktok = :tiktok,
-                    certifications = :certifications, has_delivery = :has_delivery,
-                    has_card_payment = :has_card_payment, is_franchise = :is_franchise,
-                    verified = :verified, updated_at = NOW()
-                WHERE id = :id
-            ");
-            $stmt->execute([
-                ':name'              => $data['name'],
-                ':address'           => $data['address'],
-                ':lat'               => $data['lat'] ?? null,
-                ':lng'               => $data['lng'] ?? null,
-                ':business_type'     => $data['business_type'],
-                ':phone'             => $data['phone'],
-                ':email'             => $data['email'],
-                ':website'           => $data['website'],
-                ':description'       => $data['description'],
-                ':price_range'       => $data['price_range'],
-                ':instagram'         => $data['instagram'],
-                ':facebook'          => $data['facebook'],
-                ':tiktok'            => $data['tiktok'],
-                ':certifications'    => $data['certifications'],
-                ':has_delivery'      => $data['has_delivery'],
-                ':has_card_payment'  => $data['has_card_payment'],
-                ':is_franchise'      => $data['is_franchise'],
-                ':verified'          => $data['verified'],
-                ':id'                => $businessId,
-            ]);
-        }
+        $stmt->execute([
+            ':name'              => $data['name'],
+            ':address'           => $data['address'],
+            ':lat'               => $data['lat'] ?? null,
+            ':lng'               => $data['lng'] ?? null,
+            ':business_type'     => $data['business_type'],
+            ':phone'             => $data['phone'],
+            ':email'             => $data['email'],
+            ':website'           => $data['website'],
+            ':description'       => $data['description'],
+            ':price_range'       => $data['price_range'],
+            ':instagram'         => $data['instagram'],
+            ':facebook'          => $data['facebook'],
+            ':tiktok'            => $data['tiktok'],
+            ':certifications'    => $data['certifications'],
+            ':has_delivery'      => $data['has_delivery'],
+            ':has_card_payment'  => $data['has_card_payment'],
+            ':is_franchise'      => $data['is_franchise'],
+            ':verified'          => $data['verified'],
+            ':id'                => $businessId,
+        ]);
 
         // Upsert en comercios — se guarda para todos los tipos de negocio
         $check = $db->prepare("SELECT id FROM comercios WHERE business_id = ?");

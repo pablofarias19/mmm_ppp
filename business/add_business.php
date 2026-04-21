@@ -93,6 +93,7 @@ $selectedType    = $business['business_type'] ?? '';
 $currentTags     = array_filter(array_map('trim', explode(',', ($comercioData['categorias_productos'] ?? ''))));
 $currentDias     = array_filter(array_map('trim', explode(',', ($comercioData['dias_cierre']          ?? ''))));
 $certifVal       = $business['certifications'] ?? '';
+$dispActivo      = !empty($business['disponibles_activo']);
 
 // Tipos de negocio agrupados
 $tipos = [
@@ -631,13 +632,6 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
                         <div class="char-count"><span id="count-name"><?php echo mb_strlen($business['name'] ?? ''); ?></span>/120</div>
                     </div>
 
-                    <div class="field">
-                        <label for="mapita_id">Mapita ID <span class="hint">— identificador opcional</span></label>
-                        <input type="text" id="mapita_id" name="mapita_id" maxlength="64"
-                               placeholder="ej: NEG-001"
-                               value="<?php echo bv($business, 'mapita_id'); ?>">
-                    </div>
-
                     <div class="field full">
                         <label for="address">Dirección <span class="req">*</span></label>
                         <input type="text" id="address" name="address" required maxlength="200"
@@ -813,6 +807,39 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
                 <p style="font-size:.75em;color:#9ca3af;margin:8px 0 0;">
                     Sugerencias: <span id="suggestions-base"></span>
                 </p>
+            </div>
+        </div>
+
+        <!-- ══ MÓDULO DISPONIBLES ($$$) ══════════════════════════════════════ -->
+        <div class="form-section">
+            <div class="section-head">
+                <span class="section-icon">💸</span>
+                <div>
+                    <div class="section-title">Panel de disponibles ($$$)</div>
+                    <div class="section-desc">Opcional: activá el módulo y cargá ítems para solicitudes</div>
+                </div>
+            </div>
+            <div class="section-body">
+                <?php if ($editing): ?>
+                    <label id="disp-toggle-row" style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;">
+                        <input type="checkbox" id="disp-modulo-toggle" <?php echo $dispActivo ? 'checked' : ''; ?> style="margin-top:3px;">
+                        <div>
+                            <div id="disp-modulo-label" style="font-weight:700;color:#1f2937;"><?php echo $dispActivo ? 'Módulo activo' : 'Módulo inactivo'; ?></div>
+                            <div style="font-size:.8em;color:#6b7280;">Primero activalo y luego cargá/gestioná los ítems en el panel.</div>
+                        </div>
+                    </label>
+                    <div id="disp-panel-msg" style="margin:12px 0 0;font-size:.82em;color:#6b7280;"></div>
+                    <div style="margin-top:14px;">
+                        <a href="/panel-disponibles?id=<?php echo $businessId; ?>" class="btn-save" style="display:inline-flex;text-decoration:none;width:auto;padding:10px 16px;">
+                            📋 Abrir panel de disponibles
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <p style="margin:0;font-size:.84em;color:#4b5563;line-height:1.6;">
+                        Este módulo es <strong>opcional</strong>. Después de publicar el negocio, podrás activarlo y completar los ítems desde
+                        <strong>Editar negocio → Panel de disponibles</strong>.
+                    </p>
+                <?php endif; ?>
             </div>
         </div>
 
@@ -1295,6 +1322,70 @@ document.addEventListener('DOMContentLoaded', () => {
         if (checked) updateTagSuggestions(checked.value);
     }
 });
+
+<?php if ($editing): ?>
+// ── Módulo disponibles ──────────────────────────────────────────────────────────
+function setDisponiblesVisual(active) {
+    const row = document.getElementById('disp-toggle-row');
+    const label = document.getElementById('disp-modulo-label');
+    if (row) row.style.borderColor = active ? '#10b981' : '#e5e7eb';
+    if (label) label.textContent = active ? 'Módulo activo' : 'Módulo inactivo';
+}
+
+async function refreshDisponiblesMeta() {
+    const msg = document.getElementById('disp-panel-msg');
+    if (!msg || !BIZ_ID) return;
+    try {
+        const r = await fetch('/api/disponibles.php?business_id=' + encodeURIComponent(BIZ_ID));
+        const d = await r.json();
+        if (d && d.success && d.data) {
+            const pendientes = Number(d.data.ordenes_pendientes || 0);
+            msg.textContent = pendientes > 0
+                ? 'Tenés ' + pendientes + ' solicitud' + (pendientes === 1 ? '' : 'es') + ' pendiente' + (pendientes === 1 ? '' : 's') + '.'
+                : 'No hay solicitudes pendientes por ahora.';
+            setDisponiblesVisual(!!d.data.modulo_activo);
+            const toggle = document.getElementById('disp-modulo-toggle');
+            if (toggle) toggle.checked = !!d.data.modulo_activo;
+        } else {
+            msg.textContent = (d && d.message) ? d.message : 'No se pudo cargar el estado del módulo.';
+        }
+    } catch (e) {
+        msg.textContent = 'No se pudo conectar con el módulo de disponibles.';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('disp-modulo-toggle');
+    const msg = document.getElementById('disp-panel-msg');
+    if (!toggle || !BIZ_ID) return;
+    refreshDisponiblesMeta();
+    toggle.addEventListener('change', async function() {
+        const active = this.checked ? 1 : 0;
+        setDisponiblesVisual(active);
+        if (msg) msg.textContent = 'Guardando configuración...';
+        try {
+            const r = await fetch('/api/disponibles.php?action=toggle_modulo', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ business_id: BIZ_ID, activo: active })
+            });
+            const d = await r.json();
+            if (!d || !d.success) {
+                this.checked = !active;
+                setDisponiblesVisual(!active);
+                if (msg) msg.textContent = (d && d.message) ? d.message : 'No se pudo actualizar el módulo.';
+                return;
+            }
+            if (msg) msg.textContent = d.message || 'Configuración actualizada.';
+            refreshDisponiblesMeta();
+        } catch (e) {
+            this.checked = !active;
+            setDisponiblesVisual(!active);
+            if (msg) msg.textContent = 'No se pudo conectar para actualizar el módulo.';
+        }
+    });
+});
+<?php endif; ?>
 
 // ── GALERÍA ───────────────────────────────────────────────────────────────────
 <?php if ($editing): ?>
