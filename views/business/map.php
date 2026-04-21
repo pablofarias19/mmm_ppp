@@ -2845,17 +2845,6 @@ function buildPopup(n, isMarca) {
             p += '</div>';
         }
 
-        // A5: Price range
-        const precio = precioStr(n.price_range);
-        if (precio) {
-            p += '<div class="popup-section">';
-            p += '<div class="popup-label">💰 Rango de precios</div>';
-            p += '<div class="popup-value">' + precio + '</div>';
-            p += '</div>';
-        }
-
-        // PHOTOS SECTION — desactivado: las fotos no se muestran en el popup del mapa
-
         // A6: Description excerpt
         if (n.description && n.description.trim()) {
             const exc = n.description.length > 120 ? n.description.substring(0, 120) + '…' : n.description;
