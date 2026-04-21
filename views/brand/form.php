@@ -1811,7 +1811,7 @@ async function delegateBrandAdmin() {
 
     try {
         const user = await lookupDelegateUser(query);
-        if (Number(user.id) === Number(<?= $userId ?>)) {
+        if (Number(user.id) === Number(<?= json_encode($userId) ?>)) {
             brandDelegMsg('No podés delegarte a vos mismo.', false);
             return;
         }
@@ -1834,6 +1834,7 @@ async function delegateBrandAdmin() {
 
         brandDelegMsg(data.message || 'Delegación creada.', true);
         document.getElementById('brand-delegate-query').value = '';
+        document.getElementById('brand-delegate-password').value = '';
         await loadBrandDelegations();
     } catch (error) {
         brandDelegMsg(error.message || 'No se pudo delegar.', false);
@@ -1863,13 +1864,16 @@ async function revokeBrandDelegation(userId, label) {
         }
 
         brandDelegMsg(data.message || 'Delegación revocada.', true);
+        document.getElementById('brand-delegate-password').value = '';
         await loadBrandDelegations();
     } catch (error) {
         brandDelegMsg(error.message || 'No se pudo revocar.', false);
     }
 }
 
-loadBrandDelegations();
+if (typeof brandId !== 'undefined' && brandId) {
+    loadBrandDelegations();
+}
 
 <?php endif; ?>
 </script>

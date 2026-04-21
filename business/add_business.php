@@ -1563,7 +1563,7 @@ async function delegateBusinessAdmin() {
 
     try {
         const user = await lookupDelegateUser(query);
-        if (Number(user.id) === Number(<?php echo $userId; ?>)) {
+        if (Number(user.id) === Number(<?php echo json_encode($userId); ?>)) {
             bizDelegMsg('No podés delegarte a vos mismo.', false);
             return;
         }
@@ -1586,6 +1586,7 @@ async function delegateBusinessAdmin() {
 
         bizDelegMsg(data.message || 'Delegación creada.', true);
         document.getElementById('biz-delegate-query').value = '';
+        document.getElementById('biz-delegate-password').value = '';
         await loadBusinessDelegations();
     } catch (error) {
         bizDelegMsg(error.message || 'No se pudo delegar.', false);
@@ -1615,13 +1616,16 @@ async function revokeBusinessDelegation(userId, label) {
         }
 
         bizDelegMsg(data.message || 'Delegación revocada.', true);
+        document.getElementById('biz-delegate-password').value = '';
         await loadBusinessDelegations();
     } catch (error) {
         bizDelegMsg(error.message || 'No se pudo revocar.', false);
     }
 }
 
-loadBusinessDelegations();
+if (EDITING && BIZ_ID) {
+    loadBusinessDelegations();
+}
 <?php endif; ?>
 </script>
 </body>
