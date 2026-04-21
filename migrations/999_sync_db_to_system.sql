@@ -164,5 +164,67 @@ ALTER TABLE marcas
     ADD COLUMN IF NOT EXISTS descripcion TEXT NULL AFTER extended_description;
 
 -- ─────────────────────────────────────────────────────────────
+-- 8. Módulo DISPONIBLES
+--    Usada por: api/disponibles.php, api/disponibles_solicitudes.php
+--    business/panel_disponibles.php
+-- ─────────────────────────────────────────────────────────────
+
+-- Columna flag en businesses
+ALTER TABLE businesses
+    ADD COLUMN IF NOT EXISTS disponibles_activo TINYINT(1) NOT NULL DEFAULT 0 AFTER oferta_activa_id;
+
+-- Tabla de ítems disponibles
+CREATE TABLE IF NOT EXISTS disponibles_items (
+    id                  INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+    business_id         INT             NOT NULL,
+    precio              DECIMAL(10,2)   NULL,
+    precio_a_definir    TINYINT(1)      NOT NULL DEFAULT 0,
+    cantidad            SMALLINT UNSIGNED NULL,
+    tipo_bien           VARCHAR(30)     NULL,
+    disponible_desde    DATE            NULL,
+    disponible_hasta    DATE            NULL,
+    horario_inicio      TIME            NULL,
+    horario_fin         TIME            NULL,
+    servicio            VARCHAR(45)     NULL,
+    activo              TINYINT(1)      NOT NULL DEFAULT 1,
+    orden               SMALLINT        NOT NULL DEFAULT 0,
+    created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP       NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_disp_business (business_id),
+    KEY idx_disp_activo (business_id, activo),
+    CONSTRAINT fk_dispitems_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de solicitudes
+CREATE TABLE IF NOT EXISTS disponibles_solicitudes (
+    id              INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+    business_id     INT             NOT NULL,
+    user_id         INT             NULL,
+    email           VARCHAR(255)    NOT NULL,
+    estado          ENUM('pendiente','confirmada','desistida') NOT NULL DEFAULT 'pendiente',
+    created_at      TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at      TIMESTAMP       NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_dispsol_business (business_id),
+    KEY idx_dispsol_user (user_id),
+    KEY idx_dispsol_estado (business_id, estado),
+    CONSTRAINT fk_dispsol_business FOREIGN KEY (business_id) REFERENCES businesses(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tabla de detalle de selección por solicitud
+CREATE TABLE IF NOT EXISTS disponibles_solicitud_items (
+    id              INT UNSIGNED    NOT NULL AUTO_INCREMENT,
+    solicitud_id    INT UNSIGNED    NOT NULL,
+    item_id         INT UNSIGNED    NOT NULL,
+    seleccionado    TINYINT(1)      NOT NULL DEFAULT 0,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_sol_item (solicitud_id, item_id),
+    KEY idx_dispsolitem_item (item_id),
+    CONSTRAINT fk_dispsolitem_sol  FOREIGN KEY (solicitud_id) REFERENCES disponibles_solicitudes(id) ON DELETE CASCADE,
+    CONSTRAINT fk_dispsolitem_item FOREIGN KEY (item_id)      REFERENCES disponibles_items(id)       ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ─────────────────────────────────────────────────────────────
 -- FIN DE MIGRACIÓN
 -- ─────────────────────────────────────────────────────────────
