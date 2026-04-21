@@ -66,10 +66,37 @@ try {
                 respond_error("Imagen no proporcionada", 400);
             }
 
+            $existing = BrandGallery::getByBrand($brand_id);
+            if (count($existing) >= BrandGallery::MAX_IMAGES_PER_BRAND) {
+                respond_error("Ya alcanzaste el máximo de " . BrandGallery::MAX_IMAGES_PER_BRAND . " imágenes.", 400);
+            }
+
+            $file = $_FILES['imagen'];
+            if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+                respond_error("Error al subir la imagen.", 400);
+            }
+
+            if (($file['size'] ?? 0) > BrandGallery::MAX_FILE_BYTES) {
+                respond_error("La imagen no puede superar 200 KB. Comprimila antes de subir.", 400);
+            }
+
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            $detectedMime = $finfo ? finfo_file($finfo, $file['tmp_name']) : null;
+            if ($finfo) {
+                finfo_close($finfo);
+            }
+            $allowedMime = ['image/jpeg', 'image/png', 'image/webp'];
+            if (!$detectedMime || !in_array($detectedMime, $allowedMime, true)) {
+                respond_error("Formato no permitido. Usá JPG, PNG o WebP.", 400);
+            }
+
+            // Normalizar type en una copia local para que el modelo use el MIME validado por servidor.
+            $validatedFile = array_merge((array)$file, ['type' => $detectedMime]);
+
             $titulo = $_POST['titulo'] ?? '';
             $es_principal = (bool)($_POST['es_principal'] ?? false);
 
-            $filename = BrandGallery::uploadImage($brand_id, $_FILES['imagen'], $titulo, $es_principal);
+            $filename = BrandGallery::uploadImage($brand_id, $validatedFile, $titulo, $es_principal);
 
             if (!$filename) {
                 respond_error("Error al subir la imagen", 500);

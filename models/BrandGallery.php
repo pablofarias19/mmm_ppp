@@ -7,6 +7,8 @@ use PDO;
 
 class BrandGallery {
     protected $table = 'brand_gallery';
+    public const MAX_IMAGES_PER_BRAND = 2;
+    public const MAX_FILE_BYTES = 200 * 1024; // 200 KB
 
     /**
      * Obtiene todas las imágenes de una marca
@@ -185,16 +187,33 @@ class BrandGallery {
                 return false;
             }
 
-            // Validar tipo de archivo
-            $allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
-            if (!in_array($file['type'], $allowed)) {
-                error_log("Tipo de archivo no permitido: " . $file['type']);
+            $existing = self::getByBrand($brand_id);
+            if (count($existing) >= self::MAX_IMAGES_PER_BRAND) {
+                error_log("Se alcanzó el máximo de imágenes para la marca: " . $brand_id);
                 return false;
             }
 
-            // Validar tamaño (máximo 5MB)
-            if ($file['size'] > 5 * 1024 * 1024) {
-                error_log("Archivo demasiado grande: " . $file['size']);
+            // Validar tamaño (máximo 200KB)
+            if (($file['size'] ?? 0) > self::MAX_FILE_BYTES) {
+                error_log("Archivo demasiado grande: " . ($file['size'] ?? 0));
+                return false;
+            }
+
+            // Validar tipo de archivo por MIME real
+            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+            if (!$finfo) {
+                error_log("No se pudo inicializar finfo para validar MIME en BrandGallery::uploadImage");
+                return false;
+            }
+            $realMime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
+            $allowed = [
+                'image/jpeg' => 'jpg',
+                'image/png'  => 'png',
+                'image/webp' => 'webp',
+            ];
+            if (!$realMime || !isset($allowed[$realMime])) {
+                error_log("Tipo de archivo no permitido: " . ($realMime ?: 'desconocido'));
                 return false;
             }
 
@@ -205,7 +224,7 @@ class BrandGallery {
             }
 
             // Generar nombre único
-            $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
+            $ext = $allowed[$realMime];
             $filename = 'brand_' . $brand_id . '_' . time() . '_' . rand(1000, 9999) . '.' . $ext;
             $filepath = $upload_dir . '/' . $filename;
 
