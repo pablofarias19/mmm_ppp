@@ -73,8 +73,9 @@ try {
 try {
     $db->query("SELECT 1 FROM wt_user_preferences LIMIT 1");
     $db->query("SELECT 1 FROM wt_user_blocks LIMIT 1");
+    $db->query("SELECT 1 FROM wt_user_areas LIMIT 1");
 } catch (\PDOException $e) {
-    wtpref_error('Tablas WT no inicializadas — ejecutar migrations/011_wt_preferences.sql', 503);
+    wtpref_error('Tablas WT no inicializadas — ejecutar migrations/011_wt_preferences.sql y 012_wt_user_areas.sql', 503);
 }
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
@@ -88,11 +89,28 @@ function wt_load_prefs(\PDO $db, int $uid): array {
     if (!$row) {
         return ['wt_mode' => 'open', 'areas' => []];
     }
-    $areas = [];
-    if (!empty($row['areas'])) {
+
+    // Leer áreas desde la tabla normalizada
+    $aStmt = $db->prepare("SELECT area_slug FROM wt_user_areas WHERE user_id = ? ORDER BY area_slug");
+    $aStmt->execute([$uid]);
+    $areas = $aStmt->fetchAll(\PDO::FETCH_COLUMN);
+
+    // Migración transparente: si la tabla normalizada está vacía pero el JSON antiguo
+    // tiene datos, migrar en caliente para que el usuario no pierda su configuración.
+    if (empty($areas) && !empty($row['areas'])) {
         $decoded = json_decode($row['areas'], true);
-        $areas = is_array($decoded) ? $decoded : [];
+        if (is_array($decoded) && !empty($decoded)) {
+            $toMigrate = array_values(array_unique(array_filter($decoded, fn($s) => isset(WT_AREAS[trim((string)$s)]))));
+            foreach ($toMigrate as $slug) {
+                try {
+                    $ins = $db->prepare("INSERT IGNORE INTO wt_user_areas (user_id, area_slug) VALUES (?, ?)");
+                    $ins->execute([$uid, $slug]);
+                } catch (\PDOException $e) { /* ignorar */ }
+            }
+            $areas = $toMigrate;
+        }
     }
+
     return ['wt_mode' => $row['wt_mode'], 'areas' => $areas];
 }
 
@@ -140,15 +158,39 @@ if ($method === 'POST') {
                 }
             }
         }
-        // En modo 'selective' sin áreas → guardar igual (usuario puede refinar después)
-        $areasJson = json_encode(array_values(array_unique($validAreas)));
+        $validAreas = array_values(array_unique($validAreas));
 
-        $stmt = $db->prepare(
-            "INSERT INTO wt_user_preferences (user_id, wt_mode, areas, updated_at)
-             VALUES (?, ?, ?, NOW())
-             ON DUPLICATE KEY UPDATE wt_mode = VALUES(wt_mode), areas = VALUES(areas), updated_at = NOW()"
-        );
-        $stmt->execute([$userId, $mode, $areasJson]);
+        $db->beginTransaction();
+        try {
+            // Guardar modo en wt_user_preferences (sin tocar la columna areas legacy)
+            $stmt = $db->prepare(
+                "INSERT INTO wt_user_preferences (user_id, wt_mode, updated_at)
+                 VALUES (?, ?, NOW())
+                 ON DUPLICATE KEY UPDATE wt_mode = VALUES(wt_mode), updated_at = NOW()"
+            );
+            $stmt->execute([$userId, $mode]);
+
+            // Reemplazar áreas en la tabla normalizada
+            $del = $db->prepare("DELETE FROM wt_user_areas WHERE user_id = ?");
+            $del->execute([$userId]);
+
+            if (!empty($validAreas)) {
+                $placeholders = implode(',', array_fill(0, count($validAreas), '(?,?)'));
+                $params = [];
+                foreach ($validAreas as $slug) {
+                    $params[] = $userId;
+                    $params[] = $slug;
+                }
+                $ins = $db->prepare("INSERT INTO wt_user_areas (user_id, area_slug) VALUES $placeholders");
+                $ins->execute($params);
+            }
+
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            wtpref_error('Error al guardar preferencias', 500);
+        }
+
         wtpref_success(['wt_mode' => $mode, 'areas' => $validAreas], 'Preferencias guardadas');
     }
 
