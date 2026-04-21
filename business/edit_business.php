@@ -247,6 +247,102 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
             </div>
         </form>
 
+        <!-- ══ MÓDULO DISPONIBLES ════════════════════════════════════════════ -->
+        <div style="margin-top:32px;border:2px solid #e8ecf5;border-radius:12px;overflow:hidden;">
+            <div style="background:linear-gradient(135deg,#1B3B6F,#0d2247);padding:18px 24px;display:flex;align-items:center;gap:12px;">
+                <span style="font-size:1.5em;">📦</span>
+                <div style="flex:1;">
+                    <div style="color:white;font-weight:700;font-size:1em;">Módulo Disponibles</div>
+                    <div style="color:rgba(255,255,255,.65);font-size:.8em;">Publicá ítems de bienes o servicios y recibí solicitudes de usuarios</div>
+                </div>
+                <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                    <span style="color:rgba(255,255,255,.8);font-size:.85em;font-weight:600;" id="disp-modulo-label">
+                        <?php echo !empty($business['disponibles_activo']) ? 'Activo' : 'Inactivo'; ?>
+                    </span>
+                    <span style="position:relative;display:inline-block;width:44px;height:24px;">
+                        <input type="checkbox" id="disp-modulo-toggle"
+                               <?php echo !empty($business['disponibles_activo']) ? 'checked' : ''; ?>
+                               style="opacity:0;width:0;height:0;position:absolute;">
+                        <span id="disp-toggle-slider" style="
+                            position:absolute;cursor:pointer;inset:0;
+                            background:<?php echo !empty($business['disponibles_activo']) ? '#10b981' : '#d1d5db'; ?>;
+                            border-radius:24px;transition:.3s;">
+                            <span style="position:absolute;content:'';height:18px;width:18px;
+                                left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;
+                                transform:<?php echo !empty($business['disponibles_activo']) ? 'translateX(20px)' : 'translateX(0)'; ?>;"
+                                id="disp-toggle-knob">
+                            </span>
+                        </span>
+                    </span>
+                </label>
+            </div>
+            <div style="padding:20px 24px;background:#f8faff;">
+                <p style="font-size:.85em;color:#555;margin-bottom:16px;">
+                    Cuando el módulo está <strong>activo</strong>, los usuarios verán el botón <strong>$$$</strong>
+                    en el popup del negocio en el mapa y podrán seleccionar ítems y enviar una orden de solicitud.
+                </p>
+                <div id="disp-cnt-ordenes" style="display:none;margin-bottom:14px;"></div>
+                <a href="/panel-disponibles?id=<?php echo $businessId; ?>"
+                   style="display:inline-flex;align-items:center;gap:8px;
+                          padding:11px 22px;background:#1B3B6F;color:white;
+                          border-radius:9px;font-weight:700;font-size:.9em;
+                          text-decoration:none;transition:filter .2s;"
+                   onmouseover="this.style.filter='brightness(1.15)'"
+                   onmouseout="this.style.filter=''">
+                    📋 Abrir Panel de Disponibles
+                </a>
+            </div>
+        </div>
+        <!-- ══ FIN MÓDULO DISPONIBLES ════════════════════════════════════════ -->
+
+        <script>
+        (function() {
+            const toggle  = document.getElementById('disp-modulo-toggle');
+            const slider  = document.getElementById('disp-toggle-slider');
+            const knob    = document.getElementById('disp-toggle-knob');
+            const label   = document.getElementById('disp-modulo-label');
+            const bizId   = <?php echo $businessId; ?>;
+
+            function setVisual(on) {
+                slider.style.background = on ? '#10b981' : '#d1d5db';
+                knob.style.transform    = on ? 'translateX(20px)' : 'translateX(0)';
+                label.textContent       = on ? 'Activo' : 'Inactivo';
+            }
+
+            toggle.addEventListener('change', function() {
+                const activo = this.checked ? 1 : 0;
+                fetch('/api/disponibles.php?action=toggle_modulo', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ business_id: bizId, activo: activo })
+                })
+                .then(r => r.json())
+                .then(d => {
+                    if (d.success) {
+                        setVisual(activo);
+                    } else {
+                        toggle.checked = !activo;
+                        setVisual(!activo);
+                        alert('Error: ' + d.message);
+                    }
+                })
+                .catch(() => { toggle.checked = !activo; setVisual(!activo); alert('Error de conexión'); });
+            });
+
+            // Cargar contador de órdenes pendientes
+            fetch('/api/disponibles.php?business_id=' + bizId)
+            .then(r => r.json())
+            .then(d => {
+                const cntEl = document.getElementById('disp-cnt-ordenes');
+                if (d.success && d.data && d.data.ordenes_pendientes > 0) {
+                    cntEl.style.display = '';
+                    cntEl.innerHTML = '<span style="background:#fef3c7;color:#92400e;border:1px solid #fcd34d;border-radius:20px;padding:4px 14px;font-size:.82em;font-weight:700;">🔔 '
+                        + d.data.ordenes_pendientes + ' solicitud' + (d.data.ordenes_pendientes > 1 ? 'es' : '') + ' pendiente' + (d.data.ordenes_pendientes > 1 ? 's' : '') + '</span>';
+                }
+            }).catch(() => {});
+        })();
+        </script>
+
         <!-- ══ FOTO PARA COMPARTIR EN REDES ═══════════════════════════════ -->
         <?php
         // Buscar og_cover existente

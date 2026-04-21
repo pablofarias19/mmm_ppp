@@ -50,6 +50,7 @@ $routes = [
     '/niza_classification' => __DIR__ . '/niza_classification.php',
     '/brand_analysis' => __DIR__ . '/brand_analysis.php',
     '/business_model' => __DIR__ . '/business_model.php',
+    '/panel-disponibles' => __DIR__ . '/business/panel_disponibles.php',
 ];
 
 // Route the request

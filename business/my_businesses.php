@@ -447,6 +447,8 @@ $tipoLabels = [
     $visibles  = count(array_filter($businesses, fn($b) => $b['visible']));
     $ocultos   = count($businesses) - $visibles;
     $delivery  = count(array_filter($businesses, fn($b) => !empty($b['has_delivery'])));
+    // Verificar tabla disponibles UNA sola vez fuera del loop
+    $dispTablaExiste = mapitaTableExists($db, 'disponibles_solicitudes');
     ?>
     <div class="stats-row">
         <div class="stat-card">
@@ -486,6 +488,15 @@ $tipoLabels = [
             $emoji = $tipoEmojis[$tipo]  ?? '📍';
             $label = $tipoLabels[$tipo]  ?? ucfirst($tipo);
             $comercioData = getComercioData($b['id']);
+            // Contador de solicitudes pendientes de disponibles
+            $dispOrdenesCount = 0;
+            if (!empty($b['disponibles_activo']) && $dispTablaExiste) {
+                try {
+                    $stOrd = $db->prepare("SELECT COUNT(*) FROM disponibles_solicitudes WHERE business_id = ? AND estado = 'pendiente'");
+                    $stOrd->execute([$b['id']]);
+                    $dispOrdenesCount = (int)$stOrd->fetchColumn();
+                } catch (Exception $e) { $dispOrdenesCount = 0; }
+            }
         ?>
         <div class="biz-card">
 
@@ -497,6 +508,12 @@ $tipoLabels = [
                         <?php echo htmlspecialchars($b['name']); ?>
                     </div>
                     <span class="card-type-badge"><?php echo htmlspecialchars($label); ?></span>
+                    <?php if (!empty($b['disponibles_activo'])): ?>
+                    <span style="font-size:10px;font-weight:700;background:#fef3c7;color:#92400e;
+                                 border:1px solid #fcd34d;border-radius:10px;padding:2px 7px;margin-top:3px;display:inline-block;">
+                        📦 Disponibles<?php echo $dispOrdenesCount > 0 ? ' 🔔' . $dispOrdenesCount : ''; ?>
+                    </span>
+                    <?php endif; ?>
                     <?php if ($isAdmin && !empty($b['owner_name'])): ?>
                     <span style="font-size:11px;color:#9ca3af;">👤 <?php echo htmlspecialchars($b['owner_name']); ?></span>
                     <?php endif; ?>
@@ -582,6 +599,12 @@ $tipoLabels = [
             <div class="card-actions">
                 <a href="/view?id=<?php echo $b['id']; ?>" class="btn btn-ver">👁️ Ver</a>
                 <a href="/edit?id=<?php echo $b['id']; ?>" class="btn btn-edit">✏️ Editar</a>
+                <a href="/panel-disponibles?id=<?php echo $b['id']; ?>"
+                   class="btn"
+                   style="background:<?php echo $dispOrdenesCount > 0 ? '#f59e0b' : '#374151'; ?>;color:white;"
+                   title="Panel de Disponibles<?php echo $dispOrdenesCount > 0 ? ' — ' . $dispOrdenesCount . ' solicitud(es) pendiente(s)' : ''; ?>">
+                    📦<?php echo $dispOrdenesCount > 0 ? ' 🔔' . $dispOrdenesCount : ''; ?>
+                </a>
 
                 <form method="post" style="margin:0;">
                     <?php echo csrfField(); ?>

@@ -29,6 +29,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
     <link rel="stylesheet" href="/css/brand-popup-premium.css">
     <link rel="stylesheet" href="/css/map-styles.css">
     <link rel="stylesheet" href="/css/wt-panel.css">
+    <link rel="stylesheet" href="/css/disponibles.css">
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -2551,6 +2552,9 @@ function buildPopup(n, isMarca) {
         p += '<a href="' + wa   + '" target="_blank" class="popup-action" style="background:#25D366;">💬 WA</a>';
         if (n.website) p += '<a href="' + n.website + '" target="_blank" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
         p += '<a href="/business/view_business.php?id=' + n.id + '" target="_blank" class="popup-action" style="background:#1B3B6F;">📋 Detalle</a>';
+        // Botón módulo disponibles
+        p += '<button type="button" class="popup-action" style="background:#d97706;font-weight:800;letter-spacing:.5px;" '
+           + 'onclick="abrirDisponibles(' + parseInt(n.id) + ',\'' + escapeHtml(n.name || n.nombre || '').replace(/'/g, '&#39;') + '\')">$$$</button>';
         p += '</div>';
     }
 
@@ -4695,6 +4699,204 @@ function compartirMarca(brandName, brandId) {
         Usa ← → para navegar o Esc para cerrar
     </div>
 </div>
+
+<!-- ══ MÓDULO DISPONIBLES — Modal del usuario solicitante ══════════════════ -->
+<div id="disp-overlay" class="disp-overlay" style="display:none;" onclick="if(event.target===this)cerrarDisponibles()">
+    <div class="disp-panel" onclick="event.stopPropagation()">
+        <div class="disp-header">
+            <span style="font-size:1.3em;">📦</span>
+            <h2 id="disp-panel-title">Disponibles</h2>
+            <span class="disp-badge" id="disp-panel-badge">cargando…</span>
+            <button class="disp-close" onclick="cerrarDisponibles()">✕</button>
+        </div>
+        <div class="disp-body">
+            <!-- Email del solicitante -->
+            <div class="disp-email-row">
+                <label for="disp-email">📧 Tu email (obligatorio):</label>
+                <input type="email" id="disp-email" placeholder="tucorreo@ejemplo.com" maxlength="255">
+            </div>
+
+            <!-- Leyenda -->
+            <div class="disp-legend">
+                <strong>Leyenda:</strong>
+                <span><span class="disp-dot-sel"></span> Columna amarilla = selección del usuario (solo completable por vos)</span>
+                <span>✅ Seleccionado = <strong>SÍ</strong></span>
+                <span>Dejado vacío = <strong>NO</strong></span>
+            </div>
+
+            <!-- Mensaje de estado -->
+            <div id="disp-msg" class="disp-msg"></div>
+
+            <!-- Tabla de ítems -->
+            <div class="disp-table-wrap">
+                <table class="disp-table">
+                    <thead>
+                        <tr>
+                            <th>Precio</th>
+                            <th>Cant.</th>
+                            <th>Tipo de bien</th>
+                            <th>Desde</th>
+                            <th>Hasta</th>
+                            <th>Horario</th>
+                            <th>Servicio</th>
+                            <th class="col-sel">✅ Seleccionar</th>
+                        </tr>
+                    </thead>
+                    <tbody id="disp-tbody">
+                        <tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px;">Cargando ítems…</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="disp-footer">
+            <button type="button" class="disp-btn disp-btn-secondary" onclick="cerrarDisponibles()">✖ Desistir</button>
+            <button type="button" class="disp-btn disp-btn-amber" id="disp-btn-orden" onclick="enviarOrden()">📤 Orden de solicitud</button>
+        </div>
+    </div>
+</div>
+
+<script>
+// ── Módulo Disponibles ──────────────────────────────────────────────────────
+let _dispBizId   = 0;
+let _dispItems   = [];
+let _dispSolId   = 0;
+
+function abrirDisponibles(bizId, bizName) {
+    _dispBizId  = bizId;
+    _dispItems  = [];
+    _dispSolId  = 0;
+
+    document.getElementById('disp-panel-title').textContent = bizName + ' — Disponibles';
+    document.getElementById('disp-panel-badge').textContent = 'cargando…';
+    document.getElementById('disp-tbody').innerHTML =
+        '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px;">Cargando…</td></tr>';
+    dispMsg('', '');
+    document.getElementById('disp-overlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    fetch('/api/disponibles.php?business_id=' + bizId)
+    .then(r => r.json())
+    .then(d => {
+        if (!d.success) {
+            dispMsg(d.message || 'El módulo de disponibles no está activo en este negocio.', 'err');
+            document.getElementById('disp-tbody').innerHTML =
+                '<tr><td colspan="8" style="text-align:center;color:#ef4444;padding:20px;">' + escapeHtml(d.message || 'No disponible') + '</td></tr>';
+            document.getElementById('disp-btn-orden').disabled = true;
+            document.getElementById('disp-panel-badge').textContent = 'inactivo';
+            return;
+        }
+        _dispItems = d.data.items || [];
+        document.getElementById('disp-panel-badge').textContent =
+            _dispItems.length + ' ítem' + (_dispItems.length !== 1 ? 's' : '');
+        document.getElementById('disp-btn-orden').disabled = false;
+
+        if (!_dispItems.length) {
+            document.getElementById('disp-tbody').innerHTML =
+                '<tr><td colspan="8" style="text-align:center;color:#9ca3af;padding:20px;">No hay ítems publicados aún.</td></tr>';
+            return;
+        }
+
+        const tbody = document.getElementById('disp-tbody');
+        tbody.innerHTML = '';
+        _dispItems.forEach(item => {
+            const tr = document.createElement('tr');
+
+            const precioStr = item.precio_a_definir ? '<em style="color:#9ca3af">a definir</em>'
+                : (item.precio !== null ? '$' + parseFloat(item.precio).toLocaleString('es-AR', {minimumFractionDigits:2}) : '—');
+
+            const cantStr = item.cantidad !== null ? item.cantidad : '—';
+
+            const fechaStr = (item.disponible_desde || item.disponible_hasta)
+                ? (item.disponible_desde || '') + (item.disponible_hasta ? ' al ' + item.disponible_hasta : '')
+                : '—';
+
+            const horStr = (item.horario_inicio || item.horario_fin)
+                ? (item.horario_inicio ? item.horario_inicio.substring(0,5) : '') + (item.horario_fin ? '–' + item.horario_fin.substring(0,5) : '')
+                : '—';
+
+            tr.innerHTML =
+                '<td>' + precioStr + '</td>' +
+                '<td>' + escapeHtml(String(cantStr)) + '</td>' +
+                '<td>' + escapeHtml(item.tipo_bien || '—') + '</td>' +
+                '<td>' + escapeHtml(item.disponible_desde || '—') + '</td>' +
+                '<td>' + escapeHtml(item.disponible_hasta || '—') + '</td>' +
+                '<td>' + escapeHtml(horStr) + '</td>' +
+                '<td>' + escapeHtml(item.servicio || '—') + '</td>' +
+                '<td class="col-sel"><input type="checkbox" class="disp-checkbox-sel" data-item-id="' + item.id + '"></td>';
+            tbody.appendChild(tr);
+        });
+    })
+    .catch(() => {
+        dispMsg('Error de conexión. Intentá de nuevo.', 'err');
+    });
+}
+
+function cerrarDisponibles() {
+    document.getElementById('disp-overlay').style.display = 'none';
+    document.body.style.overflow = '';
+    dispMsg('', '');
+}
+
+function enviarOrden() {
+    const email = document.getElementById('disp-email').value.trim();
+    if (!email) { dispMsg('Ingresá tu email para continuar.', 'err'); return; }
+    // RFC-compatible email check via native constraint
+    const emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.value = email;
+    if (!emailInput.checkValidity()) { dispMsg('El email no es válido.', 'err'); return; }
+
+    const checkboxes = document.querySelectorAll('#disp-tbody .disp-checkbox-sel:checked');
+    if (checkboxes.length === 0) { dispMsg('Seleccioná al menos un ítem.', 'err'); return; }
+
+    const selIds = Array.from(checkboxes).map(cb => parseInt(cb.dataset.itemId));
+
+    const btn = document.getElementById('disp-btn-orden');
+    btn.disabled = true;
+    btn.textContent = '⏳ Enviando…';
+
+    fetch('/api/disponibles_solicitudes.php?action=crear', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            business_id: _dispBizId,
+            email: email,
+            items_seleccionados: selIds
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        btn.disabled = false;
+        btn.textContent = '📤 Orden de solicitud';
+        if (d.success) {
+            _dispSolId = d.data && d.data.solicitud_id ? d.data.solicitud_id : 0;
+            dispMsg('✅ ' + d.message, 'ok');
+            // Deshabilitar edición después de enviar
+            document.querySelectorAll('#disp-tbody .disp-checkbox-sel').forEach(cb => cb.disabled = true);
+            document.getElementById('disp-email').disabled = true;
+            btn.disabled = true;
+            // Cerrar automáticamente tras 3s
+            setTimeout(cerrarDisponibles, 3000);
+        } else {
+            dispMsg('❌ ' + (d.message || 'Error al enviar'), 'err');
+        }
+    })
+    .catch(() => {
+        btn.disabled = false;
+        btn.textContent = '📤 Orden de solicitud';
+        dispMsg('Error de conexión. Intentá de nuevo.', 'err');
+    });
+}
+
+function dispMsg(text, type) {
+    const el = document.getElementById('disp-msg');
+    if (!el) return;
+    if (!text) { el.className = 'disp-msg'; el.textContent = ''; return; }
+    el.className = 'disp-msg ' + (type === 'ok' ? 'ok' : (type === 'err' ? 'err' : ''));
+    el.textContent = text;
+}
+</script>
+<!-- ══ FIN MÓDULO DISPONIBLES ═══════════════════════════════════════════════ -->
 
 </body>
 </html>
