@@ -226,6 +226,36 @@ CREATE TABLE IF NOT EXISTS disponibles_solicitud_items (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ─────────────────────────────────────────────────────────────
+-- 9. WT Canales Selectivos — preferencias y bloqueos
+--    Usada por: api/wt_preferences.php, api/wt.php
+-- ─────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS wt_user_preferences (
+    user_id    INT UNSIGNED NOT NULL,
+    wt_mode    ENUM('open','selective','closed') NOT NULL DEFAULT 'open',
+    areas      JSON NULL COMMENT 'Array de slugs de áreas, usado cuando wt_mode=selective',
+    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id),
+    CONSTRAINT fk_wt_prefs_user
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS wt_user_blocks (
+    id               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    blocker_user_id  INT UNSIGNED NOT NULL,
+    blocked_user_id  INT UNSIGNED NOT NULL,
+    created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_wt_block (blocker_user_id, blocked_user_id),
+    KEY idx_wt_block_blocker (blocker_user_id),
+    KEY idx_wt_block_blocked (blocked_user_id),
+    CONSTRAINT fk_wt_block_blocker
+        FOREIGN KEY (blocker_user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_wt_block_blocked
+        FOREIGN KEY (blocked_user_id) REFERENCES users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ─────────────────────────────────────────────────────────────
 -- FIN DE MIGRACIÓN
 -- Nota: ejecutar también migrations/010_moderation.sql
 --       para el sistema de moderación y seguridad.

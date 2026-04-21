@@ -757,6 +757,11 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                     style="width:100%;padding:10px;background:#28a745;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:5px;">
                 ➕ Agregar Negocio
             </button>
+            <button onclick="window.location.href='/views/wt_preferences.php'"
+                    style="width:100%;padding:10px;background:#3d56c9;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:5px;"
+                    title="Configurar preferencias del canal WT">
+                📻 Preferencias WT
+            </button>
             <?php if (isAdmin()): ?>
             <button onclick="window.location.href='/admin'"
                     style="width:100%;padding:10px;background:#6f42c1;color:white;border:none;border-radius:6px;cursor:pointer;margin-bottom:5px;">
@@ -2042,7 +2047,10 @@ function initWTPanel(panel) {
         });
     }
     wtPollers.set(key, { poll: null, heartbeat: null, lastId: null, cached: [] });
-    loadWTMessages(panel).catch(() => {});
+    // Cargar estado del canal y luego mensajes
+    loadWTChannelStatus(panel).catch(() => {}).finally(() => {
+        loadWTMessages(panel).catch(() => {});
+    });
     sendWTHeartbeat(panel).catch(() => {});
     const poll = setInterval(() => loadWTMessages(panel).catch(() => {}), WT_POLL_INTERVAL_MS);
     const heartbeat = setInterval(() => sendWTHeartbeat(panel).catch(() => {}), WT_HEARTBEAT_INTERVAL_MS);
@@ -2377,7 +2385,10 @@ function buildWTPopupSection(entityType, entityId, title) {
             ' data-entity-id="' + safeEntityId + '"' +
             ' data-entity-title="' + safeTitle + '"' +
             ' style="display:none;">' +
-            '<div class="wt-header">📻 WT · ' + safeTitle + '</div>' +
+            '<div class="wt-header">📻 WT · ' + safeTitle +
+                '<span class="wt-status-badge" data-wt-status-badge aria-label="Estado del canal WT"></span>' +
+            '</div>' +
+            '<div class="wt-channel-notice" data-wt-channel-notice style="display:none;"></div>' +
             '<div class="wt-presets">' + presetButtons + '</div>' +
             '<div class="wt-messages" data-wt-messages><div class="wt-empty">Sin mensajes aún</div></div>' +
             '<div class="wt-footer">' +
@@ -2387,6 +2398,51 @@ function buildWTPopupSection(entityType, entityId, title) {
         '</div>';
 
     return toggleBtn + panel;
+}
+
+// ─── WT Channel status ────────────────────────────────────────────────────────
+async function loadWTChannelStatus(panel) {
+    const entityType = panel.dataset.entityType;
+    const entityId   = panel.dataset.entityId;
+    const badge      = panel.querySelector('[data-wt-status-badge]');
+    const notice     = panel.querySelector('[data-wt-channel-notice]');
+    const footer     = panel.querySelector('.wt-footer');
+    if (!badge) return;
+    try {
+        const params = new URLSearchParams({ action: 'status', entity_type: entityType, entity_id: entityId });
+        const res  = await fetch('/api/wt.php?' + params.toString());
+        const data = await res.json();
+        if (!data.success) return;
+        const { status, reason } = data.data || {};
+        badge.className = 'wt-status-badge wt-status-' + (status || 'open');
+        const statusLabels = { open: '🟢', closed: '🔴', blocked: '🚫', restricted: '🟡', self_closed: '🔴' };
+        badge.textContent = statusLabels[status] || '⚪';
+        badge.title       = reason || '';
+        if (status && status !== 'open') {
+            if (notice) {
+                notice.style.display = 'block';
+                notice.className = 'wt-channel-notice wt-notice-' + status;
+                const link = SESSION_USER_ID > 0
+                    ? ' <a href="/views/wt_preferences.php" target="_blank">Configurar WT</a>'
+                    : '';
+                notice.innerHTML = (reason || 'Canal restringido') + '.' + link;
+            }
+            if (footer) {
+                const input  = footer.querySelector('[data-wt-input]');
+                const sendBtn = footer.querySelector('[data-wt-send]');
+                if (input)   { input.disabled = true; input.placeholder = 'Canal no disponible'; }
+                if (sendBtn) { sendBtn.disabled = true; }
+            }
+        } else {
+            if (notice) notice.style.display = 'none';
+            if (footer) {
+                const input  = footer.querySelector('[data-wt-input]');
+                const sendBtn = footer.querySelector('[data-wt-send]');
+                if (input)   { input.disabled = false; input.placeholder = 'Mensaje corto (máx. ' + WT_MAX_MESSAGE_LEN + ')'; }
+                if (sendBtn) { sendBtn.disabled = false; }
+            }
+        }
+    } catch { /* ignorar errores de red */ }
 }
 
 function buildPopup(n, isMarca) {
