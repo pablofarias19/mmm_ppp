@@ -52,6 +52,10 @@ if (mb_strlen($og_description) > 200) {
     $og_description = mb_substr($og_description, 0, 197) . '…';
 }
 ?>
+    <!-- ══ Favicon ════════════════════════════════════════════════════════ -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+
     <!-- ══ Primary Meta Tags ══════════════════════════════════════════════ -->
     <meta name="description" content="<?php echo $og_description; ?>">
     <meta name="robots" content="index, follow">

@@ -118,6 +118,11 @@ $tipos = [
         'muebleria'    => ['🛋️', 'Mueblería'],
         'floristeria'  => ['💐', 'Floristería'],
         'libreria'     => ['📖', 'Librería'],
+        'productora_audiovisual' => ['🎥', 'Productora audiovisual'],
+        'escuela_musicos'        => ['🎼', 'Escuela de músicos'],
+        'taller_artes'           => ['🎨', 'Taller de artes'],
+        'biodecodificacion'      => ['🧬', 'Biodecodificación'],
+        'libreria_cristiana'     => ['📚', 'Librería cristiana'],
     ],
     'Salud' => [
         'farmacia'        => ['💊', 'Farmacia'],
@@ -172,6 +177,11 @@ $subtypeLabels = [
     'bar'            => 'Tipo de bar (ej: cocktails, cervecería, karaoke…)',
     'hotel'          => 'Categoría / estrellas (ej: boutique, hostel, 4★…)',
     'comercio'       => 'Rubro principal (ej: ropa, electrodomésticos, juguetes…)',
+    'productora_audiovisual' => 'Especialidad (ej: cine, TV, spots, reels, streaming…)',
+    'escuela_musicos' => 'Instrumentos o enfoque (ej: guitarra, piano, canto, producción musical…)',
+    'taller_artes'   => 'Disciplina artística (ej: pintura, cerámica, dibujo, escultura…)',
+    'biodecodificacion' => 'Área de trabajo (ej: sesiones individuales, talleres, formación…)',
+    'libreria_cristiana' => 'Línea editorial (ej: biblias, devocionales, música, regalos…)',
     'supermercado'   => 'Tamaño / cadena (ej: mini market, mayorista…)',
     'farmacia'       => 'Tipo (ej: magistral, turno permanente…)',
     'hospital'       => 'Especialidad (ej: pediatría, odontología, clínica general…)',
@@ -319,6 +329,7 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
         .field label { font-size: .82em; font-weight: 700; color: #374151; }
         .field label .req { color: #e74c3c; margin-left: 2px; }
         .field label .hint { font-weight: 400; color: #9ca3af; font-size: .9em; }
+        .metadata-hint { display:block; margin-top:6px; color:#6b7280; font-size:.78em; }
         .field input, .field select, .field textarea {
             padding: 10px 12px;
             border: 1.5px solid #d1d5db;
@@ -594,6 +605,7 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
                         <input type="text" id="tipo_comercio" name="tipo_comercio"
                                placeholder="Especificá el rubro o especialidad…" maxlength="100"
                                value="<?php echo htmlspecialchars($comercioData['tipo_comercio'] ?? ''); ?>">
+                        <small class="metadata-hint">Este dato se muestra como metadato destacado en el selector del mapa.</small>
                     </div>
                 </div>
             </div>
@@ -1154,6 +1166,11 @@ const tagsByType = {
     farmacia:       ['medicamentos','cosméticos','perfumería','pañales','suplementos','test covid','turno permanente','inyecciones'],
     supermercado:   ['frutas','verduras','carnicería','fiambrería','lácteos','limpieza','mayorista','bebidas'],
     comercio:       ['electrónica','ropa','calzado','hogar','juguetes','libros','accesorios','moda','deportes'],
+    productora_audiovisual: ['video institucional','spots publicitarios','fotografía','edición','streaming','drone','podcast'],
+    escuela_musicos: ['guitarra','piano','canto','batería','violín','teoría musical','ensamble'],
+    taller_artes: ['pintura','dibujo','escultura','cerámica','arte infantil','arte terapéutico','acuarela'],
+    biodecodificacion: ['sesiones individuales','talleres grupales','formación','acompañamiento emocional','bienestar'],
+    libreria_cristiana: ['biblias','devocionales','música cristiana','regalería','libros infantiles','estudio bíblico'],
     autos_venta:    ['0km','usados','financiación','permuta','SUV','pickup','sedán'],
     motos_venta:    ['scooter','urbana','enduro','financiación','permuta','baja cilindrada','alta cilindrada'],
     verduleria:     ['verduras frescas','frutas','orgánicos','agroecológico','almacén','temporada','a granel'],

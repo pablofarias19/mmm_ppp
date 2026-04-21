@@ -84,6 +84,7 @@ if ($type === 'businesses') {
         'restaurante','cafeteria','bar','panaderia','heladeria','pizzeria',
         'supermercado','comercio','autos_venta','motos_venta','indumentaria','ferreteria',
         'electronica','muebleria','floristeria','libreria',
+        'productora_audiovisual','escuela_musicos','taller_artes','biodecodificacion','libreria_cristiana',
         'farmacia','hospital','odontologia','veterinaria','optica',
         'salon_belleza','barberia','spa','gimnasio',
         'banco','inmobiliaria','seguros','abogado','contador','taller','construccion','remate',
