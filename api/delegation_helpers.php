@@ -27,6 +27,47 @@ if (!function_exists('delegationReadInput')) {
     }
 }
 
+if (!function_exists('delegationRequirePasswordConfirmation')) {
+    function delegationRequirePasswordConfirmation(PDO $db, int $currentUserId, $password): void {
+        if (!is_string($password)) {
+            $password = '';
+        }
+        if (trim($password) === '') {
+            respond_error('password es obligatorio.', 400);
+        }
+
+        $stmt = $db->prepare('SELECT password FROM users WHERE id = ? LIMIT 1');
+        $stmt->execute([$currentUserId]);
+        $hash = $stmt->fetchColumn();
+        if (!$hash) {
+            respond_error('Usuario autenticado inválido.', 401);
+        }
+        if (!password_verify($password, (string)$hash)) {
+            respond_error('Contraseña inválida.', 403);
+        }
+    }
+}
+
+if (!function_exists('delegationLookupUserByQuery')) {
+    function delegationLookupUserByQuery(PDO $db, string $query): ?array {
+        $normalized = trim($query);
+        if ($normalized === '') {
+            return null;
+        }
+
+        $stmt = $db->prepare("
+            SELECT id, username, email
+            FROM users
+            WHERE LOWER(TRIM(username)) = LOWER(:query)
+               OR LOWER(TRIM(email)) = LOWER(:query)
+            LIMIT 1
+        ");
+        $stmt->execute(['query' => $normalized]);
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $user ?: null;
+    }
+}
+
 if (!function_exists('delegationUserInfo')) {
     function delegationUserInfo(PDO $db, int $userId): ?array {
         $stmt = $db->prepare('SELECT id, username, email, is_admin FROM users WHERE id = ? LIMIT 1');
