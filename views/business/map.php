@@ -1503,6 +1503,12 @@ function buildSelectionMetadata(rawMeta = {}) {
     return meta;
 }
 
+function truncateHourLabel(value) {
+    const raw = value === null || value === undefined ? '' : String(value).trim();
+    if (!raw) return null;
+    return raw.length >= 5 ? raw.substring(0, 5) : raw;
+}
+
 function getSelectionEmoji(kind) {
     if (kind === 'negocio') return '🏪';
     if (kind === 'marca') return '🏷️';
@@ -1526,11 +1532,13 @@ function renderSelectionMetaItem(item) {
 }
 
 function buildNegocioMetadata(n) {
+    const openHour = truncateHourLabel(n.horario_apertura);
+    const closeHour = truncateHourLabel(n.horario_cierre);
     return buildSelectionMetadata({
         'Tipo': n.business_type,
         'Especialidad': n.tipo_comercio,
         'Productos/Servicios': n.categorias_productos,
-        'Horario': (n.horario_apertura && n.horario_cierre) ? `${String(n.horario_apertura).substring(0,5)} a ${String(n.horario_cierre).substring(0,5)}` : null,
+        'Horario': (openHour && closeHour) ? `${openHour} a ${closeHour}` : null,
         'Dirección': n.address || n.ubicacion,
         'Ciudad': n.ciudad,
         'Teléfono': n.phone,
@@ -1564,7 +1572,7 @@ function buildEventoMetadata(evt) {
 function buildEncuestaMetadata(enc) {
     return buildSelectionMetadata({
         'Descripción': enc.descripcion,
-        'Estado': Number(enc.activo) === 1 ? 'Activa' : 'Inactiva',
+        'Estado activa': Number(enc.activo) === 1 ? 'Sí' : 'No',
         'Creación': enc.fecha_creacion,
         'Vencimiento': enc.fecha_expiracion,
         'Ubicación': enc.ubicacion,
@@ -2590,7 +2598,8 @@ function clearRelationLines() {
 
 function getVisibleMarkersWithMeta() {
     const out = [];
-    [clusterGroup, eventosLayer, encuestasLayer, noticiasLayer, triviasLayer, ofertasLayer, transmisionesLayer].forEach(layerGroup => {
+    const relationLayers = [clusterGroup, eventosLayer, encuestasLayer, noticiasLayer, triviasLayer, ofertasLayer, transmisionesLayer];
+    relationLayers.forEach(layerGroup => {
         if (!layerGroup || !layerGroup.eachLayer) return;
         layerGroup.eachLayer(layer => {
             if (layer && layer._mapitaMeta) out.push(layer);
@@ -2601,9 +2610,19 @@ function getVisibleMarkersWithMeta() {
 
 function getRelationVisual(relationType = '') {
     const type = String(relationType || '').toLowerCase();
-    if (['vinculado', 'asociado', 'asociacion', 'alianza'].includes(type)) return { color: '#00b894', dashArray: '6,4' };
-    if (['promociona', 'difunde', 'destaca'].includes(type)) return { color: '#e67e22', dashArray: '2,6' };
-    if (['depende', 'provee', 'abastece'].includes(type)) return { color: '#8e44ad', dashArray: '10,4' };
+    const relationVisuals = {
+        vinculado: { color: '#00b894', dashArray: '6,4' },
+        asociado: { color: '#00b894', dashArray: '6,4' },
+        asociacion: { color: '#00b894', dashArray: '6,4' },
+        alianza: { color: '#00b894', dashArray: '6,4' },
+        promociona: { color: '#e67e22', dashArray: '2,6' },
+        difunde: { color: '#e67e22', dashArray: '2,6' },
+        destaca: { color: '#e67e22', dashArray: '2,6' },
+        depende: { color: '#8e44ad', dashArray: '10,4' },
+        provee: { color: '#8e44ad', dashArray: '10,4' },
+        abastece: { color: '#8e44ad', dashArray: '10,4' }
+    };
+    if (relationVisuals[type]) return relationVisuals[type];
     return { color: '#1B3B6F', dashArray: '6,6' };
 }
 

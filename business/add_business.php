@@ -329,6 +329,7 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
         .field label { font-size: .82em; font-weight: 700; color: #374151; }
         .field label .req { color: #e74c3c; margin-left: 2px; }
         .field label .hint { font-weight: 400; color: #9ca3af; font-size: .9em; }
+        .metadata-hint { display:block; margin-top:6px; color:#6b7280; font-size:.78em; }
         .field input, .field select, .field textarea {
             padding: 10px 12px;
             border: 1.5px solid #d1d5db;
@@ -604,7 +605,7 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
                         <input type="text" id="tipo_comercio" name="tipo_comercio"
                                placeholder="Especificá el rubro o especialidad…" maxlength="100"
                                value="<?php echo htmlspecialchars($comercioData['tipo_comercio'] ?? ''); ?>">
-                        <small style="display:block;margin-top:6px;color:#6b7280;">Este dato se muestra como metadato destacado en el selector del mapa.</small>
+                        <small class="metadata-hint">Este dato se muestra como metadato destacado en el selector del mapa.</small>
                     </div>
                 </div>
             </div>
