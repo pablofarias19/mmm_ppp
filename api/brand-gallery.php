@@ -20,9 +20,6 @@ require_once __DIR__ . '/../models/BrandGallery.php';
 
 use App\Models\BrandGallery;
 
-const BRAND_GALLERY_MAX_IMAGES = 2;
-const BRAND_GALLERY_MAX_BYTES = 200 * 1024; // 200 KB
-
 try {
     $method = $_SERVER['REQUEST_METHOD'];
     $action = $_GET['action'] ?? 'list';
@@ -70,8 +67,8 @@ try {
             }
 
             $existing = BrandGallery::getByBrand($brand_id);
-            if (count($existing) >= BRAND_GALLERY_MAX_IMAGES) {
-                respond_error("Ya alcanzaste el máximo de " . BRAND_GALLERY_MAX_IMAGES . " imágenes.", 400);
+            if (count($existing) >= BrandGallery::MAX_IMAGES_PER_BRAND) {
+                respond_error("Ya alcanzaste el máximo de " . BrandGallery::MAX_IMAGES_PER_BRAND . " imágenes.", 400);
             }
 
             $file = $_FILES['imagen'];
@@ -79,7 +76,7 @@ try {
                 respond_error("Error al subir la imagen.", 400);
             }
 
-            if (($file['size'] ?? 0) > BRAND_GALLERY_MAX_BYTES) {
+            if (($file['size'] ?? 0) > BrandGallery::MAX_FILE_BYTES) {
                 respond_error("La imagen no puede superar 200 KB. Comprimila antes de subir.", 400);
             }
 
@@ -93,13 +90,13 @@ try {
                 respond_error("Formato no permitido. Usá JPG, PNG o WebP.", 400);
             }
 
-            // Normalizar type para que el modelo use el MIME validado por servidor.
-            $_FILES['imagen']['type'] = $detectedMime;
+            // Normalizar type en una copia local para que el modelo use el MIME validado por servidor.
+            $validatedFile = array_merge((array)$file, ['type' => $detectedMime]);
 
             $titulo = $_POST['titulo'] ?? '';
             $es_principal = (bool)($_POST['es_principal'] ?? false);
 
-            $filename = BrandGallery::uploadImage($brand_id, $_FILES['imagen'], $titulo, $es_principal);
+            $filename = BrandGallery::uploadImage($brand_id, $validatedFile, $titulo, $es_principal);
 
             if (!$filename) {
                 respond_error("Error al subir la imagen", 500);

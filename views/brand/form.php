@@ -1480,6 +1480,7 @@ const MAX_GALLERY_IMAGES = 2;
 const MAX_IMAGE_BYTES = 200 * 1024;
 const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 let currentGalleryCount = 0;
+let galleryHasMainImage = false;
 
 ['dragenter','dragover','dragleave','drop'].forEach(ev =>
     galleryDrop.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); })
@@ -1490,7 +1491,7 @@ galleryDrop.addEventListener('drop', e => uploadGallery(e.dataTransfer.files));
 galleryDrop.addEventListener('click', () => galleryInput.click());
 galleryInput.addEventListener('change', e => { uploadGallery(e.target.files); e.target.value = ''; });
 
-function uploadGallery(files) {
+async function uploadGallery(files) {
     const selectedFiles = Array.from(files || []);
     if (!selectedFiles.length) return;
 
@@ -1510,25 +1511,59 @@ function uploadGallery(files) {
         alert(`Solo podés subir ${remainingSlots} imagen(es) más. Se cargarán las primeras ${remainingSlots}.`);
     }
 
-    imageFiles.slice(0, remainingSlots).forEach((file, index) => {
+    const errors = [];
+    const validFiles = [];
+    imageFiles.slice(0, remainingSlots).forEach(file => {
         if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
-            alert(`Formato no permitido en "${file.name}". Usá JPG, PNG o WebP.`);
+            errors.push(`"${file.name}": formato no permitido (solo JPG, PNG o WebP).`);
             return;
         }
         if (file.size > MAX_IMAGE_BYTES) {
             const kb = Math.round(file.size / 1024);
-            alert(`"${file.name}" pesa ${kb} KB. Cada imagen debe pesar máximo 200 KB.`);
+            errors.push(`"${file.name}" pesa ${kb} KB (máximo 200 KB).`);
             return;
         }
+        validFiles.push(file);
+    });
+
+    if (errors.length) {
+        alert(`No se pudieron cargar algunos archivos:\n\n- ${errors.join('\n- ')}`);
+    }
+
+    let localCount = currentGalleryCount;
+    let localHasMain = galleryHasMainImage;
+    let uploadedAny = false;
+    const uploadErrors = [];
+    for (const file of validFiles) {
         const fd = new FormData();
         fd.append('brand_id', brandId);
         fd.append('imagen', file);
         fd.append('titulo', file.name);
-        fd.append('es_principal', (currentGalleryCount === 0 && index === 0) ? '1' : '0');
-        fetch('/api/brand-gallery.php?action=upload', { method: 'POST', body: fd })
-            .then(r => r.json())
-            .then(d => { if (d.success) loadGallery(); else alert(d.message); });
-    });
+        fd.append('es_principal', localHasMain ? '0' : '1');
+        try {
+            const r = await fetch('/api/brand-gallery.php?action=upload', { method: 'POST', body: fd });
+            const d = await r.json();
+            if (d.success) {
+                localCount += 1;
+                localHasMain = true;
+                currentGalleryCount = localCount;
+                galleryHasMainImage = localHasMain;
+                uploadedAny = true;
+            } else {
+                uploadErrors.push(d.message || `No se pudo subir "${file.name}".`);
+            }
+        } catch (error) {
+            console.error('Error subiendo imagen de galería:', error);
+            uploadErrors.push(`Error de red al subir "${file.name}".`);
+        }
+    }
+
+    if (uploadedAny) {
+        loadGallery();
+    }
+    if (uploadErrors.length) {
+        alert(`Algunas imágenes no se pudieron subir:\n\n- ${uploadErrors.join('\n- ')}`);
+    }
 }
 
 function loadGallery() {
@@ -1538,10 +1573,12 @@ function loadGallery() {
             galleryGrid.innerHTML = '';
             if (!d.success || !d.data?.length) {
                 currentGalleryCount = 0;
+                galleryHasMainImage = false;
                 galleryGrid.innerHTML = '<p style="color:var(--gray4);font-size:13px;">Sin imágenes aún.</p>';
                 return;
             }
             currentGalleryCount = d.data.length;
+            galleryHasMainImage = d.data.some(img => Number(img.es_principal) === 1 || img.es_principal === true);
             d.data.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item' + (img.es_principal ? ' main-img' : '');

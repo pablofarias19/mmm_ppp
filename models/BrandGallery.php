@@ -7,8 +7,8 @@ use PDO;
 
 class BrandGallery {
     protected $table = 'brand_gallery';
-    private const MAX_IMAGES_PER_BRAND = 2;
-    private const MAX_FILE_BYTES = 200 * 1024; // 200 KB
+    public const MAX_IMAGES_PER_BRAND = 2;
+    public const MAX_FILE_BYTES = 200 * 1024; // 200 KB
 
     /**
      * Obtiene todas las imágenes de una marca
@@ -201,10 +201,12 @@ class BrandGallery {
 
             // Validar tipo de archivo por MIME real
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $realMime = $finfo ? finfo_file($finfo, $file['tmp_name']) : null;
-            if ($finfo) {
-                finfo_close($finfo);
+            if (!$finfo) {
+                error_log("No se pudo inicializar finfo para validar MIME en BrandGallery::uploadImage");
+                return false;
             }
+            $realMime = finfo_file($finfo, $file['tmp_name']);
+            finfo_close($finfo);
             $allowed = [
                 'image/jpeg' => 'jpg',
                 'image/png'  => 'png',
