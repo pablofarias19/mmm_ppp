@@ -1041,19 +1041,21 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
         <div class="section-body">
             <p class="hint" style="margin:0 0 12px;">Ingresá username o email del destinatario y confirmá con tu password para delegar o revocar.</p>
             <div id="biz-deleg-msg" class="message msg-info" style="display:none;margin:0 0 12px;"></div>
-            <div class="field-grid">
-                <div class="field">
-                    <label for="biz-delegate-query">Username o email del destinatario</label>
-                    <input type="text" id="biz-delegate-query" maxlength="120" placeholder="ej: usuario o mail@dominio.com">
+            <form id="biz-deleg-form" onsubmit="event.preventDefault(); delegateBusinessAdmin();">
+                <div class="field-grid">
+                    <div class="field">
+                        <label for="biz-delegate-query">Username o email del destinatario</label>
+                        <input type="text" id="biz-delegate-query" maxlength="120" placeholder="ej: usuario o mail@dominio.com">
+                    </div>
+                    <div class="field">
+                        <label for="biz-delegate-password">Tu password de confirmación</label>
+                        <input type="password" id="biz-delegate-password" name="password" maxlength="255" autocomplete="current-password" placeholder="••••••••">
+                    </div>
                 </div>
-                <div class="field">
-                    <label for="biz-delegate-password">Tu password de confirmación</label>
-                    <input type="password" id="biz-delegate-password" maxlength="255" autocomplete="current-password" placeholder="••••••••">
+                <div style="margin-top:12px;">
+                    <button type="submit" class="btn-save" style="width:auto;padding:10px 18px;">Delegar</button>
                 </div>
-            </div>
-            <div style="margin-top:12px;">
-                <button type="button" class="btn-save" style="width:auto;padding:10px 18px;" onclick="delegateBusinessAdmin()">Delegar</button>
-            </div>
+            </form>
             <div class="divider"></div>
             <div id="biz-deleg-empty" class="deleg-empty">Cargando delegados…</div>
             <div id="biz-deleg-list" class="deleg-list"></div>
