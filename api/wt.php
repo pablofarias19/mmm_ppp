@@ -76,7 +76,7 @@ function wt_load_user_prefs(\PDO $db, int $uid): array {
         return ['wt_mode' => 'open', 'areas' => []];
     }
     try {
-        $stmt = $db->prepare("SELECT wt_mode, areas FROM wt_user_preferences WHERE user_id = ?");
+        $stmt = $db->prepare("SELECT wt_mode FROM wt_user_preferences WHERE user_id = ?");
         $stmt->execute([$uid]);
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
     } catch (\PDOException $e) {
@@ -87,9 +87,13 @@ function wt_load_user_prefs(\PDO $db, int $uid): array {
         return ['wt_mode' => 'open', 'areas' => []];
     }
     $areas = [];
-    if (!empty($row['areas'])) {
-        $decoded = json_decode($row['areas'], true);
-        $areas = is_array($decoded) ? $decoded : [];
+    try {
+        $aStmt = $db->prepare("SELECT area_slug FROM wt_user_areas WHERE user_id = ?");
+        $aStmt->execute([$uid]);
+        $areas = $aStmt->fetchAll(\PDO::FETCH_COLUMN);
+    } catch (\PDOException $e) {
+        // Tabla wt_user_areas aún no existe (migración 012 pendiente); continuar sin áreas
+        $areas = [];
     }
     return ['wt_mode' => $row['wt_mode'], 'areas' => $areas];
 }
