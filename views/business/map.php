@@ -13,7 +13,6 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='15' fill='%23667eea'/><text x='16' y='22' text-anchor='middle' font-size='16' fill='white'>🗺️</text></svg>">
     <title>🗺️ Mapita — Mapa de Negocios y Marcas</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <?php require_once __DIR__ . '/../../includes/meta_og.php'; ?>
@@ -528,7 +527,57 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
 
 <!-- Sidebar -->
 <div id="sidebar">
-    <h2 style="color:#667eea;margin:0 0 15px 0;">🗺️ Mapita</h2>
+    <!-- ── MAPITA Brand Header ──────────────────────────────── -->
+    <div class="mapita-brand-header" style="
+        display:flex;align-items:center;gap:10px;
+        padding:12px 0 14px;margin-bottom:14px;
+        border-bottom:2px solid #eef0f8;
+        text-decoration:none;cursor:pointer;"
+        onclick="window.location.href='/'">
+        <!-- Logo mark: Navy square with golden pin -->
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"
+             width="40" height="40" style="flex-shrink:0;border-radius:9px;box-shadow:0 2px 8px rgba(27,59,111,.25);"
+             role="img" aria-label="Mapita logo">
+            <defs>
+                <linearGradient id="sbBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%"   stop-color="#1B3B6F"/>
+                    <stop offset="100%" stop-color="#2E5FA3"/>
+                </linearGradient>
+                <linearGradient id="sbPin" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%"   stop-color="#E8C547"/>
+                    <stop offset="100%" stop-color="#D4AF37"/>
+                </linearGradient>
+            </defs>
+            <rect width="40" height="40" rx="9" ry="9" fill="url(#sbBg)"/>
+            <!-- Pin body -->
+            <ellipse cx="20" cy="16.5" rx="8" ry="8" fill="url(#sbPin)"/>
+            <!-- Pin tail -->
+            <path d="M16.2 22 Q20 31 23.8 22" fill="url(#sbPin)"/>
+            <!-- Pin inner circle -->
+            <circle cx="20" cy="16.5" r="3.2" fill="#1B3B6F"/>
+            <!-- M lettermark -->
+            <text x="20" y="20.2" text-anchor="middle"
+                  font-size="5" font-weight="900"
+                  font-family="Arial Black,Arial,sans-serif"
+                  fill="#D4AF37" letter-spacing="-0.3">M</text>
+        </svg>
+        <!-- Wordmark -->
+        <div style="line-height:1.2;min-width:0;">
+            <div style="
+                font-size:18px;font-weight:900;letter-spacing:2.5px;
+                background:linear-gradient(135deg,#1B3B6F 0%,#2E5FA3 55%,#667eea 100%);
+                -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+                background-clip:text;color:transparent;
+                font-family:Arial Black,Arial,sans-serif;
+                text-transform:uppercase;line-height:1.1;">MAPITA</div>
+            <div style="
+                font-size:9.5px;color:#8292aa;letter-spacing:0.6px;
+                font-weight:600;text-transform:uppercase;margin-top:1px;
+                white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                Negocios · Marcas · Mapa
+            </div>
+        </div>
+    </div>
 
     <input type="text" id="busqueda" placeholder="🔍 Buscar..." oninput="filtrar()"
            style="width:100%;padding:10px 12px;border:1px solid #d0d5dd;border-radius:8px;margin-bottom:12px;font-size:13px;font-family:inherit;color:#374151;transition:all 0.2s ease;"
