@@ -2951,9 +2951,11 @@ function buildPopup(n, isMarca) {
         p += '<a href="' + wa   + '" target="_blank" class="popup-action" style="background:#25D366;">💬 WA</a>';
         if (n.website) p += '<a href="' + n.website + '" target="_blank" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
         p += '<a href="/business/view_business.php?id=' + n.id + '" target="_blank" class="popup-action" style="background:#1B3B6F;">📋 Detalle</a>';
-        // Botón módulo disponibles
-        p += '<button type="button" class="popup-action" style="background:#d97706;font-weight:800;letter-spacing:.5px;" '
-           + 'onclick="abrirDisponibles(' + parseInt(n.id) + ',\'' + escapeHtml(n.name || n.nombre || '').replace(/'/g, '&#39;') + '\')">$$$</button>';
+        // Botón módulo disponibles (solo si el titular activó el módulo)
+        if (n.disponibles_activo) {
+            p += '<button type="button" class="popup-action" style="background:#d97706;font-weight:800;letter-spacing:.5px;" '
+               + 'onclick="abrirDisponibles(' + parseInt(n.id) + ',\'' + escapeHtml(n.name || n.nombre || '').replace(/'/g, '&#39;') + '\')">$$$</button>';
+        }
         p += '</div>';
     }
 
