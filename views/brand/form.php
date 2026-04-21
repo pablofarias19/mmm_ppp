@@ -1240,7 +1240,7 @@ function chanChk($brand, $val) {
                      ondrop="handleLogoDrop(event)">
                     <div style="font-size:2em;margin-bottom:6px;">🖼️</div>
                     <div style="font-weight:700;color:#374151;margin-bottom:4px;">Subir logo de la marca</div>
-                    <div style="font-size:12px;color:#9ca3af;">Arrastrá o hacé clic · JPG, PNG, WebP · máx. 5 MB</div>
+                    <div style="font-size:12px;color:#9ca3af;">Arrastrá o hacé clic · JPG, PNG, WebP · máx. 200 KB · 1 logo</div>
                     <div style="font-size:11px;color:#b0b8cc;margin-top:6px;">Recomendado: cuadrado o circular, mínimo 200×200 px</div>
                     <input type="file" id="logo-file-input" accept="image/jpeg,image/png,image/webp"
                            style="display:none;" onchange="uploadBrandLogo(this.files[0])">
@@ -1266,13 +1266,13 @@ function chanChk($brand, $val) {
                 <div class="icon">🖼️</div>
                 <div>
                     <h2>Galería de Imágenes</h2>
-                    <p>Fotos que aparecen en el popup del mapa · máx. 5 imágenes · 5 MB c/u</p>
+                    <p>Fotos que aparecen en el popup del mapa · máx. 2 imágenes · 200 KB c/u</p>
                 </div>
             </div>
             <div class="gallery-drop" id="galleryDrop">
                 <div style="font-size:2em;">📸</div>
                 <p>Arrastrá fotos aquí o hacé clic para elegir</p>
-                <small>JPG, PNG, WebP · máximo 5 MB cada una</small>
+                <small>JPG, PNG, WebP · máximo 200 KB cada una · hasta 2 imágenes</small>
                 <input type="file" id="galleryInput" multiple accept="image/*" style="display:none;">
             </div>
             <div class="gallery-grid" id="galleryGrid"></div>
@@ -1297,7 +1297,7 @@ function chanChk($brand, $val) {
                 <div class="og-drop" id="ogDrop">
                     <div style="font-size:1.8em;">🖼️</div>
                     <p>Arrastrá o hacé clic para subir imagen OG</p>
-                    <small>JPG, PNG o WebP · máximo 8 MB · ideal 1200×630 px</small>
+                    <small>JPG, PNG o WebP · máximo 200 KB · ideal 1200×630 px</small>
                     <input type="file" id="ogInput" accept="image/jpeg,image/png,image/webp" style="display:none;">
                 </div>
                 <div class="og-actions">
@@ -1476,6 +1476,10 @@ function deleteBrandLogo() {
 const galleryDrop  = document.getElementById('galleryDrop');
 const galleryInput = document.getElementById('galleryInput');
 const galleryGrid  = document.getElementById('galleryGrid');
+const MAX_GALLERY_IMAGES = 2;
+const MAX_IMAGE_BYTES = 200 * 1024;
+const ALLOWED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+let currentGalleryCount = 0;
 
 ['dragenter','dragover','dragleave','drop'].forEach(ev =>
     galleryDrop.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); })
@@ -1487,13 +1491,40 @@ galleryDrop.addEventListener('click', () => galleryInput.click());
 galleryInput.addEventListener('change', e => { uploadGallery(e.target.files); e.target.value = ''; });
 
 function uploadGallery(files) {
-    Array.from(files).forEach(file => {
-        if (!file.type.startsWith('image/')) return;
+    const selectedFiles = Array.from(files || []);
+    if (!selectedFiles.length) return;
+
+    const imageFiles = selectedFiles.filter(file => file && file.type.startsWith('image/'));
+    if (!imageFiles.length) {
+        alert('Solo se aceptan archivos de imagen.');
+        return;
+    }
+
+    const remainingSlots = MAX_GALLERY_IMAGES - currentGalleryCount;
+    if (remainingSlots <= 0) {
+        alert('Ya alcanzaste el máximo de 2 imágenes en la galería.');
+        return;
+    }
+
+    if (imageFiles.length > remainingSlots) {
+        alert(`Solo podés subir ${remainingSlots} imagen(es) más. Se cargarán las primeras ${remainingSlots}.`);
+    }
+
+    imageFiles.slice(0, remainingSlots).forEach((file, index) => {
+        if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+            alert(`Formato no permitido en "${file.name}". Usá JPG, PNG o WebP.`);
+            return;
+        }
+        if (file.size > MAX_IMAGE_BYTES) {
+            const kb = Math.round(file.size / 1024);
+            alert(`"${file.name}" pesa ${kb} KB. Cada imagen debe pesar máximo 200 KB.`);
+            return;
+        }
         const fd = new FormData();
         fd.append('brand_id', brandId);
         fd.append('imagen', file);
         fd.append('titulo', file.name);
-        fd.append('es_principal', galleryGrid.children.length === 0 ? '1' : '0');
+        fd.append('es_principal', (currentGalleryCount === 0 && index === 0) ? '1' : '0');
         fetch('/api/brand-gallery.php?action=upload', { method: 'POST', body: fd })
             .then(r => r.json())
             .then(d => { if (d.success) loadGallery(); else alert(d.message); });
@@ -1506,9 +1537,11 @@ function loadGallery() {
         .then(d => {
             galleryGrid.innerHTML = '';
             if (!d.success || !d.data?.length) {
+                currentGalleryCount = 0;
                 galleryGrid.innerHTML = '<p style="color:var(--gray4);font-size:13px;">Sin imágenes aún.</p>';
                 return;
             }
+            currentGalleryCount = d.data.length;
             d.data.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item' + (img.es_principal ? ' main-img' : '');
@@ -1565,6 +1598,15 @@ function refreshOg() {
 }
 
 function uploadOg(file) {
+    if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+        alert('Formato no permitido. Usá JPG, PNG o WebP.');
+        return;
+    }
+    if (file.size > MAX_IMAGE_BYTES) {
+        const kb = Math.round(file.size / 1024);
+        alert(`Tu imagen pesa ${kb} KB. La foto para redes debe pesar máximo 200 KB.`);
+        return;
+    }
     const fd = new FormData();
     fd.append('brand_id', brandId);
     fd.append('og_photo', file);
@@ -1573,7 +1615,7 @@ function uploadOg(file) {
     fetch('/api/upload_og_photo.php', { method: 'POST', body: fd })
         .then(r => r.json())
         .then(d => {
-            ogDrop.innerHTML = '<div style="font-size:1.8em;">🖼️</div><p>Arrastrá o hacé clic para subir imagen OG</p><small>JPG, PNG o WebP · máximo 8 MB · ideal 1200×630 px</small><input type="file" id="ogInput" accept="image/jpeg,image/png,image/webp" style="display:none;">';
+            ogDrop.innerHTML = '<div style="font-size:1.8em;">🖼️</div><p>Arrastrá o hacé clic para subir imagen OG</p><small>JPG, PNG o WebP · máximo 200 KB · ideal 1200×630 px</small><input type="file" id="ogInput" accept="image/jpeg,image/png,image/webp" style="display:none;">';
             document.getElementById('ogInput').addEventListener('change', e => { if (e.target.files[0]) uploadOg(e.target.files[0]); e.target.value = ''; });
             ogDrop.onclick = () => document.getElementById('ogInput').click();
             if (d.success) {
