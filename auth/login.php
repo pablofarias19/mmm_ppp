@@ -23,6 +23,10 @@ $currentDateTime = getCurrentDateTime();
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     verifyCsrfToken();
 
+    // Rate limit: máx 10 intentos de login por IP cada 15 minutos
+    require_once __DIR__ . '/../includes/rate_limiter.php';
+    checkRateLimit('login', 10, 900);
+
     // Incluir el archivo de autenticación
     require_once 'auth.php';
     
@@ -40,6 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         
         // Regenerar sesión para prevenir session fixation
         session_regenerate_id(true);
+
+        // Registrar login en audit log
+        require_once __DIR__ . '/../includes/audit_logger.php';
+        auditLog('login', 'user', (int)$result['user_id'], ['username' => $result['username']]);
 
         // Redireccionar según rol
         header("Location: /mis-negocios");
