@@ -2657,10 +2657,6 @@ function mostrarMarcadores(lista) {
 
         const name = n.nombre || n.name || 'Sin nombre';
 
-        // A3: Hover tooltip
-        const tooltipOffset = isMarca ? (n.logo_url ? -46 : -14) : -42;
-        marker.bindTooltip(name, { direction: 'top', offset: [0, tooltipOffset], opacity: 0.9 });
-
         if (!isMarca) {
             // For businesses: use standard popup
             marker.bindPopup(buildPopup(n, isMarca), { maxWidth: 290 });
@@ -4115,8 +4111,6 @@ function mostrarMarcadoresEventos(eventos) {
         var icon = L.divIcon({ html: iconHtml, className: '', iconSize: iconSize, iconAnchor: [iconSize[0]/2, iconSize[1]], popupAnchor: [0, -(iconSize[1]+2)] });
         var m = L.marker([parseFloat(evt.lat), parseFloat(evt.lng)], { icon: icon });
         m._mapitaMeta = { entity_type: 'evento', entity_id: evt.id || null, mapita_id: evt.mapita_id || null };
-        m.bindTooltip('🎉 ' + evt.titulo, { direction: 'top', offset: [0,-44], opacity: 0.9 });
-
         var popupHtml = '<div style="font-family:inherit;min-width:200px">'
             + '<div style="background:linear-gradient(135deg,#e74c3c,#c0392b);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
             + '<strong style="font-size:14px;">' + evt.titulo + '</strong></div>'
@@ -4173,8 +4167,6 @@ function mostrarMarcadoresEncuestas(encuestas) {
         var icon = L.divIcon({ html: iconHtml, className: '', iconSize: iconSize, iconAnchor: [iconSize[0]/2, iconSize[1]], popupAnchor: [0,-44] });
         var m = L.marker([parseFloat(enc.lat), parseFloat(enc.lng)], { icon: icon });
         m._mapitaMeta = { entity_type: 'encuesta', entity_id: enc.id || null, mapita_id: enc.mapita_id || null };
-        m.bindTooltip('📋 ' + enc.titulo, { direction: 'top', offset: [0,-42], opacity: 0.9 });
-
         var popHtml = '<div style="font-family:inherit;min-width:200px">'
             + '<div style="background:linear-gradient(135deg,#f39c12,#e67e22);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
             + '<strong style="font-size:14px;">📋 ' + enc.titulo + '</strong></div>'
@@ -4588,8 +4580,6 @@ function mostrarMarcadoresTrivias(trivias) {
         const m    = L.marker([parseFloat(tri.lat), parseFloat(tri.lng)], { icon });
         m._mapitaMeta = { entity_type: 'trivia', entity_id: tri.id || null, mapita_id: tri.mapita_id || null };
 
-        m.bindTooltip('🎯 ' + tri.titulo, { direction: 'top', offset: [0, -44], opacity: 0.9 });
-
         const dificultadLabel = { facil: '🟢 Fácil', medio: '🟡 Medio', dificil: '🔴 Difícil' }[tri.dificultad] || tri.dificultad;
         let popup = '<div style="font-family:inherit;min-width:200px">'
             + '<div style="background:linear-gradient(135deg,' + difColor + ',#7d3c98);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
@@ -4650,8 +4640,6 @@ function mostrarMarcadoresNoticias(noticias) {
         const icon = L.divIcon({ html: svg, className: '', iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -44] });
         const m    = L.marker([parseFloat(noticia.lat), parseFloat(noticia.lng)], { icon });
         m._mapitaMeta = { entity_type: 'noticia', entity_id: noticia.id || null, mapita_id: noticia.mapita_id || null };
-
-        m.bindTooltip('📰 ' + noticia.titulo, { direction: 'top', offset: [0, -42], opacity: 0.9 });
 
         const textoPrev = (noticia.contenido || '').replace(/<[^>]*>/g, '').substring(0, 120);
         let popup = '<div style="font-family:inherit;min-width:200px">'
@@ -4781,8 +4769,6 @@ function mostrarMarcadoresOfertas(ofertas) {
         var icon = L.divIcon({ html: iconHtml, className: '', iconSize: iconSize, iconAnchor: [iconSize[0]/2, iconSize[1]], popupAnchor: [0,-44] });
         var m    = L.marker([parseFloat(o.lat), parseFloat(o.lng)], { icon: icon });
         m._mapitaMeta = { entity_type: 'oferta', entity_id: o.id || null, mapita_id: o.mapita_id || null };
-        m.bindTooltip('🏷️ ' + o.nombre, { direction: 'top', offset: [0,-42], opacity: 0.9 });
-
         var pct = o.precio_normal && o.precio_oferta
             ? ' <strong style="color:#e74c3c;">-' + Math.round((1 - o.precio_oferta / o.precio_normal) * 100) + '%</strong>' : '';
         var popHtml = '<div style="font-family:inherit;min-width:200px">'
@@ -4913,8 +4899,6 @@ function mostrarMarcadoresTransmisiones(transmisiones) {
         var icon  = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
         var m    = L.marker([parseFloat(tx.lat), parseFloat(tx.lng)], { icon: icon });
         m._mapitaMeta = { entity_type: 'transmision', entity_id: tx.id || null, mapita_id: tx.mapita_id || null };
-        m.bindTooltip((tx.en_vivo ? '🔴 EN VIVO · ' : '📡 ') + tx.titulo, { direction: 'top', offset: [0,-42], opacity: 0.9 });
-
         var popHtml = '<div style="font-family:inherit;min-width:200px">'
             + '<div style="background:linear-gradient(135deg,' + color + ',#922b21);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
             + (tx.en_vivo ? '<span style="background:rgba(255,255,255,.25);padding:2px 6px;border-radius:8px;font-size:11px;margin-right:6px;">🔴 EN VIVO</span>' : '')
