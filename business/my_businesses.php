@@ -447,6 +447,8 @@ $tipoLabels = [
     $visibles  = count(array_filter($businesses, fn($b) => $b['visible']));
     $ocultos   = count($businesses) - $visibles;
     $delivery  = count(array_filter($businesses, fn($b) => !empty($b['has_delivery'])));
+    // Verificar tabla disponibles UNA sola vez fuera del loop
+    $dispTablaExiste = mapitaTableExists($db, 'disponibles_solicitudes');
     ?>
     <div class="stats-row">
         <div class="stat-card">
@@ -488,13 +490,11 @@ $tipoLabels = [
             $comercioData = getComercioData($b['id']);
             // Contador de solicitudes pendientes de disponibles
             $dispOrdenesCount = 0;
-            if (!empty($b['disponibles_activo'])) {
+            if (!empty($b['disponibles_activo']) && $dispTablaExiste) {
                 try {
-                    if (mapitaTableExists($db, 'disponibles_solicitudes')) {
-                        $stOrd = $db->prepare("SELECT COUNT(*) FROM disponibles_solicitudes WHERE business_id = ? AND estado = 'pendiente'");
-                        $stOrd->execute([$b['id']]);
-                        $dispOrdenesCount = (int)$stOrd->fetchColumn();
-                    }
+                    $stOrd = $db->prepare("SELECT COUNT(*) FROM disponibles_solicitudes WHERE business_id = ? AND estado = 'pendiente'");
+                    $stOrd->execute([$b['id']]);
+                    $dispOrdenesCount = (int)$stOrd->fetchColumn();
                 } catch (Exception $e) { $dispOrdenesCount = 0; }
             }
         ?>

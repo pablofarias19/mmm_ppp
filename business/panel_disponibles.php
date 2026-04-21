@@ -272,7 +272,7 @@ $ordenesCount = (int)$stO->fetchColumn();
                                 <input type="checkbox" class="precio-ad" title="A definir"
                                        <?php echo $it['precio_a_definir'] ? 'checked' : ''; ?>
                                        onchange="togglePrecio(this)">
-                                <input type="number" class="precio-val" min="0" max="99999999" step="0.01"
+                                <input type="number" class="precio-val" min="0" max="99999999.99" step="0.01"
                                        placeholder="0.00"
                                        value="<?php echo $it['precio'] !== null ? htmlspecialchars($it['precio']) : ''; ?>"
                                        style="<?php echo $it['precio_a_definir'] ? 'display:none;' : ''; ?>width:90px;">
@@ -362,7 +362,7 @@ function addRow() {
         <td>
             <div style="display:flex;gap:6px;align-items:center;">
                 <input type="checkbox" class="precio-ad" title="A definir" onchange="togglePrecio(this)">
-                <input type="number" class="precio-val" min="0" max="99999999" step="0.01" placeholder="0.00" style="width:90px;">
+                <input type="number" class="precio-val" min="0" max="99999999.99" step="0.01" placeholder="0.00" style="width:90px;">
                 <span class="precio-ad-label" style="font-size:.8em;color:#9ca3af;display:none;">a definir</span>
             </div>
         </td>

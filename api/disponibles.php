@@ -16,6 +16,9 @@ require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/helpers.php';
 require_once __DIR__ . '/../includes/db_helper.php';
 
+/** Precio máximo permitido para ítems de disponibles */
+define('DISP_MAX_PRECIO', 99999999.99);
+
 function disp_ok($data, $msg = 'OK') {
     echo json_encode(['success' => true, 'data' => $data, 'message' => $msg]);
     exit;
@@ -138,8 +141,8 @@ if ($method === 'POST') {
                 $precioRaw = trim((string)($item['precio'] ?? ''));
                 if ($precioRaw !== '') {
                     $precioF = filter_var($precioRaw, FILTER_VALIDATE_FLOAT);
-                    if ($precioF === false || $precioF < 0 || $precioF > 99999999.99) {
-                        disp_err("Ítem #" . ($idx + 1) . ": precio inválido (máx $99,999,999.99)");
+                    if ($precioF === false || $precioF < 0 || $precioF > DISP_MAX_PRECIO) {
+                        disp_err("Ítem #" . ($idx + 1) . ": precio inválido (máx $" . number_format(DISP_MAX_PRECIO, 2) . ")");
                     }
                     $precio = round($precioF, 2);
                 }

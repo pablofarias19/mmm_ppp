@@ -4840,7 +4840,11 @@ function cerrarDisponibles() {
 function enviarOrden() {
     const email = document.getElementById('disp-email').value.trim();
     if (!email) { dispMsg('Ingresá tu email para continuar.', 'err'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { dispMsg('El email no es válido.', 'err'); return; }
+    // RFC-compatible email check via native constraint
+    const emailInput = document.createElement('input');
+    emailInput.type = 'email';
+    emailInput.value = email;
+    if (!emailInput.checkValidity()) { dispMsg('El email no es válido.', 'err'); return; }
 
     const checkboxes = document.querySelectorAll('#disp-tbody .disp-checkbox-sel:checked');
     if (checkboxes.length === 0) { dispMsg('Seleccioná al menos un ítem.', 'err'); return; }

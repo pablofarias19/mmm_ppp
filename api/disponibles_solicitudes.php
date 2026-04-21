@@ -229,10 +229,12 @@ function disp_notify_requester(string $email, string $bizName, int $solicitudId)
  */
 function disp_notify_owner(array $biz, string $requesterEmail, int $solicitudId, int $itemCount): void {
     $ownerEmail = trim((string)($biz['owner_email'] ?? ''));
+    // Sanitizar el email para evitar inyección en cabeceras/cuerpo
+    $safeRequesterEmail = str_replace(["\r", "\n", "%0a", "%0d"], '', $requesterEmail);
     if ($ownerEmail !== '') {
         $subject = "Nueva solicitud #{$solicitudId} en «{$biz['name']}»";
         $body    = "Hola,\n\n"
-                 . "El usuario {$requesterEmail} hizo una solicitud (#${solicitudId}) "
+                 . "El usuario {$safeRequesterEmail} hizo una solicitud (#{$solicitudId}) "
                  . "con {$itemCount} ítem(s) en tu panel de disponibles.\n\n"
                  . "Accedé a tu panel de edición en Mapita para ver los detalles y confirmar.\n\n"
                  . "— Equipo Mapita";
