@@ -227,4 +227,6 @@ CREATE TABLE IF NOT EXISTS disponibles_solicitud_items (
 
 -- ─────────────────────────────────────────────────────────────
 -- FIN DE MIGRACIÓN
+-- Nota: ejecutar también migrations/010_moderation.sql
+--       para el sistema de moderación y seguridad.
 -- ─────────────────────────────────────────────────────────────

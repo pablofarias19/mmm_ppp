@@ -9,7 +9,7 @@ session_start();
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/helpers.php';
 
-$validTabs = ['negocios','marcas','noticias','eventos','trivias','encuestas','ofertas','transmisiones'];
+$validTabs = ['negocios','marcas','noticias','eventos','trivias','encuestas','ofertas','transmisiones','moderacion'];
 $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
 ?>
 <!DOCTYPE html>
@@ -269,6 +269,7 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         <button id="tab-btn-encuestas"      class="tab-btn <?php echo $tab==='encuestas'      ? 'active' : ''; ?>" onclick="switchTab('encuestas')">📋 Encuestas</button>
         <button id="tab-btn-ofertas"        class="tab-btn <?php echo $tab==='ofertas'        ? 'active' : ''; ?>" onclick="switchTab('ofertas')">🏷️ Ofertas</button>
         <button id="tab-btn-transmisiones"  class="tab-btn <?php echo $tab==='transmisiones'  ? 'active' : ''; ?>" onclick="switchTab('transmisiones')">📡 En Vivo</button>
+        <button id="tab-btn-moderacion"     class="tab-btn <?php echo $tab==='moderacion'     ? 'active' : ''; ?>" onclick="switchTab('moderacion')">🚨 Moderación</button>
     </div>
 
     <!-- NEGOCIOS -->
@@ -400,6 +401,38 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         </div>
         <div id="transmisiones-list"></div>
     </div>
+
+    <!-- MODERACIÓN -->
+    <div class="tab-content <?php echo $tab==='moderacion' ? 'active' : ''; ?>" id="tab-moderacion">
+        <div class="section-header">
+            <h2>🚨 Moderación y Seguridad</h2>
+            <span id="pending-badge" style="display:none;background:#ef4444;color:white;padding:3px 10px;border-radius:9999px;font-size:12px;font-weight:700;"></span>
+        </div>
+
+        <!-- Filtros -->
+        <div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center;">
+            <label style="font-size:13px;font-weight:600;">Estado:</label>
+            <select id="mod-status-filter" onchange="loadReports()" style="padding:8px 12px;border:1px solid #d1d5db;border-radius:6px;background:white;font-size:13px;">
+                <option value="pending">⏳ Pendientes</option>
+                <option value="reviewing">🔍 En revisión</option>
+                <option value="resolved">✅ Resueltos</option>
+                <option value="dismissed">🚫 Descartados</option>
+                <option value="all">📋 Todos</option>
+            </select>
+            <button class="btn btn-secondary" style="font-size:13px;" onclick="loadReports()">🔄 Actualizar</button>
+        </div>
+
+        <div id="reports-list"></div>
+
+        <hr style="margin:32px 0;border-color:#e5e7eb;">
+
+        <!-- Log de auditoría -->
+        <div class="section-header" style="margin-bottom:12px;">
+            <h3 style="margin:0;">🔍 Log de Auditoría <span style="font-size:13px;font-weight:400;color:#6b7280;">(últimas 100 acciones)</span></h3>
+            <button class="btn btn-secondary" style="font-size:13px;" onclick="loadAuditLog()">🔄 Actualizar</button>
+        </div>
+        <div id="audit-log-list"></div>
+    </div>
 </div>
 
 <!-- ── MODAL ─────────────────────────────────── -->
@@ -433,9 +466,10 @@ function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
     document.getElementById('tab-btn-' + tab).classList.add('active');
-    if (tab === 'marcas')    loadMarcas();
-    else if (tab === 'negocios') loadNegocios();
-    else                     loadData(tab);
+    if (tab === 'marcas')         loadMarcas();
+    else if (tab === 'negocios')  loadNegocios();
+    else if (tab === 'moderacion') { loadReports(); loadAuditLog(); }
+    else                          loadData(tab);
     window.history.pushState({tab}, '', '?tab=' + tab);
 }
 
@@ -1311,13 +1345,160 @@ async function bulkImport(type, fileInputId, resultId) {
     }
 }
 
+// ── Moderación ────────────────────────────────────
+const REASON_LABELS = {
+    spam:          '🗑 Spam',
+    inappropriate: '🔞 Inapropiado',
+    fake:          '🤥 Falso',
+    harassment:    '😡 Acoso',
+    other:         '❓ Otro'
+};
+const STATUS_LABELS = {
+    pending:    '⏳ Pendiente',
+    reviewing:  '🔍 En revisión',
+    resolved:   '✅ Resuelto',
+    dismissed:  '🚫 Descartado'
+};
+
+async function loadReports() {
+    const el     = document.getElementById('reports-list');
+    const status = document.getElementById('mod-status-filter')?.value || 'pending';
+    if (!el) return;
+    el.innerHTML = '<p style="padding:16px;color:#6b7280;">⏳ Cargando reportes...</p>';
+    try {
+        const res    = await fetch(`/api/reports.php?status=${status}&limit=50`);
+        const result = await res.json();
+        if (!result.success) { el.innerHTML = '<p style="color:red;">Error al cargar reportes.</p>'; return; }
+
+        const badge = document.getElementById('pending-badge');
+        if (badge) {
+            const n = result.data?.pending_count ?? 0;
+            badge.textContent = n + ' pendiente' + (n !== 1 ? 's' : '');
+            badge.style.display = n > 0 ? '' : 'none';
+        }
+
+        const reports = result.data?.reports ?? [];
+        if (!reports.length) {
+            el.innerHTML = '<p style="padding:24px;text-align:center;color:#6b7280;">✅ No hay reportes en este estado.</p>';
+            return;
+        }
+        el.innerHTML = `
+        <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:13px;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+            <thead>
+                <tr style="background:var(--primary);color:white;">
+                    <th style="padding:9px 12px;text-align:left;">ID</th>
+                    <th style="padding:9px 12px;text-align:left;">Tipo</th>
+                    <th style="padding:9px 12px;text-align:left;">Contenido #</th>
+                    <th style="padding:9px 12px;text-align:left;">Motivo</th>
+                    <th style="padding:9px 12px;text-align:left;">Descripción</th>
+                    <th style="padding:9px 12px;text-align:left;">Reportador</th>
+                    <th style="padding:9px 12px;text-align:left;">Estado</th>
+                    <th style="padding:9px 12px;text-align:left;">Fecha</th>
+                    <th style="padding:9px 12px;text-align:center;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${reports.map((r, i) => `
+                <tr style="border-bottom:1px solid #f0f0f0;background:${i%2===0?'white':'#fafafa'};">
+                    <td style="padding:8px 12px;color:#888;font-size:11px;">#${r.id}</td>
+                    <td style="padding:8px 12px;font-size:12px;">${r.content_type}</td>
+                    <td style="padding:8px 12px;font-size:12px;">#${r.content_id}</td>
+                    <td style="padding:8px 12px;font-size:12px;">${REASON_LABELS[r.reason] || r.reason}</td>
+                    <td style="padding:8px 12px;font-size:12px;max-width:200px;word-break:break-word;">${r.description ? r.description.substring(0,80) : '—'}</td>
+                    <td style="padding:8px 12px;font-size:12px;">${r.reporter_name || r.reporter_ip || '—'}</td>
+                    <td style="padding:8px 12px;font-size:12px;">${STATUS_LABELS[r.status] || r.status}</td>
+                    <td style="padding:8px 12px;font-size:11px;color:#6b7280;">${(r.created_at||'').substring(0,16)}</td>
+                    <td style="padding:8px 12px;text-align:center;">
+                        <div style="display:flex;gap:4px;justify-content:center;flex-wrap:wrap;">
+                            ${r.status === 'pending' || r.status === 'reviewing' ? `
+                            <button onclick="resolveReport(${r.id},'reviewing')"  style="padding:4px 8px;background:#f59e0b;color:white;border:none;border-radius:5px;font-size:11px;cursor:pointer;">🔍 Revisar</button>
+                            <button onclick="resolveReport(${r.id},'resolved')"   style="padding:4px 8px;background:#10b981;color:white;border:none;border-radius:5px;font-size:11px;cursor:pointer;">✅ Resolver</button>
+                            <button onclick="resolveReport(${r.id},'dismissed')"  style="padding:4px 8px;background:#6b7280;color:white;border:none;border-radius:5px;font-size:11px;cursor:pointer;">🚫 Descartar</button>
+                            ` : '—'}
+                        </div>
+                    </td>
+                </tr>`).join('')}
+            </tbody>
+        </table>
+        </div>`;
+    } catch(e) {
+        el.innerHTML = '<p style="color:red;">Error de red: ' + e.message + '</p>';
+    }
+}
+
+async function resolveReport(id, status) {
+    const note = status === 'resolved'
+        ? (prompt('Nota de resolución (opcional):') ?? '')
+        : '';
+    try {
+        const res    = await fetch(`/api/reports.php?id=${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({status, resolution_note: note})
+        });
+        const result = await res.json();
+        if (result.success) loadReports();
+        else alert('Error: ' + result.message);
+    } catch(e) {
+        alert('Error de red: ' + e.message);
+    }
+}
+
+async function loadAuditLog() {
+    const el = document.getElementById('audit-log-list');
+    if (!el) return;
+    el.innerHTML = '<p style="padding:16px;color:#6b7280;">⏳ Cargando log...</p>';
+    try {
+        const res    = await fetch('/api/audit_log.php?limit=100');
+        const result = await res.json();
+        if (!result.success) { el.innerHTML = '<p style="color:red;">Error al cargar log de auditoría.</p>'; return; }
+        const logs = result.data ?? [];
+        if (!logs.length) {
+            el.innerHTML = '<p style="padding:24px;text-align:center;color:#6b7280;">No hay entradas en el log.</p>';
+            return;
+        }
+        el.innerHTML = `
+        <div style="overflow-x:auto;">
+        <table style="width:100%;border-collapse:collapse;font-size:12px;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+            <thead>
+                <tr style="background:#374151;color:white;">
+                    <th style="padding:8px 12px;text-align:left;">Fecha</th>
+                    <th style="padding:8px 12px;text-align:left;">Usuario</th>
+                    <th style="padding:8px 12px;text-align:left;">Acción</th>
+                    <th style="padding:8px 12px;text-align:left;">Entidad</th>
+                    <th style="padding:8px 12px;text-align:left;">ID</th>
+                    <th style="padding:8px 12px;text-align:left;">IP</th>
+                    <th style="padding:8px 12px;text-align:left;">Detalles</th>
+                </tr>
+            </thead>
+            <tbody>
+                ${logs.map((l, i) => `
+                <tr style="border-bottom:1px solid #f0f0f0;background:${i%2===0?'white':'#fafafa'};">
+                    <td style="padding:7px 12px;color:#6b7280;">${(l.created_at||'').substring(0,16)}</td>
+                    <td style="padding:7px 12px;">${l.username || ('ID '+l.user_id) || '—'}</td>
+                    <td style="padding:7px 12px;font-weight:600;">${l.action}</td>
+                    <td style="padding:7px 12px;">${l.entity_type || '—'}</td>
+                    <td style="padding:7px 12px;">${l.entity_id || '—'}</td>
+                    <td style="padding:7px 12px;color:#6b7280;">${l.ip || '—'}</td>
+                    <td style="padding:7px 12px;max-width:220px;word-break:break-word;color:#374151;">${l.details ? l.details.substring(0,120) : '—'}</td>
+                </tr>`).join('')}
+            </tbody>
+        </table>
+        </div>`;
+    } catch(e) {
+        el.innerHTML = '<p style="color:red;">Error de red: ' + e.message + '</p>';
+    }
+}
+
 // ── Init ─────────────────────────────────────────
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
 window.addEventListener('load', () => {
     const tab = '<?php echo $tab; ?>';
-    if (tab === 'marcas')    loadMarcas();
-    else if (tab === 'negocios') loadNegocios();
-    else                     loadData(tab);
+    if (tab === 'marcas')          loadMarcas();
+    else if (tab === 'negocios')   loadNegocios();
+    else if (tab === 'moderacion') { loadReports(); loadAuditLog(); }
+    else                           loadData(tab);
 });
 </script>
 </body>

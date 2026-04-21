@@ -1,6 +1,14 @@
 <?php
 session_start();
 
+require_once __DIR__ . '/../includes/db_helper.php';
+require_once __DIR__ . '/../includes/audit_logger.php';
+
+// Registrar logout antes de destruir la sesión
+if (!empty($_SESSION['user_id'])) {
+    auditLog('logout', 'user', (int)$_SESSION['user_id']);
+}
+
 // Destruir la sesión
 $_SESSION = array();
 
