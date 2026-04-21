@@ -106,9 +106,17 @@ if (($type === 'business' && $id > 0) || ($type === 'brand' && $brandId > 0)) {
 
         // ── MARCA ─────────────────────────────────────────────────────────────
         } elseif ($type === 'brand' && $brandId > 0) {
-            $stmt = $db->prepare("SELECT nombre, rubro, ubicacion, descripcion FROM marcas WHERE id = ?");
-            $stmt->execute([$brandId]);
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            $row = null;
+            if (function_exists('mapitaTableExists') && mapitaTableExists($db, 'brands')) {
+                $stmt = $db->prepare("SELECT nombre, rubro, ubicacion, description AS descripcion FROM brands WHERE id = ?");
+                $stmt->execute([$brandId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
+            if (!$row && function_exists('mapitaTableExists') && mapitaTableExists($db, 'marcas')) {
+                $stmt = $db->prepare("SELECT nombre, rubro, ubicacion, descripcion FROM marcas WHERE id = ?");
+                $stmt->execute([$brandId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            }
 
             if ($row) {
                 $titulo    = $row['nombre'];
@@ -117,29 +125,29 @@ if (($type === 'business' && $id > 0) || ($type === 'brand' && $brandId > 0)) {
                     ? mb_substr(strip_tags($row['descripcion']), 0, 110)
                     : 'Conocé esta marca en Mapita · mapita.com.ar';
                 $colorAcento = [102, 126, 234]; // Mapita brand purple
+            }
 
-                // 1. og_cover dedicado de marca
-                $dir = __DIR__ . '/../uploads/brands/' . $brandId . '/';
-                foreach (['jpg','jpeg','png','webp'] as $ext) {
-                    if (file_exists($dir . 'og_cover.' . $ext)) {
-                        $fotoPath = $dir . 'og_cover.' . $ext; break;
-                    }
+            // 1. og_cover dedicado de marca
+            $dir = __DIR__ . '/../uploads/brands/' . $brandId . '/';
+            foreach (['jpg','jpeg','png','webp'] as $ext) {
+                if (file_exists($dir . 'og_cover.' . $ext)) {
+                    $fotoPath = $dir . 'og_cover.' . $ext; break;
                 }
-                // 2. Foto principal de la galería de la marca
-                if (!$fotoPath) {
-                    $stmtF = $db->prepare("SELECT file_path FROM brand_gallery WHERE brand_id = ? AND es_principal = 1 LIMIT 1");
+            }
+            // 2. Foto principal de la galería de la marca
+            if (!$fotoPath) {
+                $stmtF = $db->prepare("SELECT file_path FROM brand_gallery WHERE brand_id = ? AND es_principal = 1 LIMIT 1");
+                $stmtF->execute([$brandId]);
+                $fRow = $stmtF->fetch(PDO::FETCH_ASSOC);
+                if (!$fRow) {
+                    // Cualquier foto de la galería
+                    $stmtF = $db->prepare("SELECT file_path FROM brand_gallery WHERE brand_id = ? ORDER BY id ASC LIMIT 1");
                     $stmtF->execute([$brandId]);
                     $fRow = $stmtF->fetch(PDO::FETCH_ASSOC);
-                    if (!$fRow) {
-                        // Cualquier foto de la galería
-                        $stmtF = $db->prepare("SELECT file_path FROM brand_gallery WHERE brand_id = ? ORDER BY id ASC LIMIT 1");
-                        $stmtF->execute([$brandId]);
-                        $fRow = $stmtF->fetch(PDO::FETCH_ASSOC);
-                    }
-                    if ($fRow && $fRow['file_path']) {
-                        $c = __DIR__ . '/../uploads/brands/' . $fRow['file_path'];
-                        if (file_exists($c)) $fotoPath = $c;
-                    }
+                }
+                if ($fRow && $fRow['file_path']) {
+                    $c = __DIR__ . '/../uploads/brands/' . $fRow['file_path'];
+                    if (file_exists($c)) $fotoPath = $c;
                 }
             }
         }
