@@ -128,11 +128,16 @@ $tipos = [
     'Salud' => [
         'farmacia'        => ['💊', 'Farmacia'],
         'hospital'        => ['🏥', 'Clínica / Hospital'],
+        'medico_pediatra' => ['🧒', 'Médico Pediatra'],
+        'medico_traumatologo' => ['🦴', 'Médico Traumatólogo'],
+        'laboratorio'     => ['🧪', 'Laboratorio'],
         'odontologia'     => ['🦷', 'Odontología'],
         'psicologo'       => ['🧠', 'Psicología'],
         'psicopedagogo'   => ['📚', 'Psicopedagogía'],
         'fonoaudiologo'   => ['🗣️', 'Fonoaudiología'],
         'grafologo'       => ['✍️', 'Grafología'],
+        'enfermeria'      => ['🩺', 'Enfermería'],
+        'asistencia_ancianos' => ['🧓', 'Asistencia a Ancianos'],
         'veterinaria'     => ['🐾', 'Veterinaria'],
         'optica'          => ['👓', 'Óptica'],
     ],
@@ -151,6 +156,19 @@ $tipos = [
         'contador'       => ['📊', 'Contaduría'],
         'arquitectura'   => ['📐', 'Arquitectura'],
         'ingenieria'     => ['⚙️', 'Ingeniería'],
+        'ingenieria_civil' => ['🏗️', 'Ingeniería Civil'],
+        'electricista'   => ['💡', 'Electricista'],
+        'gasista'        => ['🔥', 'Gasista matriculado'],
+        'gas_en_garrafa' => ['🛢️', 'Gas en garrafa'],
+        'seguridad'      => ['🛡️', 'Seguridad'],
+        'grafica'        => ['🖨️', 'Gráfica'],
+        'astrologo'      => ['🔮', 'Astrólogo'],
+        'zapatero'       => ['👞', 'Zapatero'],
+        'videojuegos'    => ['🎮', 'Videojuegos'],
+        'maestro_particular' => ['📘', 'Maestro particular'],
+        'alquiler_mobiliario_fiestas' => ['🪑', 'Alquiler de mobiliario para fiestas'],
+        'propalacion_musica' => ['🔊', 'Propalación (música)'],
+        'animacion_fiestas' => ['🎉', 'Animación de fiestas'],
         'taller'         => ['🔩', 'Taller Mecánico'],
         'herreria'       => ['🔨', 'Herrería'],
         'carpinteria'    => ['🪵', 'Carpintería'],
@@ -186,6 +204,9 @@ $subtypeLabels = [
     'supermercado'   => 'Tamaño / cadena (ej: mini market, mayorista…)',
     'farmacia'       => 'Tipo (ej: magistral, turno permanente…)',
     'hospital'       => 'Especialidad (ej: pediatría, odontología, clínica general…)',
+    'medico_pediatra' => 'Atención pediátrica (ej: control de niño sano, guardia, consultorio…)',
+    'medico_traumatologo' => 'Especialidad traumatológica (ej: columna, deportiva, rehabilitación…)',
+    'laboratorio'    => 'Tipo de análisis (ej: clínicos, hormonales, domiciliarios…)',
     'gimnasio'       => 'Disciplinas (ej: crossfit, yoga, artes marciales…)',
     'academia'       => 'Área de enseñanza (ej: música, informática, teatro…)',
     'idiomas'        => 'Idiomas que se enseñan (ej: inglés, francés, portugués…)',
@@ -193,6 +214,21 @@ $subtypeLabels = [
     'taller'         => 'Especialidad (ej: chapa y pintura, electromecánica…)',
     'arquitectura'   => 'Especialidad (ej: diseño interior, urbanismo, paisajismo…)',
     'ingenieria'     => 'Rama (ej: civil, electrónica, industrial, agronómica…)',
+    'ingenieria_civil' => 'Especialidad (ej: cálculo estructural, obra civil, dirección técnica…)',
+    'electricista'   => 'Servicio eléctrico (ej: domiciliario, industrial, emergencias…)',
+    'gasista'        => 'Servicio de gas (ej: instalación, mantenimiento, emergencias…)',
+    'gas_en_garrafa' => 'Servicio (ej: reparto, recarga, comercialización…)',
+    'seguridad'      => 'Especialidad (ej: vigilancia, monitoreo, alarmas, custodias…)',
+    'grafica'        => 'Servicios gráficos (ej: impresiones, ploteos, cartelería…)',
+    'astrologo'      => 'Tipo de consulta (ej: natal, compatibilidad, orientación…)',
+    'zapatero'       => 'Servicios (ej: arreglo, suelas, restauración, confección…)',
+    'videojuegos'    => 'Enfoque (ej: venta, alquiler, e-sports, reparación…)',
+    'maestro_particular' => 'Materia o nivel (ej: matemática, idioma, apoyo escolar…)',
+    'alquiler_mobiliario_fiestas' => 'Tipo de mobiliario (ej: mesas, sillas, livings, carpas…)',
+    'propalacion_musica' => 'Servicio (ej: sonido, musicalización, DJ, eventos…)',
+    'animacion_fiestas' => 'Tipo de animación (ej: infantil, eventos sociales, corporativos…)',
+    'enfermeria'     => 'Modalidad (ej: domiciliaria, guardia, cuidados postoperatorios…)',
+    'asistencia_ancianos' => 'Tipo de asistencia (ej: acompañamiento, higiene, medicación…)',
     'carpinteria'    => 'Tipo (ej: muebles a medida, aberturas, obra…)',
     'modista'        => 'Especialidad (ej: alta costura, ajustes, uniformes…)',
     'danza'          => 'Estilo (ej: tango, ballet, folklore, salsa, contemporánea…)',
@@ -210,6 +246,24 @@ $subtypeLabels = [
 ];
 
 $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
+$professionalLicensedTypes = [
+    'gasista','electricista','enfermeria','medico_pediatra','medico_traumatologo','arquitectura','ingenieria_civil'
+];
+$restrictedApprovalTypes = ['abogado','seguros','inmobiliaria'];
+
+$descriptionPlaceholders = [
+    'default' => 'Contá de forma clara y respetuosa qué servicio brindás, en qué zona trabajás y cómo contactarte.',
+    'farmacia' => 'Ej: Farmacia con atención profesional, turnos y asesoramiento responsable para la comunidad.',
+    'medico_pediatra' => 'Ej: Consultorio pediátrico con controles de niño sano y seguimiento integral de la infancia.',
+    'medico_traumatologo' => 'Ej: Atención traumatológica para lesiones deportivas, rehabilitación y seguimiento profesional.',
+    'laboratorio' => 'Ej: Laboratorio de análisis clínicos con turnos, extracciones y entrega de resultados.',
+    'electricista' => 'Ej: Servicio eléctrico domiciliario e industrial con atención programada y de urgencias.',
+    'gasista' => 'Ej: Servicio de instalaciones y mantenimiento de gas con trabajo seguro y responsable.',
+    'gas_en_garrafa' => 'Ej: Distribución de gas en garrafa con entrega a domicilio y horarios de atención.',
+    'alquiler_mobiliario_fiestas' => 'Ej: Alquiler de mobiliario para eventos con entrega, armado y retiro coordinado.',
+    'animacion_fiestas' => 'Ej: Animación de fiestas infantiles y sociales con propuestas recreativas para cada edad.',
+    'maestro_particular' => 'Ej: Clases particulares personalizadas por nivel, materia y modalidad presencial/virtual.',
+];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -609,6 +663,15 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
                         <small class="metadata-hint">Este dato se muestra como metadato destacado en el selector del mapa.</small>
                     </div>
                 </div>
+
+                <div id="professional-license-note"
+                     style="display:<?php echo in_array($selectedType, $professionalLicensedTypes, true) ? 'block' : 'none'; ?>;margin-top:12px;padding:10px 12px;border-radius:8px;border:1px solid #dbeafe;background:#eff6ff;color:#1e3a8a;font-size:.82em;">
+                    Para brindar más tranquilidad a los usuarios, se aconseja subir copia del título o matrícula profesional.
+                </div>
+                <div id="restricted-approval-note"
+                     style="display:<?php echo in_array($selectedType, $restrictedApprovalTypes, true) ? 'block' : 'none'; ?>;margin-top:10px;padding:10px 12px;border-radius:8px;border:1px solid #fde68a;background:#fffbeb;color:#92400e;font-size:.82em;">
+                    Este rubro requiere aprobación expresa del administrador para habilitar su publicación en el mapa.
+                </div>
             </div>
         </div>
 
@@ -644,7 +707,7 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
                             <span class="hint">— ¿Por qué elegirían tu negocio?</span>
                         </label>
                         <textarea id="description" name="description" maxlength="1200"
-                                  placeholder="Ej: Somos una panadería artesanal con más de 20 años de historia…"
+                                  placeholder="<?php echo htmlspecialchars($descriptionPlaceholders[$selectedType] ?? $descriptionPlaceholders['default']); ?>"
                                   oninput="updateCount(this,'count-desc',1200)"><?php echo htmlspecialchars($business['description'] ?? ''); ?></textarea>
                         <div class="char-count"><span id="count-desc"><?php echo mb_strlen($business['description'] ?? ''); ?></span>/1200</div>
                     </div>
@@ -1155,11 +1218,17 @@ if (!EDITING && navigator.geolocation) {
 
 // ── Business type handler ─────────────────────────────────────────────────────
 const subtypeHints = <?php echo json_encode($subtypeLabels); ?>;
+const professionalLicensedTypes = <?php echo json_encode($professionalLicensedTypes); ?>;
+const restrictedApprovalTypes   = <?php echo json_encode($restrictedApprovalTypes); ?>;
+const descriptionPlaceholders   = <?php echo json_encode($descriptionPlaceholders); ?>;
 
 function onTypeChange(val) {
     const sec   = document.getElementById('subtype-section');
     const hint  = document.getElementById('subtype-hint');
     const input = document.getElementById('tipo_comercio');
+    const desc  = document.getElementById('description');
+    const professionalNote = document.getElementById('professional-license-note');
+    const restrictedNote   = document.getElementById('restricted-approval-note');
     sec.style.display = 'block';
     if (subtypeHints[val]) {
         hint.textContent  = '— ' + subtypeHints[val];
@@ -1167,6 +1236,15 @@ function onTypeChange(val) {
     } else {
         hint.textContent  = '(opcional)';
         input.placeholder = 'Especificá el rubro o especialidad…';
+    }
+    if (desc && !desc.value.trim()) {
+        desc.placeholder = descriptionPlaceholders[val] || descriptionPlaceholders.default || '';
+    }
+    if (professionalNote) {
+        professionalNote.style.display = professionalLicensedTypes.includes(val) ? 'block' : 'none';
+    }
+    if (restrictedNote) {
+        restrictedNote.style.display = restrictedApprovalTypes.includes(val) ? 'block' : 'none';
     }
     updateTagSuggestions(val);
 }
@@ -1226,6 +1304,24 @@ const tagsByType = {
     fonoaudiologo:  ['lenguaje','voz','deglución','audiología','tartamudez','niños','adultos mayores'],
     grafologo:      ['peritaje','orientación','grafoterapia','firma','análisis de escritura'],
     centro_vecinal: ['actividades culturales','talleres','deportes','merendero','apoyo escolar','vecinos','fomento'],
+    medico_pediatra: ['niños','controles','vacunación','crecimiento','consultorio','guardia'],
+    medico_traumatologo: ['huesos','lesiones','rehabilitación','deporte','columna','yesos'],
+    laboratorio: ['análisis clínicos','extracciones','sangre','orina','resultados online','turnos'],
+    ingenieria_civil: ['obras civiles','estructuras','cálculo','dirección de obra','proyectos'],
+    astrologo: ['carta natal','astrología','compatibilidad','tránsitos','orientación'],
+    grafica: ['impresiones','cartelería','ploteo','diseño gráfico','folletería'],
+    alquiler_mobiliario_fiestas: ['sillas','mesas','livings','carpas','mantelería','vajilla'],
+    propalacion_musica: ['sonido','musicalización','audio','dj','eventos'],
+    animacion_fiestas: ['animación infantil','show','juegos','eventos sociales','cumpleaños'],
+    zapatero: ['arreglo de calzado','suelas','pegado','restauración','cuero'],
+    gas_en_garrafa: ['garrafas','reparto','recarga','domicilio','urgencias'],
+    videojuegos: ['consolas','gaming','reparación','alquiler','torneos'],
+    seguridad: ['vigilancia','monitoreo','alarmas','cámaras','custodia'],
+    electricista: ['instalaciones','tableros','cortocircuitos','emergencias','mantenimiento'],
+    gasista: ['instalación de gas','matrícula','revisiones','fugas','emergencias'],
+    maestro_particular: ['apoyo escolar','clases particulares','matemática','idiomas','nivel secundario'],
+    asistencia_ancianos: ['acompañamiento','cuidados domiciliarios','higiene','medicación'],
+    enfermeria: ['enfermería domiciliaria','curaciones','inyecciones','control de signos','postoperatorio'],
 };
 
 function updateTagSuggestions(type) {

@@ -54,6 +54,14 @@ $typeIcons = [
     'cafeteria' => '☕',
     'academia' => '📚',
     'bar' => '🍺',
+    'medico_pediatra' => '🧒',
+    'medico_traumatologo' => '🦴',
+    'laboratorio' => '🧪',
+    'electricista' => '💡',
+    'gasista' => '🔥',
+    'enfermeria' => '🩺',
+    'asistencia_ancianos' => '🧓',
+    'videojuegos' => '🎮',
 ];
 $icon = $typeIcons[$business['business_type']] ?? '📍';
 

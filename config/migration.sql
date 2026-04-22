@@ -119,7 +119,25 @@ INSERT IGNORE INTO business_icons (business_type, emoji, color, icon_class) VALU
 ('turismo',      '✈️','#16a085', 'icon-turismo'),
 ('electronica',  '📱', '#2980b9', 'icon-electronica'),
 ('autos_venta',  '🚗', '#2980b9', 'icon-autos-venta'),
-('motos_venta',  '🏍️', '#8e44ad', 'icon-motos-venta');
+('motos_venta',  '🏍️', '#8e44ad', 'icon-motos-venta'),
+('medico_pediatra','🧒','#0ea5e9','icon-medico-pediatra'),
+('medico_traumatologo','🦴','#2563eb','icon-medico-traumatologo'),
+('laboratorio','🧪','#14b8a6','icon-laboratorio'),
+('ingenieria_civil','🏗️','#f59e0b','icon-ingenieria-civil'),
+('astrologo','🔮','#6366f1','icon-astrologo'),
+('grafica','🖨️','#a855f7','icon-grafica'),
+('alquiler_mobiliario_fiestas','🪑','#f59e0b','icon-alquiler-mobiliario-fiestas'),
+('propalacion_musica','🔊','#6366f1','icon-propalacion-musica'),
+('animacion_fiestas','🎉','#ec4899','icon-animacion-fiestas'),
+('zapatero','👞','#7c2d12','icon-zapatero'),
+('gas_en_garrafa','🛢️','#0ea5e9','icon-gas-en-garrafa'),
+('videojuegos','🎮','#8b5cf6','icon-videojuegos'),
+('seguridad','🛡️','#334155','icon-seguridad'),
+('electricista','💡','#facc15','icon-electricista'),
+('gasista','🔥','#f97316','icon-gasista'),
+('maestro_particular','📘','#0ea5e9','icon-maestro-particular'),
+('asistencia_ancianos','🧓','#14b8a6','icon-asistencia-ancianos'),
+('enfermeria','🩺','#0ea5e9','icon-enfermeria');
 
 -- ============================================================
 -- 7. Add missing columns to brands table (formulario unificado)

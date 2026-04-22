@@ -1,6 +1,7 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../delegation_helpers.php';
+require_once __DIR__ . '/../../includes/mapita_notifications.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     respond_error('Método HTTP no soportado.', 405);
@@ -68,6 +69,22 @@ try {
     ");
     $stmt->execute([$currentUserId, $businessId, $delegateUserId]);
 }
+
+$bizStmt = $db->prepare('SELECT name, user_id FROM businesses WHERE id = ? LIMIT 1');
+$bizStmt->execute([$businessId]);
+$business = $bizStmt->fetch(PDO::FETCH_ASSOC) ?: [];
+$owner = mapitaGetUserContactById($db, (int)($business['user_id'] ?? 0));
+mapitaSendUserNotificationEmail(
+    $owner['email'] ?? null,
+    'MAPITA | Confirmación de operación: delegación de negocio',
+    'Delegación de negocio',
+    [
+        'Negocio' => (string)($business['name'] ?? ('ID ' . $businessId)),
+        'Delegado' => (string)($targetUser['username'] ?? ('Usuario #' . $delegateUserId)),
+        'ID negocio' => (string)$businessId,
+        'Fecha' => date('d/m/Y H:i'),
+    ]
+);
 
 respond_success([
     'business_id' => $businessId,

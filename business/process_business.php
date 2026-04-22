@@ -7,11 +7,36 @@
 // Incluir archivos necesarios
 require_once __DIR__ . '/../includes/db_helper.php';
 require_once __DIR__ . '/../core/helpers.php';
+require_once __DIR__ . '/../includes/mapita_notifications.php';
 
 // Si existe el modelo Business, úsalo
 if (class_exists('\\App\\Models\\Business')) {
     // Importar namespace
     class_alias('\\App\\Models\\Business', 'Business');
+}
+
+function mapitaAllowedBusinessTypes(): array {
+    return [
+        'restaurante','cafeteria','bar','panaderia','heladeria','pizzeria',
+        'supermercado','comercio','autos_venta','motos_venta','indumentaria','ferreteria','electronica','muebleria','floristeria','libreria',
+        'productora_audiovisual','escuela_musicos','taller_artes','biodecodificacion','libreria_cristiana',
+        'farmacia','hospital','odontologia','veterinaria','optica',
+        'salon_belleza','barberia','spa','gimnasio',
+        'banco','inmobiliaria','seguros','abogado','contador','taller','construccion','remate','arquitectura','ingenieria',
+        'academia','escuela','hotel','turismo','cine',
+        'medico_pediatra','medico_traumatologo','laboratorio','ingenieria_civil','astrologo','grafica',
+        'alquiler_mobiliario_fiestas','propalacion_musica','animacion_fiestas','zapatero','gas_en_garrafa',
+        'videojuegos','seguridad','electricista','gasista','maestro_particular','asistencia_ancianos','enfermeria',
+        'otros',
+    ];
+}
+
+function mapitaRestrictedBusinessTypes(): array {
+    return ['inmobiliaria', 'seguros', 'abogado'];
+}
+
+function mapitaBusinessRequiresAdminApproval(string $businessType): bool {
+    return in_array($businessType, mapitaRestrictedBusinessTypes(), true);
 }
 
 function isMissingMapitaColumnError(PDOException $e): bool {
@@ -53,16 +78,7 @@ function validateBusinessData(array $data): array {
     $clean['address'] = $address;
 
     // Tipo de negocio (obligatorio, lista permitida)
-    $allowedTypes = [
-        'restaurante','cafeteria','bar','panaderia','heladeria','pizzeria',
-        'supermercado','comercio','autos_venta','motos_venta','indumentaria','ferreteria','electronica','muebleria','floristeria','libreria',
-        'productora_audiovisual','escuela_musicos','taller_artes','biodecodificacion','libreria_cristiana',
-        'farmacia','hospital','odontologia','veterinaria','optica',
-        'salon_belleza','barberia','spa','gimnasio',
-        'banco','inmobiliaria','seguros','abogado','contador','taller','construccion','remate',
-        'academia','escuela','hotel','turismo','cine',
-        'otros',
-    ];
+    $allowedTypes = mapitaAllowedBusinessTypes();
     $businessType = trim($data['business_type'] ?? '');
     if (!in_array($businessType, $allowedTypes, true)) {
         $errors[] = 'El tipo de negocio no es válido.';
@@ -189,6 +205,9 @@ function addBusiness($data, $userId) {
         // Comenzar transacción
         $db->beginTransaction();
 
+        $requiresApproval = mapitaBusinessRequiresAdminApproval((string)$data['business_type']) && !isAdmin();
+        $initialVisible   = $requiresApproval ? 0 : 1;
+
         // Insertar negocio básico
         $stmt = $db->prepare("
             INSERT INTO businesses (
@@ -198,7 +217,7 @@ function addBusiness($data, $userId) {
                 has_card_payment, is_franchise, verified, created_at
             ) VALUES (
                 :name, :address, :lat, :lng, :business_type, :phone,
-                :email, :website, :description, :price_range, :user_id, 1,
+                :email, :website, :description, :price_range, :user_id, :visible,
                 :instagram, :facebook, :tiktok, :certifications, :has_delivery,
                 :has_card_payment, :is_franchise, :verified, NOW()
             )
@@ -215,6 +234,7 @@ function addBusiness($data, $userId) {
             ':description'       => $data['description'],
             ':price_range'       => $data['price_range'],
             ':user_id'           => (int)$userId,
+            ':visible'           => $initialVisible,
             ':instagram'         => $data['instagram'],
             ':facebook'          => $data['facebook'],
             ':tiktok'            => $data['tiktok'],
@@ -226,6 +246,10 @@ function addBusiness($data, $userId) {
         ]);
 
         $businessId = $db->lastInsertId();
+
+        if ($requiresApproval && mapitaColumnExists($db, 'businesses', 'status')) {
+            $db->prepare("UPDATE businesses SET status = 'pending' WHERE id = ?")->execute([$businessId]);
+        }
 
         // Guardar horarios, sub-tipo y categorías para todos los tipos de negocio
         $hasExtended = $data['tipo_comercio'] || $data['horario_apertura'] || $data['horario_cierre']
@@ -252,9 +276,25 @@ function addBusiness($data, $userId) {
         // Confirmar transacción
         $db->commit();
 
+        $owner = mapitaGetUserContactById($db, (int)$userId);
+        mapitaSendUserNotificationEmail(
+            $owner['email'] ?? null,
+            'MAPITA | Confirmación de operación: alta de negocio',
+            'Alta de negocio',
+            [
+                'Negocio' => (string)$data['name'],
+                'Tipo' => (string)$data['business_type'],
+                'ID' => (string)$businessId,
+                'Estado' => $initialVisible ? 'Publicado' : 'Pendiente de aprobación administrativa',
+                'Fecha' => date('d/m/Y H:i'),
+            ]
+        );
+
         return [
             'success'     => true,
-            'message'     => 'Negocio agregado correctamente',
+            'message'     => $requiresApproval
+                ? 'Negocio registrado correctamente. Quedó pendiente de aprobación administrativa para su publicación.'
+                : 'Negocio agregado correctamente',
             'business_id' => $businessId,
         ];
 
@@ -299,6 +339,10 @@ function updateBusiness($businessId, $data, $userId) {
             return ['success' => false, 'message' => 'No tienes permiso para editar este negocio.'];
         }
 
+        $requiresApprovalNow = mapitaBusinessRequiresAdminApproval((string)$data['business_type']);
+        $wasRestricted       = mapitaBusinessRequiresAdminApproval((string)($business['business_type'] ?? ''));
+        $forcePendingByTypeChange = $requiresApprovalNow && !$wasRestricted && !isAdmin();
+
         $db->beginTransaction();
 
         // Actualizar negocio básico
@@ -311,7 +355,7 @@ function updateBusiness($businessId, $data, $userId) {
                 facebook = :facebook, tiktok = :tiktok,
                 certifications = :certifications, has_delivery = :has_delivery,
                 has_card_payment = :has_card_payment, is_franchise = :is_franchise,
-                verified = :verified, updated_at = NOW()
+                verified = :verified, visible = :visible, updated_at = NOW()
             WHERE id = :id
         ");
         $stmt->execute([
@@ -333,8 +377,13 @@ function updateBusiness($businessId, $data, $userId) {
             ':has_card_payment'  => $data['has_card_payment'],
             ':is_franchise'      => $data['is_franchise'],
             ':verified'          => $data['verified'],
+            ':visible'           => $forcePendingByTypeChange ? 0 : (int)($business['visible'] ?? 1),
             ':id'                => $businessId,
         ]);
+
+        if ($forcePendingByTypeChange && mapitaColumnExists($db, 'businesses', 'status')) {
+            $db->prepare("UPDATE businesses SET status = 'pending' WHERE id = ?")->execute([$businessId]);
+        }
 
         // Upsert en comercios — se guarda para todos los tipos de negocio
         $check = $db->prepare("SELECT id FROM comercios WHERE business_id = ?");
@@ -369,7 +418,26 @@ function updateBusiness($businessId, $data, $userId) {
 
         $db->commit();
 
-        return ['success' => true, 'message' => 'Negocio actualizado correctamente.'];
+        $owner = mapitaGetUserContactById($db, (int)$business['user_id']);
+        mapitaSendUserNotificationEmail(
+            $owner['email'] ?? null,
+            'MAPITA | Confirmación de operación: edición de negocio',
+            'Edición de negocio',
+            [
+                'Negocio' => (string)$data['name'],
+                'Tipo' => (string)$data['business_type'],
+                'ID' => (string)$businessId,
+                'Estado' => $forcePendingByTypeChange ? 'Pendiente de aprobación administrativa' : 'Actualizado',
+                'Fecha' => date('d/m/Y H:i'),
+            ]
+        );
+
+        return [
+            'success' => true,
+            'message' => $forcePendingByTypeChange
+                ? 'Negocio actualizado. Por cambio de rubro, quedó pendiente de aprobación administrativa para su publicación.'
+                : 'Negocio actualizado correctamente.'
+        ];
 
     } catch (Exception $e) {
         if (isset($db) && $db->inTransaction()) {
@@ -394,7 +462,7 @@ function deleteBusiness($businessId, $userId) {
         $db = getDbConnection();
 
         // Verificar permisos (owner, delegado admin o superadmin)
-        $stmt = $db->prepare("SELECT user_id FROM businesses WHERE id = ?");
+        $stmt = $db->prepare("SELECT user_id, name FROM businesses WHERE id = ?");
         $stmt->execute([$businessId]);
         $business = $stmt->fetch();
 
@@ -415,6 +483,18 @@ function deleteBusiness($businessId, $userId) {
         $db->prepare("DELETE FROM businesses WHERE id = ?")->execute([$businessId]);
 
         $db->commit();
+
+        $owner = mapitaGetUserContactById($db, (int)$business['user_id']);
+        mapitaSendUserNotificationEmail(
+            $owner['email'] ?? null,
+            'MAPITA | Confirmación de operación: eliminación de negocio',
+            'Eliminación de negocio',
+            [
+                'Negocio' => (string)($business['name'] ?? ('ID ' . $businessId)),
+                'ID' => (string)$businessId,
+                'Fecha' => date('d/m/Y H:i'),
+            ]
+        );
 
         return ['success' => true, 'message' => 'Negocio eliminado correctamente'];
 
@@ -440,7 +520,7 @@ function toggleBusinessVisibility($businessId, $userId) {
 
         $db = getDbConnection();
 
-        $stmt = $db->prepare("SELECT user_id, visible FROM businesses WHERE id = ?");
+        $stmt = $db->prepare("SELECT user_id, visible, business_type FROM businesses WHERE id = ?");
         $stmt->execute([$businessId]);
         $business = $stmt->fetch();
 
@@ -452,6 +532,11 @@ function toggleBusinessVisibility($businessId, $userId) {
         }
 
         $newVisible = $business['visible'] ? 0 : 1;
+        if ($newVisible === 1
+            && mapitaBusinessRequiresAdminApproval((string)($business['business_type'] ?? ''))
+            && !isAdmin()) {
+            return ['success' => false, 'message' => 'Este rubro requiere aprobación expresa del administrador para publicarse.'];
+        }
         $db->prepare("UPDATE businesses SET visible = ?, updated_at = NOW() WHERE id = ?")
            ->execute([$newVisible, $businessId]);
 
