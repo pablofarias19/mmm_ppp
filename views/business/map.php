@@ -645,11 +645,16 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         <optgroup label="Salud">
             <option value="farmacia">💊 Farmacia</option>
             <option value="hospital">🏥 Clínica / Hospital</option>
+            <option value="medico_pediatra">🧒 Médico Pediatra</option>
+            <option value="medico_traumatologo">🦴 Médico Traumatólogo</option>
+            <option value="laboratorio">🧪 Laboratorio</option>
             <option value="odontologia">🦷 Odontología</option>
             <option value="psicologo">🧠 Psicología</option>
             <option value="psicopedagogo">📚 Psicopedagogía</option>
             <option value="fonoaudiologo">🗣️ Fonoaudiología</option>
             <option value="grafologo">✍️ Grafología</option>
+            <option value="enfermeria">🩺 Enfermería</option>
+            <option value="asistencia_ancianos">🧓 Asistencia a Ancianos</option>
             <option value="veterinaria">🐾 Veterinaria</option>
         </optgroup>
         <optgroup label="Belleza & Bienestar">
@@ -667,6 +672,19 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             <option value="contador">📊 Contaduría</option>
             <option value="arquitectura">📐 Arquitectura</option>
             <option value="ingenieria">⚙️ Ingeniería</option>
+            <option value="ingenieria_civil">🏗️ Ingeniería Civil</option>
+            <option value="electricista">💡 Electricista</option>
+            <option value="gasista">🔥 Gasista matriculado</option>
+            <option value="gas_en_garrafa">🛢️ Gas en garrafa</option>
+            <option value="seguridad">🛡️ Seguridad</option>
+            <option value="grafica">🖨️ Gráfica</option>
+            <option value="astrologo">🔮 Astrólogo</option>
+            <option value="zapatero">👞 Zapatero</option>
+            <option value="videojuegos">🎮 Videojuegos</option>
+            <option value="maestro_particular">📘 Maestro particular</option>
+            <option value="alquiler_mobiliario_fiestas">🪑 Alquiler de mobiliario para fiestas</option>
+            <option value="propalacion_musica">🔊 Propalación (música)</option>
+            <option value="animacion_fiestas">🎉 Animación de fiestas</option>
             <option value="taller">🔩 Taller Mecánico</option>
             <option value="herreria">🔨 Herrería</option>
             <option value="carpinteria">🪵 Carpintería</option>
@@ -1055,6 +1073,13 @@ const BUSINESS_TYPE_LABELS = {
     escuela_musicos:'Escuela de Músicos', taller_artes:'Taller de Artes',
     psicologo:'Psicología', fonoaudiologo:'Fonoaudiología', grafologo:'Grafología',
     biodecodificacion:'Biodecodificación', libreria_cristiana:'Librería Cristiana',
+    medico_pediatra:'Médico Pediatra', medico_traumatologo:'Médico Traumatólogo',
+    laboratorio:'Laboratorio', enfermeria:'Enfermería', asistencia_ancianos:'Asistencia a Ancianos',
+    ingenieria_civil:'Ingeniería Civil', electricista:'Electricista', gasista:'Gasista matriculado',
+    gas_en_garrafa:'Gas en garrafa', seguridad:'Seguridad', grafica:'Gráfica',
+    astrologo:'Astrólogo', zapatero:'Zapatero', videojuegos:'Videojuegos',
+    maestro_particular:'Maestro particular', alquiler_mobiliario_fiestas:'Alquiler de mobiliario para fiestas',
+    propalacion_musica:'Propalación (música)', animacion_fiestas:'Animación de fiestas',
 };
 const BUSINESS_FALLBACK_EMOJI = {
     restaurante:'🍽️', cafeteria:'☕', bar:'🍺', panaderia:'🥐',
@@ -1070,6 +1095,13 @@ const BUSINESS_FALLBACK_EMOJI = {
     productora_audiovisual:'🎥', escuela_musicos:'🎼', taller_artes:'🎨',
     psicologo:'🧠', fonoaudiologo:'🗣️', grafologo:'✍️',
     biodecodificacion:'🧬', libreria_cristiana:'📚',
+    medico_pediatra:'🧒', medico_traumatologo:'🦴', laboratorio:'🧪',
+    enfermeria:'🩺', asistencia_ancianos:'🧓',
+    ingenieria_civil:'🏗️', electricista:'💡', gasista:'🔥',
+    gas_en_garrafa:'🛢️', seguridad:'🛡️', grafica:'🖨️',
+    astrologo:'🔮', zapatero:'👞', videojuegos:'🎮',
+    maestro_particular:'📘', alquiler_mobiliario_fiestas:'🪑',
+    propalacion_musica:'🔊', animacion_fiestas:'🎉',
 };
 
 // ─── Color helpers ───────────────────────────────────────────────────────────────

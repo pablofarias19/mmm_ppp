@@ -87,8 +87,12 @@ if ($type === 'businesses') {
         'productora_audiovisual','escuela_musicos','taller_artes','biodecodificacion','libreria_cristiana',
         'farmacia','hospital','odontologia','veterinaria','optica',
         'salon_belleza','barberia','spa','gimnasio',
-        'banco','inmobiliaria','seguros','abogado','contador','taller','construccion','remate',
-        'academia','escuela','hotel','turismo','cine','otros'
+        'banco','inmobiliaria','seguros','abogado','contador','taller','construccion','remate','arquitectura','ingenieria',
+        'academia','escuela','hotel','turismo','cine',
+        'medico_pediatra','medico_traumatologo','laboratorio','ingenieria_civil','astrologo','grafica',
+        'alquiler_mobiliario_fiestas','propalacion_musica','animacion_fiestas','zapatero','gas_en_garrafa',
+        'videojuegos','seguridad','electricista','gasista','maestro_particular','asistencia_ancianos','enfermeria',
+        'otros'
     ];
 
     $stmt = $db->prepare("

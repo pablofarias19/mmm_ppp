@@ -15,6 +15,7 @@ if (!isset($_SESSION['user_id'])) {
 
 require_once __DIR__ . '/../../core/helpers.php';
 require_once __DIR__ . '/../../includes/db_helper.php';
+require_once __DIR__ . '/../../includes/mapita_notifications.php';
 
 setSecurityHeaders();
 
@@ -63,6 +64,52 @@ function isMissingMapitaColumnErrorBrand(PDOException $e): bool {
 // ── Procesar POST ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrfToken();
+
+    if ($editing && isset($_POST['delete_brand'])) {
+        try {
+            $db = getDbConnection();
+            if (!$isAdmin && !canManageBrand($userId, (int)$brandId)) {
+                throw new Exception('No tenés permisos para eliminar esta marca.');
+            }
+
+            $stmtOwner = $db->prepare('SELECT user_id, nombre FROM brands WHERE id = ? LIMIT 1');
+            $stmtOwner->execute([(int)$brandId]);
+            $brandToDelete = $stmtOwner->fetch(PDO::FETCH_ASSOC);
+            if (!$brandToDelete) {
+                throw new Exception('Marca no encontrada.');
+            }
+
+            if ($isAdmin) {
+                $stmtDelete = $db->prepare('DELETE FROM brands WHERE id = ?');
+                $stmtDelete->execute([(int)$brandId]);
+            } else {
+                $stmtDelete = $db->prepare('DELETE FROM brands WHERE id = ? AND user_id = ?');
+                $stmtDelete->execute([(int)$brandId, $userId]);
+            }
+
+            if ($stmtDelete->rowCount() < 1) {
+                throw new Exception('No se pudo eliminar la marca.');
+            }
+
+            $owner = mapitaGetUserContactById($db, (int)$brandToDelete['user_id']);
+            mapitaSendUserNotificationEmail(
+                $owner['email'] ?? null,
+                'MAPITA | Confirmación de operación: eliminación de marca',
+                'Eliminación de marca',
+                [
+                    'Marca' => (string)($brandToDelete['nombre'] ?? ('ID ' . $brandId)),
+                    'ID' => (string)$brandId,
+                    'Fecha' => date('d/m/Y H:i'),
+                ]
+            );
+
+            header('Location: /marcas?brand_deleted=1');
+            exit;
+        } catch (Exception $e) {
+            $message = 'Error al eliminar la marca: ' . $e->getMessage();
+            $msgType = 'error';
+        }
+    }
 
     $nombre               = trim($_POST['nombre']               ?? '');
     $rubro                = trim($_POST['rubro']                ?? '');
@@ -207,6 +254,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt2 = $db->prepare('SELECT * FROM brands WHERE id = ?');
                 $stmt2->execute([$brandId]);
                 $brand = $stmt2->fetch(PDO::FETCH_ASSOC);
+                $owner = mapitaGetUserContactById($db, (int)($brand['user_id'] ?? $userId));
+                mapitaSendUserNotificationEmail(
+                    $owner['email'] ?? null,
+                    'MAPITA | Confirmación de operación: edición de marca',
+                    'Edición de marca',
+                    [
+                        'Marca' => (string)$nombre,
+                        'Rubro' => (string)$rubro,
+                        'ID' => (string)$brandId,
+                        'Fecha' => date('d/m/Y H:i'),
+                    ]
+                );
                 $message = '✔ Marca actualizada correctamente.';
                 $msgType = 'success';
             } else {
@@ -297,6 +356,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     ]);
                 }
                 $newId = $db->lastInsertId();
+                $owner = mapitaGetUserContactById($db, $userId);
+                mapitaSendUserNotificationEmail(
+                    $owner['email'] ?? null,
+                    'MAPITA | Confirmación de operación: alta de marca',
+                    'Alta de marca',
+                    [
+                        'Marca' => (string)$nombre,
+                        'Rubro' => (string)$rubro,
+                        'ID' => (string)$newId,
+                        'Fecha' => date('d/m/Y H:i'),
+                    ]
+                );
                 $message = '✔ Marca creada. Redirigiendo...';
                 $msgType = 'success';
                 header("Refresh: 2; url=/brand_form?id=$newId");
@@ -1352,6 +1423,12 @@ function chanChk($brand, $val) {
 
 <!-- Botones sticky -->
 <div class="form-actions">
+    <?php if ($editing): ?>
+    <button type="submit" name="delete_brand" value="1" class="btn btn-danger"
+            onclick="return confirm('¿Eliminar esta marca? Esta acción no se puede deshacer.');">
+        🗑️ Eliminar marca
+    </button>
+    <?php endif; ?>
     <a href="/marcas"><button type="button" class="btn btn-back">← Volver al mapa</button></a>
     <?php if ($editing): ?>
     <a href="/brand_detail?id=<?= $brandId ?>"><button type="button" class="btn btn-back">👁️ Ver detalle</button></a>

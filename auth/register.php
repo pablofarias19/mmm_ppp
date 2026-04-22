@@ -9,6 +9,7 @@ if (isset($_SESSION['user_id'])) {
 
 require_once __DIR__ . '/../core/helpers.php';
 require_once __DIR__ . '/../includes/db_helper.php';
+require_once __DIR__ . '/../includes/mapita_notifications.php';
 
 ini_set('display_errors', 0);
 error_reporting(0);
@@ -79,6 +80,16 @@ function registerUser($username, $email, $phone, $password, $confirmPassword, $i
         $result = $stmt->execute([$username, $passwordHash, $email, ($phone ?: null), (int)$isAdmin]);
 
         if ($result) {
+            mapitaSendUserNotificationEmail(
+                $email,
+                'MAPITA | Confirmación de operación: registro de usuario',
+                'Registro de usuario',
+                [
+                    'Usuario' => $username,
+                    'Email' => $email,
+                    'Fecha' => date('d/m/Y H:i'),
+                ]
+            );
             return ['success' => true, 'message' => 'Usuario registrado correctamente'];
         } else {
             throw new Exception('Error al registrar el usuario');

@@ -88,7 +88,7 @@ if ($method === 'GET') {
 
         $type = trim($_GET['type'] ?? '');
         if ($type !== '') {
-            $allowed = ['comercio','autos_venta','motos_venta','remate','hotel','restaurante','inmobiliaria','farmacia'];
+            $allowed = function_exists('mapitaAllowedBusinessTypes') ? mapitaAllowedBusinessTypes() : [];
             if (in_array($type, $allowed, true)) {
                 $sql    .= " AND b.business_type = ?";
                 $params[] = $type;
