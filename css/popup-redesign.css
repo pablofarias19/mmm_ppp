@@ -19,20 +19,20 @@
     box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16) !important;
 }
 
-.popup-header {
+.leaflet-popup .popup-header {
     padding: 14px 16px;
-    background: linear-gradient(135deg, #1B3B6F 0%, #2E5FA3 60%, #667eea 100%) !important;
-    color: white !important;
+    background: linear-gradient(135deg, #1B3B6F 0%, #2E5FA3 60%, #667eea 100%);
+    color: white;
     border-radius: 12px 12px 0 0;
 }
 
-.popup-header-inner {
+.leaflet-popup .popup-header-inner {
     display: flex;
     align-items: flex-start;
     gap: 10px;
 }
 
-.popup-header-icon {
+.leaflet-popup .popup-header-icon {
     width: 42px;
     height: 42px;
     border-radius: 8px;
@@ -45,7 +45,7 @@
     overflow: hidden;
 }
 
-.popup-header-icon img {
+.leaflet-popup .popup-header-icon img {
     width: 42px;
     height: 42px;
     object-fit: cover;
@@ -54,33 +54,33 @@
     border: none;
 }
 
-.popup-header-text {
+.leaflet-popup .popup-header-text {
     flex: 1;
     min-width: 0;
 }
 
-.popup-type-badge {
+.leaflet-popup .popup-type-badge {
     display: inline-block;
     background: rgba(255,255,255,0.22);
     border-radius: 10px;
     padding: 2px 8px;
     font-size: 11px;
-    color: rgba(255,255,255,0.95) !important;
+    color: rgba(255,255,255,0.95);
     font-weight: 500;
     margin-top: 3px;
     white-space: nowrap;
 }
 
-.popup-header h3 {
+.leaflet-popup .popup-header h3 {
     margin: 0 0 2px 0;
     font-size: 17px;
     font-weight: 700;
     letter-spacing: -0.5px;
     line-height: 1.3;
-    color: white !important;
+    color: white;
 }
 
-.popup-header .status-badge {
+.leaflet-popup .popup-header .status-badge {
     display: inline-block;
     margin-top: 6px;
     padding: 4px 10px;

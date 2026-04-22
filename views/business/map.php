@@ -2861,8 +2861,9 @@ function buildPopup(n, isMarca) {
 
     // ── Icon column ──
     if (isMarca) {
-        if (n.logo_url) {
-            p += '<div class="popup-header-icon"><img src="' + n.logo_url + '" alt="Logo ' + name + '"></div>';
+        const safeLogo = (n.logo_url && /^https?:\/\//i.test(n.logo_url)) ? n.logo_url : null;
+        if (safeLogo) {
+            p += '<div class="popup-header-icon"><img src="' + escapeHtml(safeLogo) + '" alt="Logo ' + escapeHtml(name) + '"></div>';
         } else {
             p += '<div class="popup-header-icon">🏷️</div>';
         }
@@ -2874,7 +2875,7 @@ function buildPopup(n, isMarca) {
 
     // ── Text column ──
     p += '<div class="popup-header-text">';
-    p += '<h3>' + name + '</h3>';
+    p += '<h3>' + escapeHtml(name) + '</h3>';
 
     if (!isMarca && n.business_type) {
         const typeLabel = BUSINESS_TYPE_LABELS[n.business_type] || n.business_type;
