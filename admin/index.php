@@ -502,12 +502,13 @@ async function loadData(type) {
 // ── Render list ─────────────────────────────────
 function renderList(type, items) {
     const container = document.getElementById(type + '-list');
+    const singularType = getSingularType(type);
     if (!items.length) {
         container.innerHTML = `
             <div style="text-align:center;padding:40px;color:var(--text-tertiary);">
                 <p style="font-size:2rem;">📭</p>
                 <p>No hay ${type} creados aún</p>
-                <button class="btn btn-primary" onclick="openModal('${type.slice(0,-1)}')">Crear primero</button>
+                <button class="btn btn-primary" onclick="openModal('${singularType}')">Crear primero</button>
             </div>`;
         return;
     }
@@ -536,8 +537,8 @@ function renderList(type, items) {
                 </div>
             </div>
             <div class="card-actions" style="display:flex;gap:8px;flex-shrink:0;">
-                <button class="btn btn-sm btn-secondary" onclick="editItem('${type.slice(0,-1)}',${item.id})">✏️ Editar</button>
-                <button class="btn btn-sm btn-danger"    onclick="deleteItem('${type.slice(0,-1)}',${item.id})">🗑 Eliminar</button>
+                <button class="btn btn-sm btn-secondary" onclick="editItem('${singularType}',${item.id})">✏️ Editar</button>
+                <button class="btn btn-sm btn-danger"    onclick="deleteItem('${singularType}',${item.id})">🗑 Eliminar</button>
             </div>
         </div>`;
     }).join('');
@@ -984,6 +985,18 @@ function getTypeName(type) {
         encuesta:'Encuesta', oferta:'Oferta', transmision:'Transmisión en Vivo'
     }[type] || type;
 }
+
+function getSingularType(type) {
+    return {
+        noticias:'noticia',
+        eventos:'evento',
+        trivias:'trivia',
+        encuestas:'encuesta',
+        ofertas:'oferta',
+        transmisiones:'transmision'
+    }[type] || type;
+}
+
 function getApiEndpoint(type) {
     return {
         noticia:'noticias.php', evento:'eventos.php', trivia:'trivias.php',
@@ -1038,7 +1051,14 @@ async function handleSubmit(e) {
 // ── Edit ─────────────────────────────────────────
 async function editItem(type, id) {
     try {
-        const endpoints = {noticia:'noticias', evento:'eventos', trivia:'trivias', encuesta:'encuestas'};
+        const endpoints = {
+            noticia:'noticias',
+            evento:'eventos',
+            trivia:'trivias',
+            encuesta:'encuestas',
+            oferta:'ofertas',
+            transmision:'transmisiones'
+        };
         const res  = await fetch('/api/' + endpoints[type] + '.php?id=' + id);
         const result = await res.json();
         if (result.success && result.data) {
@@ -1054,12 +1074,26 @@ async function editItem(type, id) {
 // ── Delete ───────────────────────────────────────
 async function deleteItem(type, id) {
     if (!confirm('¿Seguro que deseas eliminar esto? Esta acción no se puede deshacer.')) return;
-    const endpoints = {noticia:'noticias', evento:'eventos', trivia:'trivias', encuesta:'encuestas'};
+    const endpoints = {
+        noticia:'noticias',
+        evento:'eventos',
+        trivia:'trivias',
+        encuesta:'encuestas',
+        oferta:'ofertas',
+        transmision:'transmisiones'
+    };
     try {
         const res = await fetch('/api/' + endpoints[type] + '.php?action=delete&id=' + id, { method:'POST' });
         const result = await res.json();
         if (result.success) {
-            const tabMap = {noticia:'noticias',evento:'eventos',trivia:'trivias',encuesta:'encuestas'};
+            const tabMap = {
+                noticia:'noticias',
+                evento:'eventos',
+                trivia:'trivias',
+                encuesta:'encuestas',
+                oferta:'ofertas',
+                transmision:'transmisiones'
+            };
             loadData(tabMap[type]);
             showToast('✅ Eliminado correctamente', 'success');
         } else {
