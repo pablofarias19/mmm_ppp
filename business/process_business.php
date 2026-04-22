@@ -203,10 +203,6 @@ function addBusiness($data, $userId) {
         $db = getDbConnection();
 
         // Comenzar transacción
-        $requiresApprovalNow = mapitaBusinessRequiresAdminApproval((string)$data['business_type']);
-        $wasRestricted       = mapitaBusinessRequiresAdminApproval((string)($business['business_type'] ?? ''));
-        $forcePendingByTypeChange = $requiresApprovalNow && !$wasRestricted && !isAdmin();
-
         $db->beginTransaction();
 
         $requiresApproval = mapitaBusinessRequiresAdminApproval((string)$data['business_type']) && !isAdmin();
@@ -289,7 +285,7 @@ function addBusiness($data, $userId) {
                 'Negocio' => (string)$data['name'],
                 'Tipo' => (string)$data['business_type'],
                 'ID' => (string)$businessId,
-                'Estado' => $requiresApproval ? 'Pendiente de aprobación administrativa' : 'Publicado',
+                'Estado' => $initialVisible ? 'Publicado' : 'Pendiente de aprobación administrativa',
                 'Fecha' => date('d/m/Y H:i'),
             ]
         );
@@ -342,6 +338,10 @@ function updateBusiness($businessId, $data, $userId) {
         if (!canManageBusiness($userId, $businessId)) {
             return ['success' => false, 'message' => 'No tienes permiso para editar este negocio.'];
         }
+
+        $requiresApprovalNow = mapitaBusinessRequiresAdminApproval((string)$data['business_type']);
+        $wasRestricted       = mapitaBusinessRequiresAdminApproval((string)($business['business_type'] ?? ''));
+        $forcePendingByTypeChange = $requiresApprovalNow && !$wasRestricted && !isAdmin();
 
         $db->beginTransaction();
 

@@ -39,16 +39,20 @@ if (!function_exists('mapitaSendUserNotificationEmail')) {
         }
 
         $cleanSubject = mapitaSanitizeMailHeader($subject);
+        $mailerVersion = mapitaSanitizeMailHeader((string)phpversion());
         $headers = implode("\r\n", [
             'MIME-Version: 1.0',
             'Content-Type: text/plain; charset=UTF-8',
             'From: MAPITA <no-reply@mapita.com.ar>',
             'Reply-To: soporte@mapita.com.ar',
-            'X-Mailer: PHP/' . phpversion(),
+            'X-Mailer: PHP/' . $mailerVersion,
         ]);
 
         $body = mapitaBuildNotificationBody($operation, $details);
-        @mail($toEmail, $cleanSubject, $body, $headers);
+        $sent = mail($toEmail, $cleanSubject, $body, $headers);
+        if (!$sent) {
+            error_log('No se pudo enviar email de notificación MAPITA a ' . $toEmail);
+        }
     }
 }
 
@@ -61,4 +65,3 @@ if (!function_exists('mapitaGetUserContactById')) {
         return $row ?: null;
     }
 }
-

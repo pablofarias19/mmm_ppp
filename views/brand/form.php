@@ -91,13 +91,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 throw new Exception('No se pudo eliminar la marca.');
             }
 
+            $brandName = !empty($brandToDelete['nombre']) ? (string)$brandToDelete['nombre'] : ('ID ' . $brandId);
             $owner = mapitaGetUserContactById($db, (int)$brandToDelete['user_id']);
             mapitaSendUserNotificationEmail(
                 $owner['email'] ?? null,
                 'MAPITA | Confirmación de operación: eliminación de marca',
                 'Eliminación de marca',
                 [
-                    'Marca' => (string)($brandToDelete['nombre'] ?? ('ID ' . $brandId)),
+                    'Marca' => $brandName,
                     'ID' => (string)$brandId,
                     'Fecha' => date('d/m/Y H:i'),
                 ]
