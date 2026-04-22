@@ -160,9 +160,9 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         #sidebar {
             width: var(--sidebar-width);
             padding: var(--space-md);
-            background: var(--bg-tertiary);
+            background: #f4f5f9; /* always light gray — never dark mode override */
             overflow-y: auto;
-            border-right: var(--border-width-thin) solid var(--color-gray-300);
+            border-right: 1px solid #e2e8f0;
             transition: transform var(--transition-base), left var(--transition-base);
             z-index: var(--z-fixed);
         }
@@ -509,8 +509,23 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
 </head>
 <body>
 
-<!-- Mobile toggle -->
-<button id="togglePanel" onclick="toggleSidebar()">☰ Menú</button>
+<!-- Mobile toggle with MAPITA branding -->
+<button id="togglePanel" onclick="toggleSidebar()">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="20" height="20"
+         style="flex-shrink:0;border-radius:5px;vertical-align:middle;" role="img" aria-label="Mapita logo">
+        <defs>
+            <linearGradient id="tpBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#E8C547"/>
+                <stop offset="100%" stop-color="#D4AF37"/>
+            </linearGradient>
+        </defs>
+        <rect width="40" height="40" rx="9" ry="9" fill="rgba(255,255,255,0.2)"/>
+        <ellipse cx="20" cy="16.5" rx="8" ry="8" fill="url(#tpBg)"/>
+        <path d="M16.2 22 Q20 31 23.8 22" fill="url(#tpBg)"/>
+        <circle cx="20" cy="16.5" r="3.2" fill="white"/>
+    </svg>
+    <span style="font-family:Arial Black,Arial,sans-serif;font-weight:900;letter-spacing:1.5px;font-size:11px;">MAPITA</span>
+</button>
 
 <!-- Floating draggable view selector (IMPROVED: Independent toggles) -->
 <div id="ver-selector">
@@ -1012,6 +1027,38 @@ let userLocationMarker = null;
 
 // ─── A1: SVG Marker system (iconos cargados dinámicamente desde BD) ────────────────
 let iconosDB = {};  // Se llena con datos del API /api/api_iconos.php
+
+// ─── Etiquetas legibles y emojis de respaldo por tipo de negocio ──────────────────
+const BUSINESS_TYPE_LABELS = {
+    restaurante:'Restaurante', cafeteria:'Cafetería', bar:'Bar / Pub',
+    panaderia:'Panadería', heladeria:'Heladería', pizzeria:'Pizzería',
+    supermercado:'Supermercado', comercio:'Tienda / Local',
+    autos_venta:'Autos en Venta', motos_venta:'Motos en Venta',
+    indumentaria:'Indumentaria', verduleria:'Verdulería', carniceria:'Carnicería',
+    pastas:'Fábrica de Pastas', ferreteria:'Ferretería', electronica:'Tecnología',
+    muebleria:'Mueblería', floristeria:'Floristería', libreria:'Librería',
+    kiosco:'Kiosco', optica:'Óptica', farmacia:'Farmacia', clinica:'Clínica/Salud',
+    veterinaria:'Veterinaria', peluqueria:'Peluquería/Belleza',
+    gym:'Gimnasio', inmobiliaria:'Inmobiliaria', hotel:'Hotel/Alojamiento',
+    bar_restoran:'Bar-Restorán', banco:'Banco/Financiero',
+    educacion:'Educación', teatro:'Arte y Cultura',
+    taller_mecanico:'Taller Mecánico', lavadero:'Lavadero', cerrajeria:'Cerrajería',
+    remate:'Remate/Subasta', productora_audiovisual:'Productora Audiovisual',
+    escuela_musicos:'Escuela de Músicos', taller_artes:'Taller de Artes',
+    psicologo:'Psicología', fonoaudiologo:'Fonoaudiología', grafologo:'Grafología',
+    biodecodificacion:'Biodecodificación', libreria_cristiana:'Librería Cristiana',
+};
+const BUSINESS_FALLBACK_EMOJI = {
+    restaurante:'🍽️', cafeteria:'☕', bar:'🍺', panaderia:'🥐',
+    heladeria:'🍦', pizzeria:'🍕', supermercado:'🛒', comercio:'🛍️',
+    autos_venta:'🚗', motos_venta:'🏍️', indumentaria:'👕', verduleria:'🥦',
+    carniceria:'🥩', pastas:'🍝', ferreteria:'🔧', electronica:'📱',
+    muebleria:'🛋️', floristeria:'💐', libreria:'📖', kiosco:'🏪',
+    optica:'👓', farmacia:'💊', clinica:'🏥', veterinaria:'🐾',
+    peluqueria:'✂️', gym:'🏋️', inmobiliaria:'🏠', hotel:'🏨',
+    banco:'🏦', educacion:'📚', teatro:'🎭',
+    taller_mecanico:'🔩', remate:'🔨',
+};
 
 // ─── Color helpers ───────────────────────────────────────────────────────────────
 function _hexToRgb(hex) {
@@ -2808,21 +2855,47 @@ function buildPopup(n, isMarca) {
 
     let p = '<div style="font-family: inherit;" data-rel-entity-type="' + relType + '" data-rel-entity-id="' + relId + '" data-rel-mapita-id="' + relMapitaId + '">';
 
-    // PROFESSIONAL HEADER (with gradient background)
+    // PROFESSIONAL HEADER with icon + type badge
     p += '<div class="popup-header">';
+    p += '<div class="popup-header-inner">';
+
+    // ── Icon column ──
+    if (isMarca) {
+        if (n.logo_url) {
+            p += '<div class="popup-header-icon"><img src="' + n.logo_url + '" alt="Logo ' + name + '"></div>';
+        } else {
+            p += '<div class="popup-header-icon">🏷️</div>';
+        }
+    } else {
+        const iconData = iconosDB[n.business_type] || {};
+        const popupEmoji = iconData.emoji || BUSINESS_FALLBACK_EMOJI[n.business_type] || '📍';
+        p += '<div class="popup-header-icon">' + popupEmoji + '</div>';
+    }
+
+    // ── Text column ──
+    p += '<div class="popup-header-text">';
     p += '<h3>' + name + '</h3>';
+
+    if (!isMarca && n.business_type) {
+        const typeLabel = BUSINESS_TYPE_LABELS[n.business_type] || n.business_type;
+        p += '<span class="popup-type-badge">' + typeLabel + '</span>';
+    } else if (isMarca && n.rubro) {
+        p += '<span class="popup-type-badge">' + n.rubro + '</span>';
+    }
 
     if (!isMarca) {
         if (isRemateType(n)) {
             const remateStatus = getRemateStatus(n);
-            p += '<span class="status-badge">' + remateStatus.label + '</span>';
+            p += '<br><span class="status-badge">' + remateStatus.label + '</span>';
         } else if (!isVehicleSaleType(n)) {
             // For regular businesses: add open/closed status badge
             const openStatus = estaAbierto(n);
-            if (openStatus === true)  p += '<span class="status-badge">🟢 Abierto ahora</span>';
-            if (openStatus === false) p += '<span class="status-badge">🔴 Cerrado</span>';
+            if (openStatus === true)  p += '<br><span class="status-badge">🟢 Abierto ahora</span>';
+            if (openStatus === false) p += '<br><span class="status-badge">🔴 Cerrado</span>';
         }
     }
+    p += '</div>'; // Close popup-header-text
+    p += '</div>'; // Close popup-header-inner
     p += '</div>'; // Close popup-header
 
     p += '<div class="popup-body">';
@@ -5340,6 +5413,36 @@ function dispMsg(text, type) {
 }
 </script>
 <!-- ══ FIN MÓDULO DISPONIBLES ═══════════════════════════════════════════════ -->
+<!-- ── MAPITA map watermark ── -->
+<div id="mapita-map-watermark" style="
+    position:fixed;bottom:28px;left:16px;
+    z-index:999;pointer-events:none;
+    display:flex;align-items:center;gap:5px;
+    background:rgba(255,255,255,0.88);
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    border-radius:20px;padding:5px 11px 5px 8px;
+    box-shadow:0 2px 10px rgba(0,0,0,0.12);
+    font-family:Arial Black,Arial,sans-serif;
+    font-size:11px;font-weight:900;letter-spacing:1.6px;color:#1B3B6F;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="18" height="18"
+         style="border-radius:4px;flex-shrink:0;" role="img" aria-label="Mapita">
+        <defs>
+            <linearGradient id="wmBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1B3B6F"/>
+                <stop offset="100%" stop-color="#2E5FA3"/>
+            </linearGradient>
+            <linearGradient id="wmPin" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#E8C547"/>
+                <stop offset="100%" stop-color="#D4AF37"/>
+            </linearGradient>
+        </defs>
+        <rect width="40" height="40" rx="9" ry="9" fill="url(#wmBg)"/>
+        <ellipse cx="20" cy="16.5" rx="8" ry="8" fill="url(#wmPin)"/>
+        <path d="M16.2 22 Q20 31 23.8 22" fill="url(#wmPin)"/>
+        <circle cx="20" cy="16.5" r="3.2" fill="#1B3B6F"/>
+    </svg>
+    MAPITA
+</div>
 
 </body>
 </html>
