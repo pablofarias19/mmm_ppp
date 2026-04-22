@@ -381,7 +381,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             text-transform: uppercase; letter-spacing: 0.8px;
             padding: 8px 4px 4px; margin: 0;
         }
-        #stats { text-align: center; font-size: 14px; font-weight: bold; color: #1976d2; }
+        #stats { font-size: 11px; font-weight: 700; color: #667eea; }
 
         /* ── List items ────────────────────────────── */
         #lista .negocio, #lista .marca {
@@ -600,6 +600,18 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 Negocios y Marcas
             </div>
         </div>
+        <button type="button" id="sb-compact-btn" class="sb-compact-btn"
+                onclick="event.stopPropagation();toggleAllSbSections(event)"
+                title="Colapsar todas las secciones" aria-label="Colapsar/expandir todas las secciones">
+            <svg id="sb-all-icon" width="13" height="13" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <line x1="21" y1="10" x2="3" y2="10"/>
+                <line x1="21" y1="6"  x2="3" y2="6"/>
+                <line x1="21" y1="14" x2="3" y2="14"/>
+                <line x1="21" y1="18" x2="3" y2="18"/>
+            </svg>
+        </button>
     </div>
 
     <input type="text" id="busqueda" placeholder="🔍 Buscar..." oninput="filtrar()"
@@ -707,7 +719,20 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
     </select>
 
     <!-- ADVANCED FILTERS ACCORDION -->
-    <div id="filters-accordion" class="sidebar-card" style="padding:0;box-shadow:none;">
+    <div class="sb-section" id="sb-sec-filters">
+        <div class="sb-section-hdr open" onclick="toggleSbSection(this)"
+             aria-expanded="true" title="Filtros avanzados">
+            <span class="sb-section-hdr-label">
+                <span aria-hidden="true">🔍</span> Filtros Avanzados
+            </span>
+            <svg class="sb-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        </div>
+        <div class="sb-section-body open">
+    <div id="filters-accordion" style="padding:0;">
 
         <!-- TIPO DE EMPRESA (MOVIDO AL INICIO - MÁS IMPORTANTE) -->
         <div class="accordion-item">
@@ -803,134 +828,226 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
     </div>
 
     <!-- Zonas Inmobiliarias: solo visible en modo negocios/ambos -->
-    <div id="inmuebles-container" class="sidebar-card">
+    <div id="inmuebles-container" style="padding:10px 14px 12px;border-top:1px solid #eef0f8;">
         <label style="display:flex;align-items:center;cursor:pointer;font-size:12px;">
             <input type="checkbox" id="show-inmuebles" onchange="toggleInmuebles()" style="width:auto;margin-right:8px;">
             🏠 Zonas de influencia (inmobiliarias)
         </label>
     </div>
+        </div><!-- /sb-section-body -->
+    </div><!-- /sb-sec-filters -->
 
     <!-- Utility buttons -->
-    <div class="sidebar-card" style="display:flex;gap:5px;padding:10px;">
-        <button onclick="ubicarme()"
-                style="flex:1;padding:10px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
-            📍 Ubicarme
-        </button>
-        <button onclick="exportarPDF()"
-                style="flex:1;padding:10px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
-            🧾 PDF
-        </button>
-    </div>
-
-    <div class="sidebar-card" style="border-left:4px solid #00d4ff;">
-        <div style="font-size:12px;font-weight:700;color:#1565c0;margin-bottom:8px;">🧾 Selector MetaData</div>
-        <button type="button" onclick="toggleSelectionMode()" id="sel-multi"
-                style="width:100%;padding:10px;border:none;border-radius:8px;background:#00acc1;color:white;cursor:pointer;font-size:12px;font-weight:700;">
-            <span id="sel-multi-icon">🧾</span> <span id="sel-multi-label">Activar selección</span>
-        </button>
-        <div id="selection-mode-status" style="margin-top:8px;font-size:11px;color:#546e7a;">
-            Modo normal. Para salir del modo selección: botón “Salir del modo selección” o tecla S.
+    <div class="sb-section" id="sb-sec-tools">
+        <div class="sb-section-hdr" onclick="toggleSbSection(this)"
+             aria-expanded="false" title="Herramientas del mapa">
+            <span class="sb-section-hdr-label">
+                <span aria-hidden="true">🛠️</span> Herramientas
+            </span>
+            <svg class="sb-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
+        </div>
+        <div class="sb-section-body">
+            <div class="sb-section-body-inner">
+                <div style="display:flex;gap:5px;">
+                    <button onclick="ubicarme()"
+                            style="flex:1;padding:10px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
+                        📍 Ubicarme
+                    </button>
+                    <button onclick="exportarPDF()"
+                            style="flex:1;padding:10px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
+                        🧾 PDF
+                    </button>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div id="selection-panel" class="selection-panel" aria-live="polite" style="display:none;">
-        <div class="selection-panel__header">
-            <div class="selection-panel__title">Selección del mapa</div>
-            <button type="button" class="selection-panel__close" onclick="dismissSelectionPanel()" title="Salir del modo selección">✕</button>
+    <div class="sb-section" id="sb-sec-selection">
+        <div class="sb-section-hdr" onclick="toggleSbSection(this)"
+             aria-expanded="false" title="Selección múltiple de marcadores" style="border-left:4px solid #00d4ff;">
+            <span class="sb-section-hdr-label" style="color:#1565c0;">
+                <span aria-hidden="true">🧾</span> Selector MetaData
+            </span>
+            <svg class="sb-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none"
+                 stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                 stroke-linejoin="round" aria-hidden="true">
+                <polyline points="6 9 12 15 18 9"/>
+            </svg>
         </div>
-        <div class="selection-panel__intro">Usá este panel para seleccionar elementos y operar en bloque.</div>
-        <div id="selection-summary" class="selection-panel__summary">0 elementos</div>
-        <div id="selection-step" class="selection-panel__step">Activá el modo selección y elegí marcadores.</div>
-        <div id="selection-hint" class="selection-panel__hint" style="display:none;font-size:11px;color:#8cb4e0;margin-top:4px;">Paso 1: hacé click en marcadores o usá Shift + arrastrar para cuadro de selección.</div>
-        <div class="selection-panel__actions">
-            <button type="button" onclick="selectAllVisible()" title="Seleccionar todos los marcadores visibles en pantalla">➕ Seleccionar visibles</button>
-            <button type="button" onclick="clearSelection()">🧹 Vaciar selección</button>
-            <button type="button" id="selection-aggregate-btn" onclick="aggregateSelectedSurveys()">📊 Combinar encuestas</button>
-            <button type="button" onclick="exportSelection()" title="Exportar selección como JSON">📤 Exportar JSON</button>
-            <button type="button" id="selection-details-toggle" onclick="toggleSelectionDetails()">📋 Ver detalles</button>
+        <div class="sb-section-body">
+            <div class="sb-section-body-inner">
+                <button type="button" onclick="toggleSelectionMode()" id="sel-multi"
+                        style="width:100%;padding:10px;border:none;border-radius:8px;background:#00acc1;color:white;cursor:pointer;font-size:12px;font-weight:700;margin-bottom:6px;">
+                    <span id="sel-multi-icon">🧾</span> <span id="sel-multi-label">Activar selección</span>
+                </button>
+                <div id="selection-mode-status" style="font-size:11px;color:#546e7a;">
+                    Modo normal. Para salir del modo selección: botón "Salir del modo selección" o tecla S.
+                </div>
+            </div>
+            <div id="selection-panel" class="selection-panel" aria-live="polite" style="display:none;">
+                <div class="selection-panel__header">
+                    <div class="selection-panel__title">Selección del mapa</div>
+                    <button type="button" class="selection-panel__close" onclick="dismissSelectionPanel()" title="Salir del modo selección">✕</button>
+                </div>
+                <div class="selection-panel__intro">Usá este panel para seleccionar elementos y operar en bloque.</div>
+                <div id="selection-summary" class="selection-panel__summary">0 elementos</div>
+                <div id="selection-step" class="selection-panel__step">Activá el modo selección y elegí marcadores.</div>
+                <div id="selection-hint" class="selection-panel__hint" style="display:none;font-size:11px;color:#8cb4e0;margin-top:4px;">Paso 1: hacé click en marcadores o usá Shift + arrastrar para cuadro de selección.</div>
+                <div class="selection-panel__actions">
+                    <button type="button" onclick="selectAllVisible()" title="Seleccionar todos los marcadores visibles en pantalla">➕ Seleccionar visibles</button>
+                    <button type="button" onclick="clearSelection()">🧹 Vaciar selección</button>
+                    <button type="button" id="selection-aggregate-btn" onclick="aggregateSelectedSurveys()">📊 Combinar encuestas</button>
+                    <button type="button" onclick="exportSelection()" title="Exportar selección como JSON">📤 Exportar JSON</button>
+                    <button type="button" id="selection-details-toggle" onclick="toggleSelectionDetails()">📋 Ver detalles</button>
+                </div>
+                <div id="selection-details" class="selection-panel__details selection-panel__details--hidden"></div>
+                <div id="selection-aggregate-result" class="selection-panel__result"></div>
+            </div>
         </div>
-        <div id="selection-details" class="selection-panel__details selection-panel__details--hidden"></div>
-        <div id="selection-aggregate-result" class="selection-panel__result"></div>
     </div>
 
     <!-- Encuestas Activas -->
-    <div id="encuestas-container" class="sidebar-card" style="display:none;border-left:4px solid #f39c12;">
-        <h3 style="margin:0 0 12px 0;font-size:14px;color:#f39c12;">📊 Encuestas Activas</h3>
-        <div id="encuestas-list" style="max-height:150px;overflow-y:auto;"></div>
+    <div id="encuestas-container" class="sidebar-card" style="display:none;border-left:4px solid #f39c12;padding:0;overflow:hidden;">
+        <div class="sb-mod-hdr open" onclick="toggleSbModule(this)">
+            <h3 style="margin:0;font-size:13px;color:#f39c12;font-weight:700;">📊 Encuestas Activas</h3>
+            <svg class="sb-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f39c12" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="sb-mod-body open">
+            <div class="sb-mod-body-inner">
+                <div id="encuestas-list" style="max-height:150px;overflow-y:auto;"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Eventos Próximos -->
-    <div id="eventos-container" class="sidebar-card" style="display:none;border-left:4px solid #e74c3c;">
-        <h3 style="margin:0 0 12px 0;font-size:14px;color:#e74c3c;">🎉 Eventos Próximos</h3>
-        <div id="eventos-list" style="max-height:150px;overflow-y:auto;"></div>
+    <div id="eventos-container" class="sidebar-card" style="display:none;border-left:4px solid #e74c3c;padding:0;overflow:hidden;">
+        <div class="sb-mod-hdr open" onclick="toggleSbModule(this)">
+            <h3 style="margin:0;font-size:13px;color:#e74c3c;font-weight:700;">🎉 Eventos Próximos</h3>
+            <svg class="sb-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="sb-mod-body open">
+            <div class="sb-mod-body-inner">
+                <div id="eventos-list" style="max-height:150px;overflow-y:auto;"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Trivias Disponibles -->
-    <div id="trivias-container" class="sidebar-card" style="display:none;border-left:4px solid #9b59b6;">
-        <h3 style="margin:0 0 12px 0;font-size:14px;color:#9b59b6;">🎯 Trivias Disponibles</h3>
-        <div id="trivias-list" style="max-height:150px;overflow-y:auto;"></div>
+    <div id="trivias-container" class="sidebar-card" style="display:none;border-left:4px solid #9b59b6;padding:0;overflow:hidden;">
+        <div class="sb-mod-hdr open" onclick="toggleSbModule(this)">
+            <h3 style="margin:0;font-size:13px;color:#9b59b6;font-weight:700;">🎯 Trivias Disponibles</h3>
+            <svg class="sb-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#9b59b6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="sb-mod-body open">
+            <div class="sb-mod-body-inner">
+                <div id="trivias-list" style="max-height:150px;overflow-y:auto;"></div>
+            </div>
+        </div>
     </div>
 
-    <div id="noticias-container" class="sidebar-card" style="display:none;border-left:4px solid #667eea;">
-        <h3 style="margin:0 0 12px 0;font-size:14px;color:#667eea;">📰 Últimas Noticias</h3>
-        <div id="noticias-list" style="max-height:150px;overflow-y:auto;"></div>
+    <div id="noticias-container" class="sidebar-card" style="display:none;border-left:4px solid #667eea;padding:0;overflow:hidden;">
+        <div class="sb-mod-hdr open" onclick="toggleSbModule(this)">
+            <h3 style="margin:0;font-size:13px;color:#667eea;font-weight:700;">📰 Últimas Noticias</h3>
+            <svg class="sb-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="sb-mod-body open">
+            <div class="sb-mod-body-inner">
+                <div id="noticias-list" style="max-height:150px;overflow-y:auto;"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Ofertas Activas -->
-    <div id="ofertas-container" class="sidebar-card" style="display:none;border-left:4px solid #e74c3c;">
-        <h3 style="margin:0 0 8px 0;font-size:14px;color:#e74c3c;">🏷️ Ofertas Activas</h3>
-        <div id="ofertas-list" style="max-height:150px;overflow-y:auto;"></div>
+    <div id="ofertas-container" class="sidebar-card" style="display:none;border-left:4px solid #e74c3c;padding:0;overflow:hidden;">
+        <div class="sb-mod-hdr open" onclick="toggleSbModule(this)">
+            <h3 style="margin:0;font-size:13px;color:#e74c3c;font-weight:700;">🏷️ Ofertas Activas</h3>
+            <svg class="sb-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e74c3c" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="sb-mod-body open">
+            <div class="sb-mod-body-inner">
+                <div id="ofertas-list" style="max-height:150px;overflow-y:auto;"></div>
+            </div>
+        </div>
     </div>
 
     <!-- Transmisiones en Vivo -->
-    <div id="transmisiones-container" class="sidebar-card" style="display:none;border-left:4px solid #c0392b;">
-        <h3 style="margin:0 0 8px 0;font-size:14px;color:#c0392b;">
-            📡 <span style="display:inline-block;width:8px;height:8px;background:#c0392b;border-radius:50%;animation:blink 1s infinite;vertical-align:middle;margin-right:4px;"></span>
-            En Vivo
-        </h3>
-        <div id="transmisiones-list" style="max-height:150px;overflow-y:auto;"></div>
+    <div id="transmisiones-container" class="sidebar-card" style="display:none;border-left:4px solid #c0392b;padding:0;overflow:hidden;">
+        <div class="sb-mod-hdr open" onclick="toggleSbModule(this)">
+            <h3 style="margin:0;font-size:13px;color:#c0392b;font-weight:700;display:flex;align-items:center;gap:5px;">
+                📡 <span style="display:inline-block;width:7px;height:7px;background:#c0392b;border-radius:50%;animation:blink 1s infinite;"></span> En Vivo
+            </h3>
+            <svg class="sb-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="sb-mod-body open">
+            <div class="sb-mod-body-inner">
+                <div id="transmisiones-list" style="max-height:150px;overflow-y:auto;"></div>
+            </div>
+        </div>
     </div>
 
     <?php if (isAdmin()): ?>
     <!-- Admin: Toggle capas del mapa -->
-    <div class="sidebar-card" style="border-left:4px solid #6f42c1;">
-        <h3 style="margin:0 0 10px 0;font-size:13px;color:#6f42c1;display:flex;align-items:center;gap:6px;">
-            🛡️ Visibilidad de capas
-        </h3>
-        <div style="display:flex;flex-direction:column;gap:6px;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" id="toggle-eventos" checked onchange="toggleCapa('eventos',this.checked)" style="width:auto;margin:0;">
-                🎉 Eventos
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" id="toggle-noticias" checked onchange="toggleCapa('noticias',this.checked)" style="width:auto;margin:0;">
-                📰 Noticias
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" id="toggle-trivias" checked onchange="toggleCapa('trivias',this.checked)" style="width:auto;margin:0;">
-                🎯 Trivias
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" id="toggle-encuestas" checked onchange="toggleCapa('encuestas',this.checked)" style="width:auto;margin:0;">
-                📊 Encuestas
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" id="toggle-ofertas" checked onchange="toggleCapa('ofertas',this.checked)" style="width:auto;margin:0;">
-                🏷️ Ofertas
-            </label>
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
-                <input type="checkbox" id="toggle-transmisiones" checked onchange="toggleCapa('transmisiones',this.checked)" style="width:auto;margin:0;">
-                📡 Transmisiones
-            </label>
+    <div class="sb-section" id="sb-sec-admin">
+        <div class="sb-section-hdr" onclick="toggleSbSection(this)"
+             aria-expanded="false" title="Administración de visibilidad de capas" style="border-left:4px solid #6f42c1;">
+            <span class="sb-section-hdr-label" style="color:#6f42c1;">
+                <span aria-hidden="true">🛡️</span> Visibilidad de capas
+            </span>
+            <svg class="sb-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+        </div>
+        <div class="sb-section-body">
+            <div class="sb-section-body-inner">
+                <div style="display:flex;flex-direction:column;gap:6px;">
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                        <input type="checkbox" id="toggle-eventos" checked onchange="toggleCapa('eventos',this.checked)" style="width:auto;margin:0;">
+                        🎉 Eventos
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                        <input type="checkbox" id="toggle-noticias" checked onchange="toggleCapa('noticias',this.checked)" style="width:auto;margin:0;">
+                        📰 Noticias
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                        <input type="checkbox" id="toggle-trivias" checked onchange="toggleCapa('trivias',this.checked)" style="width:auto;margin:0;">
+                        🎯 Trivias
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                        <input type="checkbox" id="toggle-encuestas" checked onchange="toggleCapa('encuestas',this.checked)" style="width:auto;margin:0;">
+                        📊 Encuestas
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                        <input type="checkbox" id="toggle-ofertas" checked onchange="toggleCapa('ofertas',this.checked)" style="width:auto;margin:0;">
+                        🏷️ Ofertas
+                    </label>
+                    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;">
+                        <input type="checkbox" id="toggle-transmisiones" checked onchange="toggleCapa('transmisiones',this.checked)" style="width:auto;margin:0;">
+                        📡 Transmisiones
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
     <?php endif; ?>
 
-    <!-- Stats -->
-    <div id="stats" class="sidebar-card"></div>
+    <!-- Stats + Results list -->
+    <div class="sb-section" id="sb-sec-results">
+        <div class="sb-section-hdr open" onclick="toggleSbSection(this)" aria-expanded="true">
+            <span class="sb-section-hdr-label">
+                <span aria-hidden="true">📋</span> Resultados
+            </span>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                <span id="stats" style="font-size:11px;font-weight:700;color:#667eea;white-space:nowrap;"></span>
+                <svg class="sb-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+        </div>
+        <div class="sb-section-body open">
+            <div id="lista" style="max-height:340px;overflow-y:auto;padding:4px 0 8px;"></div>
+        </div>
+    </div>
 
-    <!-- Results list -->
-    <div id="lista" style="max-height:340px;overflow-y:auto;"></div>
 
     <!-- Auth -->
     <div class="sidebar-card" style="margin-top:8px;">
@@ -3463,6 +3580,45 @@ function toggleAccordion(btn) {
     content.classList.toggle('active');
 }
 
+// ─── Collapsible sidebar sections (sb-section system) ────────────────────────────
+function toggleSbSection(hdr) {
+    const body = hdr.nextElementSibling;
+    if (!body) return;
+    const willOpen = !hdr.classList.contains('open');
+    hdr.classList.toggle('open', willOpen);
+    body.classList.toggle('open', willOpen);
+    hdr.setAttribute('aria-expanded', String(willOpen));
+}
+
+function toggleSbModule(hdr) {
+    const body = hdr.nextElementSibling;
+    if (!body) return;
+    const willOpen = !hdr.classList.contains('open');
+    hdr.classList.toggle('open', willOpen);
+    body.classList.toggle('open', willOpen);
+}
+
+let _sbAllOpen = true;
+function toggleAllSbSections(e) {
+    if (e) e.stopPropagation();
+    _sbAllOpen = !_sbAllOpen;
+    document.querySelectorAll('#sidebar .sb-section-hdr').forEach(hdr => {
+        hdr.classList.toggle('open', _sbAllOpen);
+        hdr.setAttribute('aria-expanded', String(_sbAllOpen));
+        const body = hdr.nextElementSibling;
+        if (body) body.classList.toggle('open', _sbAllOpen);
+    });
+    const icon = document.getElementById('sb-all-icon');
+    if (icon) {
+        // Switch between compress (collapse-all) and expand icons
+        icon.innerHTML = _sbAllOpen
+            ? '<line x1="21" y1="10" x2="3" y2="10"/><line x1="21" y1="6" x2="3" y2="6"/><line x1="21" y1="14" x2="3" y2="14"/><line x1="21" y1="18" x2="3" y2="18"/>'
+            : '<line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/>';
+    }
+    const btn = document.getElementById('sb-compact-btn');
+    if (btn) btn.title = _sbAllOpen ? 'Colapsar todas las secciones' : 'Expandir todas las secciones';
+}
+
 // ─── Filter helper functions ────────────────────────────────────────────────────
 function getLocationFilter() {
     const enable = document.getElementById('filter-location-enable')?.checked;
@@ -3672,6 +3828,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     updateSelectionPanel();
     // Initialize legend content (pre-populated so it's ready before user clicks)
     buildMapLegend();
+
+    // ── Mobile: close filters section by default (less screen space) ──────────
+    if (window.innerWidth <= 768) {
+        const filtersHdr = document.querySelector('#sb-sec-filters .sb-section-hdr');
+        if (filtersHdr) {
+            filtersHdr.classList.remove('open');
+            filtersHdr.setAttribute('aria-expanded', 'false');
+            const body = filtersHdr.nextElementSibling;
+            if (body) body.classList.remove('open');
+        }
+    }
 
 });
 

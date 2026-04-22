@@ -427,3 +427,173 @@ input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:foc
     color: #fff;
     margin-bottom: 4px;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   COLLAPSIBLE SIDEBAR SECTIONS  (sb-section system)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Wrapper card ─────────────────────────────────────────────────────────── */
+.sb-section {
+    background: white;
+    border-radius: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+.sb-section:hover {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.13);
+}
+
+/* ── Clickable header ─────────────────────────────────────────────────────── */
+.sb-section-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 11px 14px;
+    min-height: 44px;
+    cursor: pointer;
+    background: white;
+    border-bottom: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+    user-select: none;
+}
+.sb-section-hdr:hover {
+    background: #f5f7fe;
+}
+.sb-section-hdr:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: -2px;
+}
+.sb-section-hdr.open {
+    border-bottom-color: #eef0f8;
+}
+
+/* ── Label + counter inside header ───────────────────────────────────────── */
+.sb-section-hdr-label {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    flex: 1;
+    min-width: 0;
+    font-size: 11px;
+    font-weight: 700;
+    color: #556;
+    text-transform: uppercase;
+    letter-spacing: 0.65px;
+    line-height: 1;
+}
+.sb-section-hdr-label .sb-cnt {
+    background: #e8eaf6;
+    color: #667eea;
+    border-radius: 999px;
+    font-size: 10px;
+    padding: 1px 7px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+    transition: background 0.15s, color 0.15s;
+}
+.sb-section-hdr.open .sb-section-hdr-label .sb-cnt {
+    background: #667eea;
+    color: white;
+}
+
+/* ── Animated chevron ────────────────────────────────────────────────────── */
+.sb-chevron {
+    flex-shrink: 0;
+    color: #c8ccd8;
+    transition: transform 0.28s cubic-bezier(.4,0,.2,1), color 0.15s;
+    display: block;
+}
+.sb-section-hdr:hover .sb-chevron { color: #667eea; }
+.sb-section-hdr.open .sb-chevron {
+    transform: rotate(180deg);
+    color: #667eea;
+}
+
+/* ── Collapsible body ────────────────────────────────────────────────────── */
+.sb-section-body {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.35s cubic-bezier(.4,0,.2,1),
+                opacity    0.25s ease;
+}
+.sb-section-body.open {
+    max-height: 2000px;
+    opacity: 1;
+}
+/* Filters section may need extra height when all accordions are open */
+#sb-sec-filters .sb-section-body.open {
+    max-height: 3000px;
+}
+.sb-section-body-inner {
+    padding: 12px 14px;
+}
+
+/* ── Module containers (eventos, encuestas…) ─────────────────────────────── */
+.sb-mod-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    transition: background 0.15s;
+    gap: 8px;
+}
+.sb-mod-hdr:hover { background: rgba(0,0,0,0.03); }
+.sb-mod-hdr.open .sb-chevron { transform: rotate(180deg); }
+
+.sb-mod-body {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.32s cubic-bezier(.4,0,.2,1),
+                opacity    0.22s ease;
+}
+.sb-mod-body.open {
+    max-height: 500px;
+    opacity: 1;
+}
+.sb-mod-body-inner { padding: 10px 14px; }
+
+/* ── Results wrapper (slightly different background) ────────────────────── */
+#sb-sec-results {
+    background: #f4f5f9;
+    box-shadow: none;
+}
+#sb-sec-results .sb-section-hdr {
+    background: #f4f5f9;
+    border-radius: 10px 10px 0 0;
+}
+#sb-sec-results .sb-section-hdr:hover { background: #eceef5; }
+#sb-sec-results .sb-section-body { background: #f4f5f9; }
+
+/* ── Collapse-all / expand-all button in brand header ───────────────────── */
+.sb-compact-btn {
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    margin-left: auto;
+    border: 1.5px solid #dde2f0;
+    border-radius: 8px;
+    background: white;
+    cursor: pointer;
+    color: #667eea;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+    padding: 0;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+.sb-compact-btn:hover {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+    box-shadow: 0 2px 8px rgba(102,126,234,0.3);
+}
