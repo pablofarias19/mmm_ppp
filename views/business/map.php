@@ -505,6 +505,14 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         .filter-location-autocomplete::placeholder {
             color: #9ca3af;
         }
+
+        /* ── MAPITA brand typography (shared by toggle + watermark) ── */
+        .mapita-wordmark {
+            font-family: Arial Black, Arial, sans-serif;
+            font-weight: 900;
+            letter-spacing: 1.5px;
+            font-size: 11px;
+        }
     </style>
 </head>
 <body>
@@ -524,7 +532,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         <path d="M16.2 22 Q20 31 23.8 22" fill="url(#tpBg)"/>
         <circle cx="20" cy="16.5" r="3.2" fill="white"/>
     </svg>
-    <span style="font-family:Arial Black,Arial,sans-serif;font-weight:900;letter-spacing:1.5px;font-size:11px;">MAPITA</span>
+    <span class="mapita-wordmark">MAPITA</span>
 </button>
 
 <!-- Floating draggable view selector (IMPROVED: Independent toggles) -->
@@ -1058,6 +1066,10 @@ const BUSINESS_FALLBACK_EMOJI = {
     peluqueria:'✂️', gym:'🏋️', inmobiliaria:'🏠', hotel:'🏨',
     banco:'🏦', educacion:'📚', teatro:'🎭',
     taller_mecanico:'🔩', remate:'🔨',
+    lavadero:'🧺', cerrajeria:'🔑',
+    productora_audiovisual:'🎥', escuela_musicos:'🎼', taller_artes:'🎨',
+    psicologo:'🧠', fonoaudiologo:'🗣️', grafologo:'✍️',
+    biodecodificacion:'🧬', libreria_cristiana:'📚',
 };
 
 // ─── Color helpers ───────────────────────────────────────────────────────────────
@@ -5423,8 +5435,7 @@ function dispMsg(text, type) {
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
     border-radius:20px;padding:5px 11px 5px 8px;
     box-shadow:0 2px 10px rgba(0,0,0,0.12);
-    font-family:Arial Black,Arial,sans-serif;
-    font-size:11px;font-weight:900;letter-spacing:1.6px;color:#1B3B6F;">
+    color:#1B3B6F;">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="18" height="18"
          style="border-radius:4px;flex-shrink:0;" role="img" aria-label="Mapita">
         <defs>
@@ -5442,7 +5453,7 @@ function dispMsg(text, type) {
         <path d="M16.2 22 Q20 31 23.8 22" fill="url(#wmPin)"/>
         <circle cx="20" cy="16.5" r="3.2" fill="#1B3B6F"/>
     </svg>
-    MAPITA
+    <span class="mapita-wordmark">MAPITA</span>
 </div>
 
 </body>
