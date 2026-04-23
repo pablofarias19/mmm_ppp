@@ -1,6 +1,27 @@
 <?php
 session_start();
 require_once __DIR__ . '/../../core/helpers.php';
+require_once __DIR__ . '/../../includes/db_helper.php';
+
+// ── Datos del perfil del usuario logueado (para prellenar formulario de postulación) ──
+$_sessionUserId    = (int)($_SESSION['user_id'] ?? 0);
+$_sessionUserName  = $_SESSION['user_name'] ?? '';
+$_profileEmail     = '';
+$_profilePhone     = '';
+if ($_sessionUserId > 0) {
+    try {
+        $_pdb = getDbConnection();
+        if ($_pdb) {
+            $_pst = $_pdb->prepare("SELECT email, phone FROM users WHERE id = ? LIMIT 1");
+            $_pst->execute([$_sessionUserId]);
+            $_prow = $_pst->fetch(\PDO::FETCH_ASSOC);
+            if ($_prow) {
+                $_profileEmail = $_prow['email'] ?? '';
+                $_profilePhone = $_prow['phone'] ?? '';
+            }
+        }
+    } catch (Throwable $_e) { /* silencioso */ }
+}
 
 // ── Open Graph ────────────────────────────────────────────────────────────────
 $og_title       = 'MAPITA - Mapa de Marcas y Negocios';
@@ -1316,6 +1337,9 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
 // ─── State ──────────────────────────────────────────────────────────────────────
 const IS_ADMIN       = <?= isAdmin() ? 'true' : 'false' ?>;
 const SESSION_USER_ID = <?= (int)($_SESSION['user_id'] ?? 0) ?>;
+const SESSION_USER_NAME = <?= json_encode($_sessionUserName) ?>;
+const SESSION_USER_EMAIL = <?= json_encode($_profileEmail) ?>;
+const SESSION_USER_PHONE = <?= json_encode($_profilePhone) ?>;
 const MAPITA_LOCALE = document.documentElement.lang || 'es-AR';
 
 let negocios  = [];
@@ -3498,6 +3522,11 @@ function buildPopup(n, isMarca) {
         if (n.disponibles_activo) {
             p += '<button type="button" class="popup-action" style="background:#d97706;font-weight:800;letter-spacing:.5px;" '
                + 'onclick="abrirDisponibles(' + parseInt(n.id) + ',\'' + escapeHtml(n.name || n.nombre || '').replace(/'/g, '&#39;') + '\')">$$$</button>';
+        }
+        // Botón módulo Busco Empleados/as (solo si hay oferta activa)
+        if (n.job_offer_active) {
+            p += '<button type="button" class="popup-action" style="background:#1d4ed8;font-weight:700;" '
+               + 'onclick="abrirOfertaTrabajo(' + parseInt(n.id) + ',\'' + escapeHtml(n.name || n.nombre || '').replace(/'/g, '&#39;') + '\')">💼 Empleos</button>';
         }
         p += '</div>';
     }
@@ -5759,8 +5788,102 @@ function compartirMarca(brandName, brandId) {
     </div>
 </div>
 
-<!-- ══ MÓDULO DISPONIBLES — Modal del usuario solicitante ══════════════════ -->
-<div id="disp-overlay" class="disp-overlay" style="display:none;" onclick="if(event.target===this)cerrarDisponibles()">
+<!-- ══ MÓDULO BUSCO EMPLEADOS/AS — Modal de postulación ═════════════════════ -->
+<div id="job-modal-overlay" style="display:none;position:fixed;z-index:10100;left:0;top:0;width:100%;height:100%;
+     background:rgba(0,0,0,0.6);align-items:center;justify-content:center;"
+     onclick="if(event.target===this)cerrarOfertaTrabajo()">
+    <div style="background:white;border-radius:16px;width:100%;max-width:520px;max-height:92vh;
+                overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.35);margin:10px;"
+         onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div style="background:linear-gradient(135deg,#1B3B6F,#0d2247);padding:18px 22px;
+                    display:flex;align-items:center;gap:12px;border-radius:16px 16px 0 0;">
+            <span style="font-size:1.6em;">💼</span>
+            <div style="flex:1;">
+                <div id="job-modal-title" style="color:white;font-weight:800;font-size:1em;">Busco Empleados/as</div>
+            </div>
+            <button type="button" onclick="cerrarOfertaTrabajo()"
+                    style="background:rgba(255,255,255,.15);border:none;color:white;border-radius:50%;
+                           width:32px;height:32px;font-size:1.1em;cursor:pointer;line-height:1;">✕</button>
+        </div>
+        <!-- Body -->
+        <div style="padding:22px;">
+            <div id="job-offer-details" style="margin-bottom:18px;"></div>
+
+            <div id="job-modal-msg" style="display:none;margin-bottom:14px;"></div>
+
+            <!-- Login gate -->
+            <div id="job-login-gate" style="display:none;text-align:center;padding:20px 10px;">
+                <div style="font-size:2em;margin-bottom:8px;">🔒</div>
+                <p style="font-weight:700;color:#1B3B6F;margin-bottom:8px;">Iniciá sesión para postularte</p>
+                <p style="font-size:.86em;color:#6b7280;margin-bottom:16px;">Las postulaciones solo están disponibles para usuarios registrados.</p>
+                <a href="/login" style="display:inline-block;padding:10px 22px;background:#1B3B6F;color:white;
+                   border-radius:8px;font-weight:700;text-decoration:none;font-size:.9em;">Iniciar sesión</a>
+                <a href="/register" style="display:inline-block;margin-left:10px;padding:10px 22px;
+                   background:#f3f4f6;color:#374151;border-radius:8px;font-weight:700;text-decoration:none;font-size:.9em;">Registrarse</a>
+            </div>
+
+            <!-- Formulario interno -->
+            <div id="job-app-form-wrap" style="display:none;">
+                <div style="border-top:1px solid #e5e7eb;padding-top:16px;margin-bottom:14px;">
+                    <p style="font-size:.84em;font-weight:700;color:#374151;margin-bottom:12px;">📝 Completá tu postulación</p>
+                    <div style="display:flex;flex-direction:column;gap:11px;">
+                        <div>
+                            <label style="font-size:.8em;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Nombre completo *</label>
+                            <input id="job-app-name" type="text" maxlength="255"
+                                   style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.875em;"
+                                   placeholder="Tu nombre">
+                        </div>
+                        <div>
+                            <label style="font-size:.8em;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Email *</label>
+                            <input id="job-app-email" type="email" maxlength="255"
+                                   style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.875em;"
+                                   placeholder="tucorreo@ejemplo.com">
+                        </div>
+                        <div>
+                            <label style="font-size:.8em;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Teléfono <span style="color:#9ca3af;font-weight:400;">(opcional)</span></label>
+                            <input id="job-app-phone" type="tel" maxlength="50"
+                                   style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.875em;"
+                                   placeholder="+54 9 ...">
+                        </div>
+                        <div>
+                            <label style="font-size:.8em;font-weight:700;color:#374151;display:block;margin-bottom:4px;">Mensaje <span style="color:#9ca3af;font-weight:400;">(opcional)</span></label>
+                            <textarea id="job-app-message" rows="3" maxlength="2000"
+                                      style="width:100%;padding:9px 12px;border:1.5px solid #d1d5db;border-radius:8px;font-size:.875em;resize:vertical;"
+                                      placeholder="Contale algo al empleador…"></textarea>
+                        </div>
+                        <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;">
+                            <input id="job-app-consent" type="checkbox" style="margin-top:3px;flex-shrink:0;">
+                            <span style="font-size:.78em;color:#6b7280;line-height:1.5;">
+                                Autorizo el uso de mis datos (nombre, email y teléfono) para ser contactado/a por el negocio respecto a esta oferta. <strong>*</strong>
+                            </span>
+                        </label>
+                    </div>
+                </div>
+                <button id="job-app-btn" type="button" onclick="enviarPostulacion()"
+                        style="width:100%;padding:12px;background:#1B3B6F;color:white;border:none;
+                               border-radius:10px;font-size:.95em;font-weight:800;cursor:pointer;">
+                    📤 Postularme
+                </button>
+            </div>
+
+            <!-- Éxito -->
+            <div id="job-app-success" style="display:none;text-align:center;padding:20px 10px;">
+                <div style="font-size:2.5em;margin-bottom:8px;">🎉</div>
+                <p style="font-weight:800;color:#065f46;margin-bottom:8px;">¡Postulación enviada!</p>
+                <p style="font-size:.86em;color:#6b7280;">El negocio se comunicará con vos a la brevedad. ¡Buena suerte!</p>
+                <button onclick="cerrarOfertaTrabajo()"
+                        style="margin-top:16px;padding:10px 22px;background:#1B3B6F;color:white;
+                               border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:.9em;">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ══ FIN MÓDULO BUSCO EMPLEADOS/AS ══════════════════════════════════════════ -->
+
+<!-- ══ MÓDULO DISPONIBLES — Modal del usuario solicitante ══════════════════ --><div id="disp-overlay" class="disp-overlay" style="display:none;" onclick="if(event.target===this)cerrarDisponibles()">
     <div class="disp-panel" onclick="event.stopPropagation()">
         <div class="disp-header">
             <span style="font-size:1.3em;">📦</span>
@@ -5955,6 +6078,142 @@ function dispMsg(text, type) {
     el.textContent = text;
 }
 
+// ── Módulo Busco Empleados/as ─────────────────────────────────────────────────
+let _jobBizId   = 0;
+let _jobBizName = '';
+
+function abrirOfertaTrabajo(bizId, bizName) {
+    _jobBizId   = bizId;
+    _jobBizName = bizName;
+
+    document.getElementById('job-modal-title').textContent = bizName + ' — Busco Empleados/as';
+    document.getElementById('job-offer-details').innerHTML = '<em style="color:#9ca3af;">Cargando oferta…</em>';
+    document.getElementById('job-app-form-wrap').style.display = 'none';
+    document.getElementById('job-login-gate').style.display = 'none';
+    document.getElementById('job-app-success').style.display = 'none';
+    jobModalMsg('', '');
+
+    document.getElementById('job-modal-overlay').style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    fetch('/api/job_offers.php?business_id=' + bizId)
+    .then(r => r.json())
+    .then(d => {
+        if (!d.success || !d.data) {
+            document.getElementById('job-offer-details').innerHTML =
+                '<p style="color:#ef4444;">No hay oferta activa en este negocio.</p>';
+            return;
+        }
+        const data = d.data;
+        let html = '';
+        if (data.job_offer_position) {
+            html += '<div style="font-size:1.05em;font-weight:800;color:#1B3B6F;margin-bottom:8px;">🔍 ' + escapeHtml(data.job_offer_position) + '</div>';
+        }
+        if (data.job_offer_description) {
+            html += '<div style="font-size:.88em;color:#374151;line-height:1.6;margin-bottom:12px;white-space:pre-line;">' + escapeHtml(data.job_offer_description) + '</div>';
+        }
+        if (data.job_offer_url) {
+            let safeUrl = null;
+            try { const u = new URL(data.job_offer_url); if (u.protocol === 'https:' || u.protocol === 'http:') safeUrl = u.href; } catch(_) {}
+            if (safeUrl) {
+                html += '<div style="margin-bottom:12px;">'
+                     + '<a href="' + escapeHtml(safeUrl) + '" target="_blank" rel="noopener" '
+                     + 'style="display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:#1B3B6F;color:white;border-radius:8px;font-size:.86em;font-weight:700;text-decoration:none;">'
+                     + '🔗 Postularse por link externo</a>'
+                     + '</div>';
+            }
+        }
+        document.getElementById('job-offer-details').innerHTML = html || '<em style="color:#9ca3af;">Sin descripción.</em>';
+
+        // Login gate o formulario
+        if (SESSION_USER_ID > 0) {
+            // Prellenar formulario con datos del perfil
+            const nameEl  = document.getElementById('job-app-name');
+            const emailEl = document.getElementById('job-app-email');
+            const phoneEl = document.getElementById('job-app-phone');
+            if (nameEl  && !nameEl.value)  nameEl.value  = SESSION_USER_NAME  || '';
+            if (emailEl && !emailEl.value) emailEl.value = SESSION_USER_EMAIL || '';
+            if (phoneEl && !phoneEl.value) phoneEl.value = SESSION_USER_PHONE || '';
+            document.getElementById('job-app-form-wrap').style.display = '';
+        } else {
+            document.getElementById('job-login-gate').style.display = '';
+        }
+    })
+    .catch(() => {
+        document.getElementById('job-offer-details').innerHTML =
+            '<p style="color:#ef4444;">Error de conexión. Intentá de nuevo.</p>';
+    });
+}
+
+function cerrarOfertaTrabajo() {
+    document.getElementById('job-modal-overlay').style.display = 'none';
+    document.body.style.overflow = '';
+    jobModalMsg('', '');
+}
+
+function jobModalMsg(text, type) {
+    const el = document.getElementById('job-modal-msg');
+    if (!el) return;
+    if (!text) { el.style.display = 'none'; return; }
+    el.style.display    = 'block';
+    el.style.padding    = '8px 12px';
+    el.style.borderRadius = '8px';
+    el.style.fontWeight = '600';
+    el.style.fontSize   = '.875em';
+    el.style.color      = type === 'ok' ? '#065f46' : '#991b1b';
+    el.style.background = type === 'ok' ? '#d1fae5' : '#fee2e2';
+    el.textContent = text;
+}
+
+function enviarPostulacion() {
+    const name    = (document.getElementById('job-app-name')?.value    || '').trim();
+    const email   = (document.getElementById('job-app-email')?.value   || '').trim();
+    const phone   = (document.getElementById('job-app-phone')?.value   || '').trim();
+    const message = (document.getElementById('job-app-message')?.value || '').trim();
+    const consent = document.getElementById('job-app-consent')?.checked;
+    const btn     = document.getElementById('job-app-btn');
+
+    if (!name)    { jobModalMsg('El nombre es obligatorio.', 'err'); return; }
+    if (!email)   { jobModalMsg('El email es obligatorio.', 'err'); return; }
+    const emailCheck = document.createElement('input');
+    emailCheck.type  = 'email';
+    emailCheck.value = email;
+    if (!emailCheck.checkValidity()) { jobModalMsg('El email no es válido.', 'err'); return; }
+    if (!consent) { jobModalMsg('Debés aceptar el consentimiento para postularte.', 'err'); return; }
+
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando…'; }
+
+    fetch('/api/job_applications.php?action=create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            business_id:     _jobBizId,
+            applicant_name:  name,
+            applicant_email: email,
+            applicant_phone: phone,
+            message:         message,
+            consent:         true,
+        })
+    })
+    .then(r => r.json())
+    .then(d => {
+        if (btn) { btn.disabled = false; btn.textContent = '📤 Postularme'; }
+        if (d.success) {
+            document.getElementById('job-app-form-wrap').style.display = 'none';
+            document.getElementById('job-app-success').style.display   = '';
+            jobModalMsg('', '');
+        } else if (d.message && d.message.includes('ya te postulaste')) {
+            jobModalMsg('ℹ️ ' + d.message, 'err');
+        } else {
+            jobModalMsg('❌ ' + (d.message || 'Error al enviar'), 'err');
+        }
+    })
+    .catch(() => {
+        if (btn) { btn.disabled = false; btn.textContent = '📤 Postularme'; }
+        jobModalMsg('Error de conexión. Intentá de nuevo.', 'err');
+    });
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const watermark = document.getElementById('mapita-map-watermark');
     const panel = document.getElementById('mapita-home-panel');
@@ -5991,6 +6250,10 @@ document.addEventListener('DOMContentLoaded', function() {
         franquicias: {
             title: 'Franquicias y oportunidades',
             text: 'Podés mostrar franquicias y propuestas de expansión para conectar con personas interesadas en nuevas oportunidades.'
+        },
+        empleados: {
+            title: '💼 Busco Empleados/as',
+            text: 'Los titulares de negocio pueden publicar una oferta laboral activa. Los usuarios registrados en Mapita pueden postularse con un formulario interno o por link externo. Para activar la funcionalidad, accedé a "Editar negocio" → sección "Busco Empleados/as". Completá el puesto buscado, la descripción y (opcionalmente) un link externo, guardá y activá la oferta. Para ver y gestionar las postulaciones, usá el botón "Panel de Trabajo" desde "Mis Negocios". Importante: para postularse es obligatorio tener una cuenta registrada en Mapita.'
         }
     };
 
@@ -6155,6 +6418,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <li><span>Registrarte para ubicar tu negocio y marca en el mapa.</span><button type="button" class="quickstart-help-btn" data-help-key="registrar" aria-label="Ayuda sobre registro en el mapa">?</button></li>
         <li><span>Crear canales de comunicación selectivos (WT).</span><button type="button" class="quickstart-help-btn" data-help-key="wt" aria-label="Ayuda sobre canales WT selectivos">?</button></li>
         <li><span>Mostrar franquicias y generar oportunidades para todos.</span><button type="button" class="quickstart-help-btn" data-help-key="franquicias" aria-label="Ayuda sobre franquicias y oportunidades">?</button></li>
+        <li><span>Publicar y gestionar ofertas laborales (Busco Empleados/as).</span><button type="button" class="quickstart-help-btn" data-help-key="empleados" aria-label="Ayuda sobre Busco Empleados/as">?</button></li>
     </ul>
 </div>
 <div id="quickstart-help-modal" class="quickstart-help-modal" role="dialog" aria-modal="true" aria-labelledby="quickstart-help-modal-title" aria-hidden="true">

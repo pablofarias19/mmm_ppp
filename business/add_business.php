@@ -94,6 +94,7 @@ $currentTags     = array_filter(array_map('trim', explode(',', ($comercioData['c
 $currentDias     = array_filter(array_map('trim', explode(',', ($comercioData['dias_cierre']          ?? ''))));
 $certifVal       = $business['certifications'] ?? '';
 $dispActivo      = !empty($business['disponibles_activo']);
+$jobOfferActivo  = !empty($business['job_offer_active']);
 
 // Tipos de negocio agrupados
 $tipos = [
@@ -906,8 +907,66 @@ $descriptionPlaceholders = [
             </div>
         </div>
 
-        <!-- ══ REDES SOCIALES ════════════════════════════════════════════════ -->
+        <!-- ══ MÓDULO BUSCO EMPLEADOS/AS ════════════════════════════════════ -->
         <div class="form-section">
+            <div class="section-head">
+                <span class="section-icon">💼</span>
+                <div>
+                    <div class="section-title">Busco Empleados/as</div>
+                    <div class="section-desc">Publicá una oferta laboral y recibí postulaciones de usuarios registrados</div>
+                </div>
+            </div>
+            <div class="section-body">
+                <?php if ($editing): ?>
+                    <label id="job-toggle-row" style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;">
+                        <input type="checkbox" id="job-offer-toggle" <?php echo $jobOfferActivo ? 'checked' : ''; ?> style="margin-top:3px;">
+                        <div>
+                            <div id="job-offer-label" style="font-weight:700;color:#1f2937;"><?php echo $jobOfferActivo ? 'Oferta activa' : 'Oferta inactiva'; ?></div>
+                            <div style="font-size:.8em;color:#6b7280;">Completá el puesto y luego activá la oferta. Solo usuarios registrados pueden postularse.</div>
+                        </div>
+                    </label>
+
+                    <div style="margin-top:18px;display:flex;flex-direction:column;gap:14px;">
+                        <div class="field">
+                            <label for="job-position">🔍 Puesto / Posición buscada <span style="color:#e74c3c">*</span></label>
+                            <input type="text" id="job-position" maxlength="255" placeholder="Ej: Cajero/a, Atención al cliente, Desarrollador/a…"
+                                   value="<?php echo htmlspecialchars($business['job_offer_position'] ?? ''); ?>">
+                            <div style="font-size:.75em;color:#9ca3af;margin-top:3px;">Requerido para activar la oferta.</div>
+                        </div>
+                        <div class="field">
+                            <label for="job-description">📝 Descripción del puesto</label>
+                            <textarea id="job-description" rows="3" maxlength="3000" style="resize:vertical;"
+                                      placeholder="Describí tareas, requisitos, horarios, condiciones…"><?php echo htmlspecialchars($business['job_offer_description'] ?? ''); ?></textarea>
+                        </div>
+                        <div class="field">
+                            <label for="job-url">🔗 Link externo de postulación <em style="color:#9ca3af;font-weight:400;">(opcional)</em></label>
+                            <input type="url" id="job-url" maxlength="500" placeholder="https://…"
+                                   value="<?php echo htmlspecialchars($business['job_offer_url'] ?? ''); ?>">
+                            <div style="font-size:.75em;color:#9ca3af;margin-top:3px;">Si tenés un formulario propio, pegá el link acá. Convive con las postulaciones internas.</div>
+                        </div>
+                    </div>
+
+                    <div id="job-offer-msg" style="margin:12px 0 0;font-size:.82em;"></div>
+
+                    <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+                        <button type="button" id="job-save-btn" class="btn-save" style="width:auto;padding:10px 16px;" onclick="guardarOfertaTrabajo()">
+                            💾 Guardar oferta laboral
+                        </button>
+                        <a href="/panel-trabajo?id=<?php echo $businessId; ?>" class="btn-save" style="display:inline-flex;text-decoration:none;width:auto;padding:10px 16px;background:#065f46;">
+                            📋 Abrir panel de postulaciones
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <p style="margin:0;font-size:.84em;color:#4b5563;line-height:1.6;">
+                        Este módulo es <strong>opcional</strong>. Después de publicar el negocio, podrás activarlo y completar los datos desde
+                        <strong>Editar negocio → Busco Empleados/as</strong>.
+                    </p>
+                <?php endif; ?>
+            </div>
+        </div>
+        <!-- ══ FIN MÓDULO BUSCO EMPLEADOS/AS ══════════════════════════════════ -->
+
+        <!-- ══ REDES SOCIALES ════════════════════════════════════════════════ -->        <div class="form-section">
             <div class="section-head">
                 <span class="section-icon">📱</span>
                 <div>
@@ -1478,6 +1537,87 @@ document.addEventListener('DOMContentLoaded', () => {
             this.checked = !active;
             setDisponiblesVisual(!active);
             if (msg) msg.textContent = 'No se pudo conectar para actualizar el módulo.';
+        }
+    });
+});
+<?php endif; ?>
+
+// ── MÓDULO BUSCO EMPLEADOS/AS ─────────────────────────────────────────────────
+<?php if ($editing): ?>
+function jobOfferMsg(text, ok) {
+    const el = document.getElementById('job-offer-msg');
+    if (!el) return;
+    if (!text) { el.style.display = 'none'; return; }
+    el.style.display    = 'block';
+    el.style.fontWeight = '600';
+    el.style.color      = ok ? '#065f46' : '#991b1b';
+    el.style.background = ok ? '#d1fae5' : '#fee2e2';
+    el.style.padding    = '8px 12px';
+    el.style.borderRadius = '8px';
+    el.textContent = text;
+    setTimeout(() => { el.style.display = 'none'; }, 4000);
+}
+
+async function guardarOfertaTrabajo() {
+    const position    = (document.getElementById('job-position')?.value    || '').trim();
+    const description = (document.getElementById('job-description')?.value || '').trim();
+    const url         = (document.getElementById('job-url')?.value         || '').trim();
+    const btn         = document.getElementById('job-save-btn');
+
+    if (!position) { jobOfferMsg('El puesto/posición es obligatorio.', false); return; }
+
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando…'; }
+    try {
+        const r = await fetch('/api/job_offers.php?action=save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ business_id: BIZ_ID, job_offer_position: position, job_offer_description: description, job_offer_url: url })
+        });
+        const d = await r.json();
+        if (d.success) {
+            jobOfferMsg('✅ ' + (d.message || 'Oferta guardada'), true);
+        } else {
+            jobOfferMsg('❌ ' + (d.message || 'Error al guardar'), false);
+        }
+    } catch (e) {
+        jobOfferMsg('Error de conexión al guardar la oferta.', false);
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar oferta laboral'; }
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const toggle = document.getElementById('job-offer-toggle');
+    if (!toggle || !BIZ_ID) return;
+    toggle.addEventListener('change', async function() {
+        const active = this.checked ? 1 : 0;
+        const label  = document.getElementById('job-offer-label');
+        // Al activar, exigir que se haya guardado la posición
+        if (active) {
+            const pos = (document.getElementById('job-position')?.value || '').trim();
+            if (!pos) {
+                this.checked = false;
+                jobOfferMsg('Completá y guardá el puesto antes de activar la oferta.', false);
+                return;
+            }
+        }
+        try {
+            const r = await fetch('/api/job_offers.php?action=toggle', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ business_id: BIZ_ID, activo: active })
+            });
+            const d = await r.json();
+            if (d.success) {
+                if (label) label.textContent = active ? 'Oferta activa' : 'Oferta inactiva';
+                jobOfferMsg(d.message || (active ? 'Oferta activada' : 'Oferta desactivada'), true);
+            } else {
+                this.checked = !active;
+                jobOfferMsg('❌ ' + (d.message || 'No se pudo cambiar el estado'), false);
+            }
+        } catch (e) {
+            this.checked = !active;
+            jobOfferMsg('Error de conexión.', false);
         }
     });
 });

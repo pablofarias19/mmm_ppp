@@ -472,6 +472,8 @@ $tipoLabels = [
     $delivery  = count(array_filter($businesses, fn($b) => !empty($b['has_delivery'])));
     // Verificar tabla disponibles UNA sola vez fuera del loop
     $dispTablaExiste = mapitaTableExists($db, 'disponibles_solicitudes');
+    $jobAppTablaExiste = mapitaTableExists($db, 'job_applications');
+    $jobOfferColExiste = mapitaColumnExists($db, 'businesses', 'job_offer_active');
     ?>
     <div class="stats-row">
         <div class="stat-card">
@@ -520,6 +522,15 @@ $tipoLabels = [
                     $dispOrdenesCount = (int)$stOrd->fetchColumn();
                 } catch (Exception $e) { $dispOrdenesCount = 0; }
             }
+            // Contador de postulaciones pendientes de trabajo
+            $jobAppPendientes = 0;
+            if (!empty($b['job_offer_active']) && $jobOfferColExiste && $jobAppTablaExiste) {
+                try {
+                    $stJob = $db->prepare("SELECT COUNT(*) FROM job_applications WHERE business_id = ? AND estado = 'pendiente'");
+                    $stJob->execute([$b['id']]);
+                    $jobAppPendientes = (int)$stJob->fetchColumn();
+                } catch (Exception $e) { $jobAppPendientes = 0; }
+            }
         ?>
         <div class="biz-card">
 
@@ -535,6 +546,12 @@ $tipoLabels = [
                     <span style="font-size:10px;font-weight:700;background:#fef3c7;color:#92400e;
                                  border:1px solid #fcd34d;border-radius:10px;padding:2px 7px;margin-top:3px;display:inline-block;">
                         📦 Disponibles<?php echo $dispOrdenesCount > 0 ? ' 🔔' . $dispOrdenesCount : ''; ?>
+                    </span>
+                    <?php endif; ?>
+                    <?php if ($jobOfferColExiste && !empty($b['job_offer_active'])): ?>
+                    <span style="font-size:10px;font-weight:700;background:#dbeafe;color:#1e40af;
+                                 border:1px solid #93c5fd;border-radius:10px;padding:2px 7px;margin-top:3px;display:inline-block;">
+                        💼 Busco Empleados<?php echo $jobAppPendientes > 0 ? ' 🔔' . $jobAppPendientes : ''; ?>
                     </span>
                     <?php endif; ?>
                     <?php if ($isAdmin && !empty($b['owner_name'])): ?>
@@ -628,6 +645,14 @@ $tipoLabels = [
                    title="Panel de Disponibles<?php echo $dispOrdenesCount > 0 ? ' — ' . $dispOrdenesCount . ' solicitud(es) pendiente(s)' : ''; ?>">
                     📦<?php echo $dispOrdenesCount > 0 ? ' 🔔' . $dispOrdenesCount : ''; ?>
                 </a>
+                <?php if ($jobOfferColExiste && !empty($b['job_offer_active'])): ?>
+                <a href="/panel-trabajo?id=<?php echo $b['id']; ?>"
+                   class="btn"
+                   style="background:<?php echo $jobAppPendientes > 0 ? '#1d4ed8' : '#374151'; ?>;color:white;"
+                   title="Panel de Trabajo<?php echo $jobAppPendientes > 0 ? ' — ' . $jobAppPendientes . ' postulación(es) pendiente(s)' : ''; ?>">
+                    💼<?php echo $jobAppPendientes > 0 ? ' 🔔' . $jobAppPendientes : ''; ?>
+                </a>
+                <?php endif; ?>
 
                 <form method="post" style="margin:0;">
                     <?php echo csrfField(); ?>

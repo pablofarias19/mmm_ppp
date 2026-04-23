@@ -51,6 +51,7 @@ $routes = [
     '/brand_analysis' => __DIR__ . '/brand_analysis.php',
     '/business_model' => __DIR__ . '/business_model.php',
     '/panel-disponibles' => __DIR__ . '/business/panel_disponibles.php',
+    '/panel-trabajo'     => __DIR__ . '/business/panel_trabajo.php',
 ];
 
 // Route the request
