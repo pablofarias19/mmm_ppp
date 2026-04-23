@@ -376,6 +376,29 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             text-transform: uppercase; letter-spacing: 0.8px;
             margin-bottom: 8px; display: block;
         }
+        .quickstart-panel {
+            border-left: 4px solid #667eea;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+        }
+        .quickstart-panel__title {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: #1B3B6F;
+            font-weight: 800;
+        }
+        .quickstart-panel__intro {
+            margin: 0 0 8px;
+            font-size: 12px;
+            color: #334155;
+            line-height: 1.45;
+        }
+        .quickstart-panel__list {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 12px;
+            color: #334155;
+            line-height: 1.5;
+        }
         .section-header {
             font-size: 10px; font-weight: 700; color: #999;
             text-transform: uppercase; letter-spacing: 0.8px;
@@ -717,6 +740,20 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             <option value="otros">📍 Otros</option>
         </optgroup>
     </select>
+
+    <div class="sidebar-card quickstart-panel" id="quickstart-panel">
+        <span class="sidebar-card-label">Guía inicial</span>
+        <h3 class="quickstart-panel__title">🧭 Panel de Inicio</h3>
+        <p class="quickstart-panel__intro">Este panel te orienta rápidamente sobre lo básico del sistema y cómo empezar.</p>
+        <ul class="quickstart-panel__list">
+            <li>Ver y elegir negocios y marcas en el mapa.</li>
+            <li>Contactarte con sus titulares y hacer pedidos.</li>
+            <li>Ver novedades, ofertas y contenidos recientes.</li>
+            <li>Registrarte para ubicar tu negocio y marca en el mapa.</li>
+            <li>Crear canales de comunicación selectivos (WT).</li>
+            <li>Mostrar franquicias y generar oportunidades para todos.</li>
+        </ul>
+    </div>
 
     <!-- ADVANCED FILTERS ACCORDION -->
     <div class="sb-section" id="sb-sec-filters">
@@ -3160,8 +3197,11 @@ function buildPopup(n, isMarca) {
             if (rw.inicio) p += '<p style="margin:4px 0;font-size:12px;">🕐 Inicio: ' + formatDateTime(rw.inicio) + '</p>';
             if (rw.fin) p += '<p style="margin:4px 0;font-size:12px;">⏳ Cierre: ' + formatDateTime(rw.fin) + '</p>';
             if (n.remate_titulo || n.tipo_comercio) p += '<p style="margin:4px 0;font-size:12px;">🔨 ' + (n.remate_titulo || n.tipo_comercio) + '</p>';
-        } else if (n.horario_apertura) {
-            p += '<p style="margin:4px 0;font-size:12px;">🕐 ' + n.horario_apertura + ' – ' + n.horario_cierre + '</p>';
+        } else if (n.horario_apertura || n.horario_cierre) {
+            const openHour = truncateHourLabel(n.horario_apertura);
+            const closeHour = truncateHourLabel(n.horario_cierre);
+            const scheduleLabel = (openHour && closeHour) ? (openHour + ' – ' + closeHour) : (openHour || closeHour);
+            if (scheduleLabel) p += '<p style="margin:4px 0;font-size:12px;">🕐 ' + scheduleLabel + '</p>';
         }
         if (n.categorias_productos) p += '<p style="margin:4px 0;color:#888;font-size:11px;">🏷️ ' + n.categorias_productos + '</p>';
 
