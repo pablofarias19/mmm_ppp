@@ -3716,7 +3716,9 @@ const SECTOR_STATUS_OPACITY = {
 function getSectorStyle(sector) {
     const color   = SECTOR_TYPE_COLORS[sector.type]   || '#667eea';
     const opacity = SECTOR_STATUS_OPACITY[sector.status] || 0.2;
-    return { color, fillColor: color, fillOpacity: opacity, weight: 2, dashArray: sector.status === 'proyecto' ? '8,6' : null };
+    const style   = { color, fillColor: color, fillOpacity: opacity, weight: 2 };
+    if (sector.status === 'proyecto') style.dashArray = '8,6';
+    return style;
 }
 
 function toggleSectoresIndustriales() {
@@ -3738,7 +3740,13 @@ function toggleSectoresIndustriales() {
 function renderSectorLayers() {
     sectoresIndustrialesData.forEach(sector => {
         if (!sector.geometry) return;
-        const geo = typeof sector.geometry === 'string' ? JSON.parse(sector.geometry) : sector.geometry;
+        let geo;
+        try {
+            geo = typeof sector.geometry === 'string' ? JSON.parse(sector.geometry) : sector.geometry;
+        } catch(parseErr) {
+            console.warn('Sector industrial con JSON de geometría inválido (id=' + sector.id + '):', parseErr);
+            return;
+        }
         try {
             const style  = getSectorStyle(sector);
             const layer  = L.geoJSON(geo, {
