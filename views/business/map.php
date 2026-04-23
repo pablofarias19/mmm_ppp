@@ -3122,7 +3122,18 @@ function buildPopup(n, isMarca) {
         }
         if (esFranq) p += '<span class="brand-status-badge brand-status-badge--franquicia">🏢 Franquicia</span>';
         if (tieneL)  p += '<span class="brand-status-badge brand-status-badge--licencia">📜 Con Licencia</span>';
+        p += '<button type="button" class="brand-legal-hint-btn" aria-label="Información legal Ley 22.362"'
+           + ' onclick="var t=this.parentNode.nextElementSibling;t.classList.toggle(\'brand-legal-tooltip--open\');this.setAttribute(\'aria-expanded\',t.classList.contains(\'brand-legal-tooltip--open\'));"'
+           + ' aria-expanded="false">?</button>';
         p += '</div>';
+        // Legal info panel (toggles on ? click)
+        p += '<div class="brand-legal-tooltip" role="note">'
+           + '<p><strong>Ley 22.362 — Marcas y designaciones</strong></p>'
+           + '<p>Estos activos intangibles se rigen por la Ley 22.362 y pueden ser capitalizados adecuadamente si reúnen los requisitos esenciales.</p>'
+           + '<p>Para más información consulte con su asesor legal de confianza. Si no cuenta con uno, le recomendamos: '
+           + '<a href="https://www.fariasortiz.com.ar/marcas.html" target="_blank" rel="noopener" class="brand-legal-link">Estudio Farías Ortiz ↗</a>'
+           + '</p>'
+           + '</div>';
 
         // Clase Niza + Rubro pills
         if (n.clase_principal || n.rubro) {

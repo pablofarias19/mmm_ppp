@@ -299,6 +299,71 @@
     margin-bottom: 8px;
 }
 
+/* ─── BRAND LEGAL HINT (?) ────────────────────────────────────────────── */
+.brand-legal-hint-btn {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #9b59b6;
+    color: white;
+    border: none;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-family: inherit;
+    transition: background 0.15s ease;
+    margin-left: auto;
+    align-self: center;
+}
+
+.brand-legal-hint-btn:hover,
+.brand-legal-hint-btn:focus {
+    background: #6a2fa2;
+    outline: 2px solid #9b59b6;
+    outline-offset: 1px;
+}
+
+.brand-legal-tooltip {
+    display: none;
+    background: #fdf8ff;
+    border-left: 3px solid #9b59b6;
+    border-radius: 0 8px 8px 0;
+    padding: 10px 12px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    line-height: 1.55;
+    color: #333;
+}
+
+.brand-legal-tooltip p {
+    margin: 0 0 6px;
+}
+
+.brand-legal-tooltip p:last-child {
+    margin: 0;
+}
+
+.brand-legal-tooltip.brand-legal-tooltip--open {
+    display: block;
+}
+
+.brand-legal-link {
+    color: #6a2fa2;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.brand-legal-link:hover {
+    color: #4a1469;
+}
+
 /* ─── ANIMATIONS ──────────────────────────────────────────────────────── */
 @keyframes popupSlideUp {
     from {
