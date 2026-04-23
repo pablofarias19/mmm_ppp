@@ -297,7 +297,7 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
                     AND b.business_type IN ('transporte','transportista','logistica','flota')
                     AND b.lat BETWEEN ? AND ?
                     AND b.lng BETWEEN ? AND ?
-                  LIMIT " . CQ_MAX_RECIPIENTS
+                  LIMIT " . CQ_MAX_MASIVA
             );
             $stmt->execute([
                 (float)$bounds['south'],
