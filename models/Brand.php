@@ -79,6 +79,16 @@ class Brand {
                     " . self::columnExpr($db, 'brands', 'b', 'zona_exclusiva') . ",
                     " . self::columnExpr($db, 'brands', 'b', 'zona_exclusiva_radius_km') . ",
                     " . self::columnExpr($db, 'brands', 'b', 'created_at') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'description') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'estado') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'inpi_registrada') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'inpi_numero') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'inpi_fecha_registro') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'inpi_vencimiento') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'inpi_tipo') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'franchise_details') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'whatsapp') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'founded_year') . ",
                     'brands' AS fuente
                 FROM brands b
                 WHERE " . ($hasBrandsVisible ? 'b.visible = 1' : '1=1') . "
@@ -131,6 +141,16 @@ class Brand {
                     " . self::columnExpr($db, 'marcas', 'm', 'zona_exclusiva') . ",
                     " . self::columnExpr($db, 'marcas', 'm', 'zona_exclusiva_radius_km') . ",
                     " . self::columnExpr($db, 'marcas', 'm', 'created_at') . ",
+                    " . self::columnExpr($db, 'marcas', 'm', 'description') . ",
+                    " . self::columnExpr($db, 'marcas', 'm', 'estado') . ",
+                    NULL AS inpi_registrada,
+                    NULL AS inpi_numero,
+                    NULL AS inpi_fecha_registro,
+                    NULL AS inpi_vencimiento,
+                    NULL AS inpi_tipo,
+                    NULL AS franchise_details,
+                    " . self::columnExpr($db, 'marcas', 'm', 'whatsapp') . ",
+                    NULL AS founded_year,
                     'marcas' AS fuente
                 FROM marcas m
                 {$joinClasificacionNiza}

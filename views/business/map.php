@@ -376,6 +376,29 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             text-transform: uppercase; letter-spacing: 0.8px;
             margin-bottom: 8px; display: block;
         }
+        .quickstart-panel {
+            border-left: 4px solid #667eea;
+            background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+        }
+        .quickstart-panel__title {
+            margin: 0 0 8px;
+            font-size: 14px;
+            color: #1B3B6F;
+            font-weight: 800;
+        }
+        .quickstart-panel__intro {
+            margin: 0 0 8px;
+            font-size: 12px;
+            color: #334155;
+            line-height: 1.45;
+        }
+        .quickstart-panel__list {
+            margin: 0;
+            padding-left: 18px;
+            font-size: 12px;
+            color: #334155;
+            line-height: 1.5;
+        }
         .section-header {
             font-size: 10px; font-weight: 700; color: #999;
             text-transform: uppercase; letter-spacing: 0.8px;
@@ -717,6 +740,20 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             <option value="otros">📍 Otros</option>
         </optgroup>
     </select>
+
+    <div class="sidebar-card quickstart-panel" id="quickstart-panel">
+        <span class="sidebar-card-label">Guía inicial</span>
+        <h3 class="quickstart-panel__title">🧭 Panel de Inicio</h3>
+        <p class="quickstart-panel__intro">Este panel te orienta rápidamente sobre lo básico del sistema y cómo empezar.</p>
+        <ul class="quickstart-panel__list">
+            <li>Ver y elegir negocios y marcas en el mapa.</li>
+            <li>Contactarte con sus titulares y hacer pedidos.</li>
+            <li>Ver novedades, ofertas y contenidos recientes.</li>
+            <li>Registrarte para ubicar tu negocio y marca en el mapa.</li>
+            <li>Crear canales de comunicación selectivos (WT).</li>
+            <li>Mostrar franquicias y generar oportunidades para todos.</li>
+        </ul>
+    </div>
 
     <!-- ADVANCED FILTERS ACCORDION -->
     <div class="sb-section" id="sb-sec-filters">
@@ -3007,6 +3044,12 @@ async function loadWTChannelStatus(panel) {
     } catch { /* ignorar errores de red */ }
 }
 
+function toggleBrandLegalInfo(btn) {
+    var tooltip = btn.parentNode.nextElementSibling;
+    var open = tooltip.classList.toggle('brand-legal-tooltip--open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
 function buildPopup(n, isMarca) {
     const name    = n.nombre || n.name    || 'Sin nombre';
     const address = n.ubicacion || n.address || '';
@@ -3017,7 +3060,7 @@ function buildPopup(n, isMarca) {
     let p = '<div style="font-family: inherit;" data-rel-entity-type="' + relType + '" data-rel-entity-id="' + relId + '" data-rel-mapita-id="' + relMapitaId + '">';
 
     // PROFESSIONAL HEADER with icon + type badge
-    p += '<div class="popup-header">';
+    p += '<div class="popup-header' + (isMarca ? ' popup-header--brand' : '') + '">';
     p += '<div class="popup-header-inner">';
 
     // ── Icon column ──
@@ -3055,6 +3098,14 @@ function buildPopup(n, isMarca) {
             if (openStatus === true)  p += '<br><span class="status-badge">🟢 Abierto ahora</span>';
             if (openStatus === false) p += '<br><span class="status-badge">🔴 Cerrado</span>';
         }
+    } else {
+        if (n.inpi_registrada == 1 || n.inpi_registrada === true || n.inpi_registrada === '1') {
+            p += '<br><span class="status-badge">✅ INPI Registrada</span>';
+        } else if (n.es_franquicia == 1 || n.es_franquicia === true || n.es_franquicia === '1') {
+            p += '<br><span class="status-badge">🏢 Franquicia</span>';
+        } else {
+            p += '<br><span class="status-badge">⚪ Marca de Hecho</span>';
+        }
     }
     p += '</div>'; // Close popup-header-text
     p += '</div>'; // Close popup-header-inner
@@ -3064,17 +3115,103 @@ function buildPopup(n, isMarca) {
 
     if (isMarca) {
         // ── Brand popup ──────────────────────────────────────────────────────
-        if (n.clase_principal) p += '<p style="margin:5px 0;"><span style="background:' + getNizaColor(n.clase_principal) + ';color:white;padding:3px 8px;border-radius:10px;font-size:11px;">📋 CLASE ' + n.clase_principal + '</span></p>';
-        if (n.rubro)            p += '<p style="margin:4px 0;color:#555;font-size:12px;">🏷️ ' + n.rubro + '</p>';
-        if (n.valor_activo)     p += '<p style="margin:4px 0;color:#27ae60;font-weight:bold;font-size:13px;">💰 $' + n.valor_activo + '</p>';
-        if (n.nivel_proteccion) {
-            const col = n.nivel_proteccion==='Alta'?'#27ae60':n.nivel_proteccion==='Media'?'#f39c12':'#e74c3c';
-            p += '<p style="margin:4px 0;font-size:12px;">🛡️ Protección: <strong style="color:' + col + '">' + n.nivel_proteccion + '</strong></p>';
-        }
-        if (n.riesgo_oposicion) p += '<p style="margin:4px 0;font-size:12px;">⚠️ Riesgo: ' + n.riesgo_oposicion + '</p>';
 
-        // Condition buttons (per brand, shown in map)
-        const hasConds = n.tiene_zona || n.tiene_licencia || n.es_franquicia || n.zona_exclusiva;
+        // Status badges row
+        const inpiReg = n.inpi_registrada == 1 || n.inpi_registrada === true || n.inpi_registrada === '1';
+        const esFranq = n.es_franquicia == 1 || n.es_franquicia === true || n.es_franquicia === '1';
+        const tieneL  = n.tiene_licencia == 1 || n.tiene_licencia === true || n.tiene_licencia === '1';
+        p += '<div class="brand-status-row">';
+        if (inpiReg) {
+            p += '<span class="brand-status-badge brand-status-badge--inpi">✅ INPI Registrada</span>';
+        } else {
+            p += '<span class="brand-status-badge brand-status-badge--hecho">⚪ Marca de Hecho</span>';
+        }
+        if (esFranq) p += '<span class="brand-status-badge brand-status-badge--franquicia">🏢 Franquicia</span>';
+        if (tieneL)  p += '<span class="brand-status-badge brand-status-badge--licencia">📜 Con Licencia</span>';
+        p += '<button type="button" class="brand-legal-hint-btn" aria-label="Información legal Ley 22.362"'
+           + ' onclick="toggleBrandLegalInfo(this)"'
+           + ' aria-expanded="false">?</button>';
+        p += '</div>';
+        // Legal info panel (toggles on ? click)
+        p += '<div class="brand-legal-tooltip" role="note">'
+           + '<p><strong>Ley 22.362 — Marcas y designaciones</strong></p>'
+           + '<p>Estos activos intangibles se rigen por la Ley 22.362 y pueden ser capitalizados adecuadamente si reúnen los requisitos esenciales.</p>'
+           + '<p>Para más información consulte con su asesor legal de confianza. Si no cuenta con uno, le recomendamos: '
+           + '<a href="https://www.fariasortiz.com.ar/marcas.html" target="_blank" rel="noopener" class="brand-legal-link">Estudio Farías Ortiz ↗</a>'
+           + '</p>'
+           + '</div>';
+
+        // Clase Niza + Rubro pills
+        if (n.clase_principal || n.rubro) {
+            p += '<div style="margin-bottom:10px;display:flex;flex-wrap:wrap;gap:5px;align-items:center;">';
+            if (n.clase_principal) {
+                p += '<span style="background:' + getNizaColor(n.clase_principal) + ';color:white;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;">📋 CLASE ' + escapeHtml(String(n.clase_principal)) + '</span>';
+            }
+            if (n.rubro) {
+                p += '<span style="background:#f0ecff;color:#6a2fa2;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:600;">🏷️ ' + escapeHtml(n.rubro) + '</span>';
+            }
+            p += '</div>';
+        }
+
+        // Description excerpt
+        const descText = n.description || n.extended_description || '';
+        if (descText && descText.trim()) {
+            const exc = descText.length > 110 ? descText.substring(0, 110) + '…' : descText;
+            p += '<p style="margin:0 0 10px;color:#555;font-size:12px;line-height:1.5;">' + escapeHtml(exc) + '</p>';
+        }
+
+        // INPI registration details
+        if (inpiReg && (n.inpi_numero || n.inpi_fecha_registro || n.inpi_vencimiento || n.inpi_tipo)) {
+            p += '<div class="brand-inpi-grid">';
+            if (n.inpi_tipo)           p += '<div class="brand-inpi-item"><span class="label">Tipo</span><span class="value">' + escapeHtml(n.inpi_tipo) + '</span></div>';
+            if (n.inpi_numero)         p += '<div class="brand-inpi-item"><span class="label">N° Registro</span><span class="value">' + escapeHtml(n.inpi_numero) + '</span></div>';
+            if (n.inpi_fecha_registro) p += '<div class="brand-inpi-item"><span class="label">Registrada</span><span class="value">' + escapeHtml(n.inpi_fecha_registro) + '</span></div>';
+            if (n.inpi_vencimiento)    p += '<div class="brand-inpi-item"><span class="label">Vencimiento</span><span class="value">' + escapeHtml(n.inpi_vencimiento) + '</span></div>';
+            p += '</div>';
+        }
+
+        // Protection level + risk
+        if (n.nivel_proteccion || n.riesgo_oposicion) {
+            p += '<div class="brand-protection-row">';
+            if (n.nivel_proteccion) {
+                const pCol = n.nivel_proteccion==='Alta'?'#155724':n.nivel_proteccion==='Media'?'#856404':'#721c24';
+                const pBg  = n.nivel_proteccion==='Alta'?'#d4edda':n.nivel_proteccion==='Media'?'#fff3cd':'#f8d7da';
+                p += '<span style="background:' + pBg + ';color:' + pCol + ';padding:3px 9px;border-radius:10px;font-size:11px;font-weight:700;">🛡️ Protección ' + escapeHtml(n.nivel_proteccion) + '</span>';
+            }
+            if (n.riesgo_oposicion) {
+                p += '<span style="background:#ffeeba;color:#856404;padding:3px 9px;border-radius:10px;font-size:11px;font-weight:600;">⚠️ Riesgo: ' + escapeHtml(n.riesgo_oposicion) + '</span>';
+            }
+            p += '</div>';
+        }
+
+        // Franchise details
+        if (esFranq && n.franchise_details) {
+            p += '<div class="popup-section" style="margin-bottom:8px;">';
+            p += '<div class="popup-label">🏢 Detalles de franquicia</div>';
+            p += '<div class="popup-value" style="font-size:12px;">' + escapeHtml(n.franchise_details) + '</div>';
+            p += '</div>';
+        }
+
+        // Valor activo
+        if (n.valor_activo) {
+            p += '<p style="margin:6px 0 8px;color:#27ae60;font-weight:700;font-size:13px;">💰 Valor activo: $' + escapeHtml(String(n.valor_activo)) + '</p>';
+        }
+
+        // Founded year
+        if (n.founded_year) {
+            p += '<p style="margin:4px 0 8px;font-size:12px;color:#777;">📅 Fundada en ' + escapeHtml(String(n.founded_year)) + '</p>';
+        }
+
+        // Location
+        if (address) {
+            p += '<div class="popup-section">';
+            p += '<div class="popup-label">📍 Ubicación</div>';
+            p += '<div class="popup-value">' + escapeHtml(address) + '</div>';
+            p += '</div>';
+        }
+
+        // Map visualization buttons
+        const hasConds = n.tiene_zona || n.tiene_licencia || esFranq || n.zona_exclusiva;
         if (hasConds) {
             p += '<div style="margin:8px 0;border-top:1px solid #eee;padding-top:7px;">';
             p += '<p style="margin:0 0 5px;font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px;">Ver en mapa</p>';
@@ -3082,22 +3219,34 @@ function buildPopup(n, isMarca) {
             const bs = 'padding:5px 10px;border:none;border-radius:12px;cursor:pointer;font-size:11px;color:white;font-family:sans-serif;';
             if (n.tiene_zona)     p += '<button onclick="toggleZonaSingle(' + n.lat + ',' + n.lng + ',' + (n.zona_radius_km||10) + ')" style="' + bs + 'background:#3498db;">🌐 Zona</button>';
             if (n.tiene_licencia) p += '<button onclick="toggleLicenciaSingle(' + n.lat + ',' + n.lng + ')" style="' + bs + 'background:#27ae60;">📜 Licencia</button>';
-            if (n.es_franquicia)  p += '<button onclick="toggleFranquiciaSingle(' + n.lat + ',' + n.lng + ')" style="' + bs + 'background:#9c27b0;">🏢 Franquicia</button>';
+            if (esFranq)          p += '<button onclick="toggleFranquiciaSingle(' + n.lat + ',' + n.lng + ')" style="' + bs + 'background:#9c27b0;">🏢 Franquicia</button>';
             if (n.zona_exclusiva) p += '<button onclick="toggleExclusivaSingle(' + n.lat + ',' + n.lng + ',' + (n.zona_exclusiva_radius_km||2) + ')" style="' + bs + 'background:#e74c3c;">🎯 Exclusiva</button>';
             p += '</div></div>';
         }
 
+        // WT channel
+        p += buildWTPopupSection('marca', n.id, name);
+
         p += '</div>'; // Close popup-body
 
-        // Nav links for brands
+        // Footer actions
         p += '<div class="popup-footer">';
-        // Enlace de detalle según origen de la marca
         var detalleUrl = (n.fuente === 'marcas')
             ? '/brand_form?id=' + n.id
             : '/brand_detail?id=' + n.id;
-        p += '<a href="' + detalleUrl + '" class="popup-action" style="background:#1B3B6F;">📋 Detalle</a>';
-        p += '<a href="/marcas" class="popup-action" style="background:#4285F4;">🗺️ Mapa</a>';
-        if (n.website) p += '<a href="' + n.website + '" target="_blank" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
+        p += '<a href="' + detalleUrl + '" class="popup-action" style="background:#6a2fa2;">📋 Detalle</a>';
+        if (n.website) {
+            let safeWebsite = null;
+            try {
+                const u = new URL(String(n.website));
+                if (u.protocol === 'https:' || u.protocol === 'http:') safeWebsite = escapeHtml(u.href);
+            } catch (_) { /* URL inválida, ignorar */ }
+            if (safeWebsite) p += '<a href="' + safeWebsite + '" target="_blank" rel="noopener" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
+        }
+        if (n.whatsapp) {
+            const waNum = String(n.whatsapp).replace(/\D/g, '');
+            p += '<a href="https://wa.me/' + escapeHtml(waNum) + '" target="_blank" rel="noopener" class="popup-action" style="background:#25d366;">💬 WA</a>';
+        }
         p += '</div>';
 
     } else {
@@ -3160,8 +3309,11 @@ function buildPopup(n, isMarca) {
             if (rw.inicio) p += '<p style="margin:4px 0;font-size:12px;">🕐 Inicio: ' + formatDateTime(rw.inicio) + '</p>';
             if (rw.fin) p += '<p style="margin:4px 0;font-size:12px;">⏳ Cierre: ' + formatDateTime(rw.fin) + '</p>';
             if (n.remate_titulo || n.tipo_comercio) p += '<p style="margin:4px 0;font-size:12px;">🔨 ' + (n.remate_titulo || n.tipo_comercio) + '</p>';
-        } else if (n.horario_apertura) {
-            p += '<p style="margin:4px 0;font-size:12px;">🕐 ' + n.horario_apertura + ' – ' + n.horario_cierre + '</p>';
+        } else if (n.horario_apertura || n.horario_cierre) {
+            const openHour = truncateHourLabel(n.horario_apertura);
+            const closeHour = truncateHourLabel(n.horario_cierre);
+            const scheduleLabel = (openHour && closeHour) ? (openHour + ' – ' + closeHour) : (openHour || closeHour);
+            if (scheduleLabel) p += '<p style="margin:4px 0;font-size:12px;">🕐 ' + scheduleLabel + '</p>';
         }
         if (n.categorias_productos) p += '<p style="margin:4px 0;color:#888;font-size:11px;">🏷️ ' + n.categorias_productos + '</p>';
 
