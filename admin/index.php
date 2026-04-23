@@ -270,7 +270,7 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         <button id="tab-btn-ofertas"        class="tab-btn <?php echo $tab==='ofertas'        ? 'active' : ''; ?>" onclick="switchTab('ofertas')">🏷️ Ofertas</button>
         <button id="tab-btn-transmisiones"  class="tab-btn <?php echo $tab==='transmisiones'  ? 'active' : ''; ?>" onclick="switchTab('transmisiones')">📡 En Vivo</button>
         <button id="tab-btn-moderacion"     class="tab-btn <?php echo $tab==='moderacion'     ? 'active' : ''; ?>" onclick="switchTab('moderacion')">🚨 Moderación</button>
-        <button id="tab-btn-sectores"       class="tab-btn <?php echo $tab==='sectores'       ? 'active' : ''; ?>" onclick="switchTab('sectores')">🏭 Sectores Industriales</button>
+        <button id="tab-btn-sectores"       class="tab-btn <?php echo $tab==='sectores'       ? 'active' : ''; ?>" onclick="switchTab('sectores')">🏭 Catálogo: Sectores Ind.</button>
     </div>
 
     <!-- NEGOCIOS -->
@@ -403,14 +403,16 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         <div id="transmisiones-list"></div>
     </div>
 
-    <!-- SECTORES INDUSTRIALES -->
+    <!-- CATÁLOGO: SECTORES INDUSTRIALES (Admin) -->
     <div class="tab-content <?php echo $tab==='sectores' ? 'active' : ''; ?>" id="tab-sectores">
         <div class="section-header">
-            <h2>🏭 Sectores Industriales</h2>
+            <h2>🏭 Catálogo: Sectores Industriales</h2>
             <button class="btn btn-primary" onclick="openSectorModal()">+ Nuevo Sector</button>
         </div>
-        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;">
-            ⚠️ <strong>Requiere migración:</strong> Ejecutar <code>migrations/014_industrial_sectors.sql</code> antes de usar este módulo.
+        <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#0369a1;">
+            ℹ️ <strong>Este es el catálogo de sectores</strong> — taxonomía usada por el módulo de Industrias de los usuarios.
+            Los usuarios crean sus industrias en <a href="/industrias" style="color:#0369a1;font-weight:700;">🏭 Industrias</a>.
+            Asegurate de haber ejecutado <code>migrations/014_industrial_sectors.sql</code> antes de usar este módulo.
         </div>
         <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <input type="text" id="search-sectores" placeholder="🔍 Buscar por nombre…"
