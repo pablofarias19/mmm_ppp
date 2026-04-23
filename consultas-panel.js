@@ -27,6 +27,7 @@
         geoBounds:        null,         // {north,south,east,west}
         lastReplyId:      0,
         pollTimer:        null,
+        previewDebounce:  null,
         threadConsultaId: null,
         threadBizId:      null,
     };
@@ -309,8 +310,8 @@
 
     let previewDebounce = null;
     function debouncedPreview() {
-        clearTimeout(previewDebounce);
-        previewDebounce = setTimeout(function () {
+        clearTimeout(state.previewDebounce);
+        state.previewDebounce = setTimeout(function () {
             const tipo    = document.getElementById('cq-modal-overlay')?.dataset.tipo;
             if (!tipo) return;
             const cfg     = MODAL_CONFIG[tipo] || {};
@@ -602,6 +603,18 @@
         if (state.pollTimer) return;
         state.pollTimer = setInterval(pollReplies, 8000);
     }
+
+    /* Limpia el intervalo cuando el usuario abandona la pestaña/página */
+    window.addEventListener('beforeunload', function () {
+        if (state.pollTimer) clearInterval(state.pollTimer);
+    });
+    document.addEventListener('visibilitychange', function () {
+        if (document.hidden) {
+            if (state.pollTimer) { clearInterval(state.pollTimer); state.pollTimer = null; }
+        } else {
+            startPolling();
+        }
+    });
 
     async function pollReplies() {
         if (typeof SESSION_USER_ID === 'undefined' || SESSION_USER_ID <= 0) return;

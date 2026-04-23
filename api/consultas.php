@@ -19,7 +19,7 @@
  */
 
 ini_set('display_errors', 0);
-error_reporting(E_ALL);
+error_reporting(0);
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-cache');
 session_start();
@@ -56,11 +56,11 @@ function cq_require_login(): int {
     return $uid;
 }
 
+/** Máximo de destinatarios por consulta. */
+define('CQ_MAX_RECIPIENTS', 200);
+
 /**
  * Tipos de negocio RESTRINGIDOS: solo participan en consultas masivas/generales
- * si el admin activó consulta_habilitada = 1 en ese negocio específico.
- * (Estudio Jurídico, Inmobiliaria, Productor de Seguros)
- */
 function cq_restricted_types(): array {
     return ['abogado', 'inmobiliaria', 'seguros'];
 }
@@ -141,7 +141,7 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
                 $sql .= ' AND b.business_type = ?';
                 $params[] = $bizType;
             }
-            $sql .= ' LIMIT 200';
+            $sql .= ' LIMIT ' . CQ_MAX_RECIPIENTS . '';
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -162,7 +162,7 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
             }
             // Para tipos restringidos ya filtramos por consulta_habilitada en excludeRestricted.
             // Para el resto, todos los negocios visibles del tipo elegido son destinatarios.
-            $sql .= ' LIMIT 200';
+            $sql .= ' LIMIT ' . CQ_MAX_RECIPIENTS . '';
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -174,7 +174,7 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
             $stmt = $db->prepare(
                 "SELECT id, name, business_type FROM businesses
                   WHERE visible = 1 AND es_proveedor = 1 AND business_type = ?
-                  LIMIT 200"
+                  LIMIT " . CQ_MAX_RECIPIENTS
             );
             $stmt->execute([$rubro]);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -191,7 +191,7 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
                     AND b.business_type IN ('transporte','transportista','logistica','flota')
                     AND b.lat BETWEEN ? AND ?
                     AND b.lng BETWEEN ? AND ?
-                  LIMIT 200"
+                  LIMIT " . CQ_MAX_RECIPIENTS
             );
             $stmt->execute([
                 (float)$bounds['south'],
