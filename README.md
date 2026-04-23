@@ -144,7 +144,68 @@ source migrations/008_entity_delegations.sql
 - `POST /api/ownership_transfers/accept.php` (`transfer_id`) → acepta y cambia titularidad
 - `POST /api/ownership_transfers/reject.php` (`transfer_id`) → rechaza transferencia
 
-## Seguridad
+## Módulo Sectores Industriales
+
+### Migración
+
+```sql
+source migrations/014_industrial_sectors.sql
+```
+
+### Endpoints
+
+| Método | URL | Descripción | Auth |
+|--------|-----|-------------|------|
+| GET | `/api/industrial_sectors.php` | Lista todos los sectores | No |
+| GET | `/api/industrial_sectors.php?id=N` | Detalle de un sector | No |
+| GET | `/api/industrial_sectors.php?type=mineria` | Filtrar por tipo | No |
+| GET | `/api/industrial_sectors.php?status=activo` | Filtrar por estado | No |
+| GET | `/api/industrial_sectors.php?limit=50&offset=0` | Paginación | No |
+| POST | `/api/industrial_sectors.php?action=create` | Crear sector | Admin |
+| POST | `/api/industrial_sectors.php?action=update&id=N` | Actualizar sector | Admin |
+| POST | `/api/industrial_sectors.php?action=delete&id=N` | Eliminar sector | Admin |
+
+### Valores permitidos
+
+| Campo | Valores |
+|-------|---------|
+| `type` | `mineria`, `energia`, `agro`, `infraestructura`, `inmobiliario`, `industrial` |
+| `status` | `proyecto`, `activo`, `potencial` |
+| `investment_level` | `bajo`, `medio`, `alto` |
+| `risk_level` | `bajo`, `medio`, `alto` |
+
+### Ejemplo de payload (crear)
+
+```json
+{
+  "name": "Parque Industrial Norte",
+  "type": "industrial",
+  "subtype": "Parque tecnológico",
+  "status": "activo",
+  "investment_level": "alto",
+  "risk_level": "bajo",
+  "jurisdiction": "Córdoba",
+  "description": "Parque industrial de alta tecnología en la zona norte.",
+  "geometry": {
+    "type": "Polygon",
+    "coordinates": [[
+      [-64.18, -31.41],
+      [-64.17, -31.41],
+      [-64.17, -31.42],
+      [-64.18, -31.42],
+      [-64.18, -31.41]
+    ]]
+  }
+}
+```
+
+### Integración con el mapa
+
+Los sectores industriales se visualizan en el mapa principal como capas GeoJSON.
+Activar la capa desde la barra lateral: **🏭 Sectores Industriales**.
+Cada tipo se diferencia por color y el estado por opacidad.
+
+
 
 - Contraseñas hasheadas con `password_hash(PASSWORD_DEFAULT)`
 - Protección CSRF en todos los formularios
