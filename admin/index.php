@@ -1410,7 +1410,7 @@ function renderNegocios(items) {
     }
 
     // Tipos restringidos que requieren habilitación manual para consultas
-    const RESTRICTED_TYPES = ['abogado', 'inmobiliaria', 'seguros'];
+    const RESTRICTED_TYPES = ['abogado', 'inmobiliaria', 'seguros', 'agente_inpi'];
 
     el.innerHTML = `
     <div style="overflow-x:auto;">
@@ -1423,7 +1423,9 @@ function renderNegocios(items) {
                 <th style="padding:10px 12px;text-align:left;font-weight:600;">Mapita ID</th>
                 <th style="padding:10px 12px;text-align:left;font-weight:600;">Dirección</th>
                 <th style="padding:10px 12px;text-align:left;font-weight:600;">Propietario</th>
-                <th style="padding:10px 12px;text-align:center;font-weight:600;" title="Solo aplica a Estudio Jurídico, Inmobiliaria y Seguros">Consulta Hab.</th>
+                <th style="padding:10px 12px;text-align:center;font-weight:600;" title="Solo aplica a Estudio Jurídico, Inmobiliaria, Seguros y Agente INPI">Consulta Hab.</th>
+                <th style="padding:10px 12px;text-align:center;font-weight:600;" title="Cualquier negocio: siempre entra en Consulta Masiva de su área">Masiva Siempre</th>
+                <th style="padding:10px 12px;text-align:center;font-weight:600;" title="Solo negocios P: siempre entra en Consulta Proveedores de su rubro">P Siempre</th>
                 <th style="padding:10px 12px;text-align:center;font-weight:600;">Acciones</th>
             </tr>
         </thead>
@@ -1435,7 +1437,11 @@ function renderNegocios(items) {
                 const owner        = n.owner_name || n.username || '—';
                 const isRestricted = RESTRICTED_TYPES.includes(tipo);
                 const habilitada   = n.consulta_habilitada == 1;
-                const toggleCell   = isRestricted
+                const siempre      = n.consulta_siempre == 1;
+                const pSiempre     = n.proveedor_siempre == 1;
+                const isP          = n.es_proveedor == 1;
+
+                const toggleHabCell = isRestricted
                     ? `<td style="padding:9px 12px;text-align:center;">
                          <button onclick="toggleConsultaHabilitada(${n.id}, this)"
                                  title="${habilitada ? 'Deshabilitar' : 'Habilitar'} consultas para este negocio"
@@ -1445,6 +1451,27 @@ function renderNegocios(items) {
                          </button>
                        </td>`
                     : `<td style="padding:9px 12px;text-align:center;color:#d1d5db;font-size:11px;">—</td>`;
+
+                const toggleSiempreCell = `<td style="padding:9px 12px;text-align:center;">
+                     <button onclick="toggleConsultaSiempre(${n.id}, this)"
+                             title="${siempre ? 'Quitar inclusión forzada en masivas' : 'Forzar inclusión en Consulta Masiva'}"
+                             style="padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;
+                                    background:${siempre ? '#1d4ed8' : '#9ca3af'};color:white;transition:background .2s;">
+                       ${siempre ? '🔒 Siempre' : '🎲 A veces'}
+                     </button>
+                   </td>`;
+
+                const togglePSiempreCell = isP
+                    ? `<td style="padding:9px 12px;text-align:center;">
+                         <button onclick="toggleProveedorSiempre(${n.id}, this)"
+                                 title="${pSiempre ? 'Volver a modo aleatorio' : 'Forzar inclusión en Consulta Proveedores'}"
+                                 style="padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;
+                                        background:${pSiempre ? '#7e22ce' : '#9ca3af'};color:white;transition:background .2s;">
+                           ${pSiempre ? '🔒 Siempre' : '🎲 Aleatorio'}
+                         </button>
+                       </td>`
+                    : `<td style="padding:9px 12px;text-align:center;color:#d1d5db;font-size:11px;">—</td>`;
+
                 return `
                 <tr style="border-bottom:1px solid #f0f0f0;background:${i%2===0?'white':'#fafafa'};">
                     <td style="padding:9px 12px;color:#888;font-size:11px;">#${n.id}</td>
@@ -1453,7 +1480,9 @@ function renderNegocios(items) {
                     <td style="padding:9px 12px;color:#4b5563;font-size:12px;">${n.mapita_id||'—'}</td>
                     <td style="padding:9px 12px;color:var(--text-secondary);font-size:12px;">${dir}</td>
                     <td style="padding:9px 12px;font-size:12px;color:#555;">${owner}</td>
-                    ${toggleCell}
+                    ${toggleHabCell}
+                    ${toggleSiempreCell}
+                    ${togglePSiempreCell}
                     <td style="padding:9px 12px;text-align:center;">
                         <div style="display:flex;gap:6px;justify-content:center;">
                             <a href="/edit?id=${n.id}" style="padding:5px 12px;background:#0ea5e9;color:white;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;">✏️ Editar</a>
@@ -1480,9 +1509,67 @@ async function toggleConsultaHabilitada(businessId, btn) {
         const data = await res.json();
         if (data.success) {
             const on = data.data.consulta_habilitada === 1;
-            btn.textContent   = on ? '✅ Hab.' : '⛔ No hab.';
+            btn.textContent      = on ? '✅ Hab.' : '⛔ No hab.';
             btn.style.background = on ? '#065f46' : '#9ca3af';
-            btn.title         = (on ? 'Deshabilitar' : 'Habilitar') + ' consultas para este negocio';
+            btn.title            = (on ? 'Deshabilitar' : 'Habilitar') + ' consultas para este negocio';
+            showToast(data.message, 'success');
+        } else {
+            btn.textContent = prevText;
+            showToast('❌ ' + (data.error || 'Error'), 'error');
+        }
+    } catch {
+        btn.textContent = prevText;
+        showToast('❌ Error de red', 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function toggleConsultaSiempre(businessId, btn) {
+    const prevText = btn.textContent.trim();
+    btn.disabled   = true;
+    btn.textContent = '⏳';
+    try {
+        const res  = await fetch('/api/consultas.php', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ action: 'toggle_consulta_siempre', business_id: businessId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            const on = data.data.consulta_siempre === 1;
+            btn.textContent      = on ? '🔒 Siempre' : '🎲 A veces';
+            btn.style.background = on ? '#1d4ed8' : '#9ca3af';
+            btn.title            = on ? 'Quitar inclusión forzada en masivas' : 'Forzar inclusión en Consulta Masiva';
+            showToast(data.message, 'success');
+        } else {
+            btn.textContent = prevText;
+            showToast('❌ ' + (data.error || 'Error'), 'error');
+        }
+    } catch {
+        btn.textContent = prevText;
+        showToast('❌ Error de red', 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function toggleProveedorSiempre(businessId, btn) {
+    const prevText = btn.textContent.trim();
+    btn.disabled   = true;
+    btn.textContent = '⏳';
+    try {
+        const res  = await fetch('/api/consultas.php', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ action: 'toggle_proveedor_siempre', business_id: businessId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            const on = data.data.proveedor_siempre === 1;
+            btn.textContent      = on ? '🔒 Siempre' : '🎲 Aleatorio';
+            btn.style.background = on ? '#7e22ce' : '#9ca3af';
+            btn.title            = on ? 'Volver a modo aleatorio' : 'Forzar inclusión en Consulta Proveedores';
             showToast(data.message, 'success');
         } else {
             btn.textContent = prevText;

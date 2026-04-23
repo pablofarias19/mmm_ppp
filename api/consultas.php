@@ -16,6 +16,8 @@
  *   mark_read               — marca una consulta como leída por el negocio
  *   toggle_proveedor        — activa/desactiva flag es_proveedor (dueño)
  *   toggle_consulta_habilitada — activa/desactiva flag consulta_habilitada (admin)
+ *   toggle_consulta_siempre    — admin marca negocio para siempre incluido en masivas
+ *   toggle_proveedor_siempre   — admin marca negocio P para siempre incluido en proveedores
  */
 
 ini_set('display_errors', 0);
@@ -58,6 +60,9 @@ function cq_require_login(): int {
 
 /** Máximo de destinatarios por consulta general. */
 define('CQ_MAX_GENERAL',    30);
+
+/** Máximo de destinatarios aleatorios por consulta masiva y proveedores. */
+define('CQ_MAX_MASIVA',     20);
 
 /** Radio máximo en km para Consulta General. */
 define('CQ_GENERAL_RADIUS_KM', 10);
@@ -123,34 +128,69 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
 
     switch ($tipo) {
         // ── CONSULTA MASIVA: negocios visibles dentro del área ────────────────
+        // Regla:
+        //   1. Negocios FORZADOS dentro del área: consulta_siempre=1 ó creados por admin
+        //   2. Del resto (excluidos los forzados), hasta CQ_MAX_MASIVA aleatorios
+        //   3. Merge: forzados + aleatorios
         case 'masiva': {
             if (!$bounds || !isset($bounds['north'], $bounds['south'], $bounds['east'], $bounds['west'])) {
                 cq_err('geo_bounds requerido para consulta masiva.');
             }
-            $params = [];
-            $sql  = "SELECT b.id, b.name, b.business_type FROM businesses b
-                     LEFT JOIN wt_user_preferences wup ON wup.user_id = b.user_id
-                     WHERE b.visible = 1
-                       AND b.lat BETWEEN ? AND ?
-                       AND b.lng BETWEEN ? AND ?
-                       AND (wup.wt_mode IS NULL OR wup.wt_mode != 'closed')
-                       AND $excludeRestricted";
-            $params = [
-                (float)$bounds['south'],
-                (float)$bounds['north'],
-                (float)$bounds['west'],
-                (float)$bounds['east'],
-            ];
-            foreach ($restrictedTypes as $rt) $params[] = $rt;
 
+            // Parámetros base compartidos
+            $baseWhere = "b.visible = 1
+                           AND b.lat BETWEEN ? AND ?
+                           AND b.lng BETWEEN ? AND ?
+                           AND (wup.wt_mode IS NULL OR wup.wt_mode != 'closed')
+                           AND $excludeRestricted";
+            $baseParams = [
+                (float)$bounds['south'], (float)$bounds['north'],
+                (float)$bounds['west'],  (float)$bounds['east'],
+            ];
+            foreach ($restrictedTypes as $rt) $baseParams[] = $rt;
+
+            $typeFilter = '';
+            $typeParams = [];
             if ($bizType !== '') {
-                $sql .= ' AND b.business_type = ?';
-                $params[] = $bizType;
+                $typeFilter = ' AND b.business_type = ?';
+                $typeParams[] = $bizType;
             }
-            $sql .= ' LIMIT ' . CQ_MAX_RECIPIENTS . '';
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            // ① Negocios FORZADOS (consulta_siempre=1 O propietario admin)
+            $sqlForced = "SELECT b.id, b.name, b.business_type
+                            FROM businesses b
+                            LEFT JOIN wt_user_preferences wup ON wup.user_id = b.user_id
+                            JOIN users u ON u.id = b.user_id
+                           WHERE $baseWhere
+                             AND (b.consulta_siempre = 1 OR u.is_admin = 1)
+                             $typeFilter";
+            $stmtForced = $db->prepare($sqlForced);
+            $stmtForced->execute(array_merge($baseParams, $typeParams));
+            $forced = $stmtForced->fetchAll(\PDO::FETCH_ASSOC);
+            $forcedIds = array_column($forced, 'id');
+
+            // ② Negocios ALEATORIOS: excluir los forzados, random, max CQ_MAX_MASIVA
+            $excludeForced = '';
+            $excludeParams = [];
+            if (!empty($forcedIds)) {
+                $ph = implode(',', array_fill(0, count($forcedIds), '?'));
+                $excludeForced = " AND b.id NOT IN ($ph)";
+                $excludeParams = $forcedIds;
+            }
+
+            $sqlRandom = "SELECT b.id, b.name, b.business_type
+                            FROM businesses b
+                            LEFT JOIN wt_user_preferences wup ON wup.user_id = b.user_id
+                           WHERE $baseWhere
+                             $typeFilter
+                             $excludeForced
+                           ORDER BY RAND()
+                           LIMIT " . CQ_MAX_MASIVA;
+            $stmtRandom = $db->prepare($sqlRandom);
+            $stmtRandom->execute(array_merge($baseParams, $typeParams, $excludeParams));
+            $random = $stmtRandom->fetchAll(\PDO::FETCH_ASSOC);
+
+            return array_merge($forced, $random);
         }
 
         // ── CONSULTA GENERAL: servicios especiales habilitados por admin ──────
@@ -207,15 +247,43 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
         }
 
         // ── CONSULTA GLOBAL PROVEEDORES: negocios P del rubro solicitado ──────
+        // Regla:
+        //   1. Negocios P FORZADOS del rubro: proveedor_siempre = 1
+        //   2. Del resto (P, rubro, sin proveedor_siempre), hasta CQ_MAX_MASIVA aleatorios
+        //   3. Merge: forzados + aleatorios
         case 'global_proveedor': {
             if ($rubro === '') cq_err('rubro requerido para consulta global proveedor.');
-            $stmt = $db->prepare(
+
+            // ① FORZADOS
+            $stmtF = $db->prepare(
                 "SELECT id, name, business_type FROM businesses
-                  WHERE visible = 1 AND es_proveedor = 1 AND business_type = ?
-                  LIMIT " . CQ_MAX_RECIPIENTS
+                  WHERE visible = 1 AND es_proveedor = 1 AND proveedor_siempre = 1
+                    AND business_type = ?"
             );
-            $stmt->execute([$rubro]);
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            $stmtF->execute([$rubro]);
+            $forced = $stmtF->fetchAll(\PDO::FETCH_ASSOC);
+            $forcedIds = array_column($forced, 'id');
+
+            // ② ALEATORIOS
+            $excludeForced = '';
+            $excludeParams = [];
+            if (!empty($forcedIds)) {
+                $ph = implode(',', array_fill(0, count($forcedIds), '?'));
+                $excludeForced = " AND id NOT IN ($ph)";
+                $excludeParams = $forcedIds;
+            }
+            $stmtR = $db->prepare(
+                "SELECT id, name, business_type FROM businesses
+                  WHERE visible = 1 AND es_proveedor = 1 AND proveedor_siempre = 0
+                    AND business_type = ?
+                    $excludeForced
+                  ORDER BY RAND()
+                  LIMIT " . CQ_MAX_MASIVA
+            );
+            $stmtR->execute(array_merge([$rubro], $excludeParams));
+            $random = $stmtR->fetchAll(\PDO::FETCH_ASSOC);
+
+            return array_merge($forced, $random);
         }
 
         // ── CONSULTA ENVIO: transportistas dentro del área ────────────────────
@@ -663,6 +731,45 @@ if ($method === 'POST') {
         $msg = $newVal ? 'Consulta General habilitada.' : 'Consulta General deshabilitada.';
         auditLog('toggle_consulta_habilitada', 'business', $businessId, ['consulta_habilitada' => $newVal]);
         cq_ok(['consulta_habilitada' => $newVal], $msg);
+    }
+
+    // ── toggle_consulta_siempre: admin marca negocio como siempre incluido en masivas ──
+    if ($action === 'toggle_consulta_siempre') {
+        if (!isAdmin()) cq_err('Solo administradores pueden cambiar este campo.', 403);
+        $input      = cq_input();
+        $businessId = (int)($input['business_id'] ?? ($_GET['business_id'] ?? 0));
+        if ($businessId <= 0) cq_err('business_id requerido.');
+
+        $stmtCur = $db->prepare("SELECT consulta_siempre FROM businesses WHERE id = ? LIMIT 1");
+        $stmtCur->execute([$businessId]);
+        $cur = $stmtCur->fetch(\PDO::FETCH_ASSOC);
+        if (!$cur) cq_err('Negocio no encontrado.', 404);
+
+        $newVal = $cur['consulta_siempre'] ? 0 : 1;
+        $db->prepare("UPDATE businesses SET consulta_siempre = ? WHERE id = ?")->execute([$newVal, $businessId]);
+        $msg = $newVal ? 'Negocio marcado como SIEMPRE en masivas.' : 'Negocio removido de inclusión forzada.';
+        auditLog('toggle_consulta_siempre', 'business', $businessId, ['consulta_siempre' => $newVal]);
+        cq_ok(['consulta_siempre' => $newVal], $msg);
+    }
+
+    // ── toggle_proveedor_siempre: admin marca negocio P como siempre incluido ─
+    if ($action === 'toggle_proveedor_siempre') {
+        if (!isAdmin()) cq_err('Solo administradores pueden cambiar este campo.', 403);
+        $input      = cq_input();
+        $businessId = (int)($input['business_id'] ?? ($_GET['business_id'] ?? 0));
+        if ($businessId <= 0) cq_err('business_id requerido.');
+
+        $stmtCur = $db->prepare("SELECT es_proveedor, proveedor_siempre FROM businesses WHERE id = ? LIMIT 1");
+        $stmtCur->execute([$businessId]);
+        $cur = $stmtCur->fetch(\PDO::FETCH_ASSOC);
+        if (!$cur) cq_err('Negocio no encontrado.', 404);
+        if (!$cur['es_proveedor']) cq_err('El negocio no tiene designación Proveedor (P).', 400);
+
+        $newVal = $cur['proveedor_siempre'] ? 0 : 1;
+        $db->prepare("UPDATE businesses SET proveedor_siempre = ? WHERE id = ?")->execute([$newVal, $businessId]);
+        $msg = $newVal ? 'Proveedor marcado como SIEMPRE incluido.' : 'Proveedor vuelve a modo aleatorio.';
+        auditLog('toggle_proveedor_siempre', 'business', $businessId, ['proveedor_siempre' => $newVal]);
+        cq_ok(['proveedor_siempre' => $newVal], $msg);
     }
 }
 
