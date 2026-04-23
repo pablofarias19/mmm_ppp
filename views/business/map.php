@@ -3044,6 +3044,12 @@ async function loadWTChannelStatus(panel) {
     } catch { /* ignorar errores de red */ }
 }
 
+function toggleBrandLegalInfo(btn) {
+    var tooltip = btn.parentNode.nextElementSibling;
+    var open = tooltip.classList.toggle('brand-legal-tooltip--open');
+    btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
+
 function buildPopup(n, isMarca) {
     const name    = n.nombre || n.name    || 'Sin nombre';
     const address = n.ubicacion || n.address || '';
@@ -3123,7 +3129,7 @@ function buildPopup(n, isMarca) {
         if (esFranq) p += '<span class="brand-status-badge brand-status-badge--franquicia">🏢 Franquicia</span>';
         if (tieneL)  p += '<span class="brand-status-badge brand-status-badge--licencia">📜 Con Licencia</span>';
         p += '<button type="button" class="brand-legal-hint-btn" aria-label="Información legal Ley 22.362"'
-           + ' onclick="var t=this.parentNode.nextElementSibling;t.classList.toggle(\'brand-legal-tooltip--open\');this.setAttribute(\'aria-expanded\',t.classList.contains(\'brand-legal-tooltip--open\'));"'
+           + ' onclick="toggleBrandLegalInfo(this)"'
            + ' aria-expanded="false">?</button>';
         p += '</div>';
         // Legal info panel (toggles on ? click)
@@ -3230,7 +3236,11 @@ function buildPopup(n, isMarca) {
             : '/brand_detail?id=' + n.id;
         p += '<a href="' + detalleUrl + '" class="popup-action" style="background:#6a2fa2;">📋 Detalle</a>';
         if (n.website) {
-            const safeWebsite = /^https?:\/\//i.test(n.website) ? escapeHtml(n.website) : null;
+            let safeWebsite = null;
+            try {
+                const u = new URL(String(n.website));
+                if (u.protocol === 'https:' || u.protocol === 'http:') safeWebsite = escapeHtml(u.href);
+            } catch (_) { /* URL inválida, ignorar */ }
             if (safeWebsite) p += '<a href="' + safeWebsite + '" target="_blank" rel="noopener" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
         }
         if (n.whatsapp) {
