@@ -227,6 +227,9 @@ function ja_notify_owner(array $biz, string $applicantName, int $appId): void {
                  . "Ingresá a tu panel de trabajo en Mapita para gestionar las postulaciones.\n\n"
                  . "— Equipo Mapita";
         $headers = "From: noreply@mapita.com.ar\r\nContent-Type: text/plain; charset=UTF-8";
-        @mail($ownerEmail, $subject, $body, $headers);
+        $sent = @mail($ownerEmail, $subject, $body, $headers);
+        if (!$sent) {
+            error_log("ja_notify_owner: fallo envío email a {$ownerEmail} para postulación #{$appId}");
+        }
     }
 }

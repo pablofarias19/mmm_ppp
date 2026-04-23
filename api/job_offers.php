@@ -132,6 +132,11 @@ if ($method === 'POST') {
         if ($url !== '') {
             $parsed = filter_var($url, FILTER_VALIDATE_URL);
             if (!$parsed) job_err('La URL externa no es válida.');
+            // Verificar protocolo seguro
+            $scheme = parse_url($url, PHP_URL_SCHEME);
+            if (!in_array(strtolower((string)$scheme), ['http', 'https'], true)) {
+                job_err('La URL debe comenzar con http:// o https://');
+            }
             if (mb_strlen($url) > 500) job_err('La URL no puede superar 500 caracteres.');
         }
 
