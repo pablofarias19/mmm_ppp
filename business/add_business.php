@@ -95,6 +95,18 @@ $currentDias     = array_filter(array_map('trim', explode(',', ($comercioData['d
 $certifVal       = $business['certifications'] ?? '';
 $dispActivo      = !empty($business['disponibles_activo']);
 $jobOfferActivo  = !empty($business['job_offer_active']);
+$esProveedor     = !empty($business['es_proveedor']);
+
+// Tipos de negocio que NO pueden ser Proveedor "P" (servicios puros)
+$noProveedorTypes = [
+    'agente_inpi', 'estudio_juridico', 'abogado', 'inmobiliaria', 'seguros',
+    'banco', 'hospital', 'farmacia', 'medico_pediatra', 'medico_traumatologo',
+    'laboratorio', 'enfermeria', 'asistencia_ancianos', 'psicologo', 'psicopedagogo',
+    'fonoaudiologo', 'grafologo', 'academia', 'idiomas', 'escuela', 'maestro_particular',
+    'arquitectura', 'ingenieria', 'ingenieria_civil', 'electricista', 'gasista', 'contador',
+    'seguridad',
+];
+$puedeSerProveedor = $editing && !in_array($selectedType, $noProveedorTypes, true);
 
 // Tipos de negocio agrupados
 $tipos = [
@@ -965,6 +977,35 @@ $descriptionPlaceholders = [
             </div>
         </div>
         <!-- ══ FIN MÓDULO BUSCO EMPLEADOS/AS ══════════════════════════════════ -->
+
+        <!-- ══ MÓDULO PROVEEDOR "P" ══════════════════════════════════════════ -->
+        <?php if ($puedeSerProveedor): ?>
+        <div class="form-section">
+            <div class="section-head">
+                <span class="section-icon">📦</span>
+                <div>
+                    <div class="section-title">Designación Proveedor (P)</div>
+                    <div class="section-desc">Al activarlo, tu negocio aparece en la <strong>Consulta Global Proveedores</strong> filtrada por rubro</div>
+                </div>
+            </div>
+            <div class="section-body">
+                <label id="proveedor-toggle-row" style="display:flex;align-items:flex-start;gap:12px;cursor:pointer;padding:10px 12px;border:1px solid #e5e7eb;border-radius:10px;background:#f8fafc;">
+                    <input type="checkbox" id="proveedor-toggle" <?php echo $esProveedor ? 'checked' : ''; ?> style="margin-top:3px;">
+                    <div>
+                        <div id="proveedor-label" style="font-weight:700;color:#1f2937;"><?php echo $esProveedor ? '📦 Proveedor activo' : 'Proveedor inactivo'; ?></div>
+                        <div style="font-size:.8em;color:#6b7280;">Solo para comercios e industrias. Al activar, otros usuarios pueden encontrarte en Consulta Global por tu rubro y enviarte consultas directas.</div>
+                    </div>
+                </label>
+                <div id="proveedor-msg" style="margin:10px 0 0;font-size:.82em;"></div>
+                <div style="margin-top:12px;">
+                    <button type="button" id="proveedor-save-btn" class="btn-save" style="width:auto;padding:10px 16px;" onclick="guardarProveedor()">
+                        💾 Guardar designación P
+                    </button>
+                </div>
+            </div>
+        </div>
+        <?php endif; ?>
+        <!-- ══ FIN MÓDULO PROVEEDOR "P" ══════════════════════════════════════ -->
 
         <!-- ══ REDES SOCIALES ════════════════════════════════════════════════ -->        <div class="form-section">
             <div class="section-head">
@@ -1971,6 +2012,54 @@ async function revokeBusinessDelegation(userId, label) {
 
 if (EDITING && BIZ_ID) {
     loadBusinessDelegations();
+}
+<?php endif; ?>
+
+<?php if ($puedeSerProveedor): ?>
+// ── Módulo Proveedor "P" ──────────────────────────────────────────────────────
+document.getElementById('proveedor-toggle')?.addEventListener('change', function () {
+    const label = document.getElementById('proveedor-label');
+    if (label) label.textContent = this.checked ? '📦 Proveedor activo' : 'Proveedor inactivo';
+});
+
+async function guardarProveedor() {
+    const toggle = document.getElementById('proveedor-toggle');
+    const msgEl  = document.getElementById('proveedor-msg');
+    const btn    = document.getElementById('proveedor-save-btn');
+    if (!toggle) return;
+
+    btn.disabled    = true;
+    btn.textContent = '⏳ Guardando…';
+    msgEl.textContent = '';
+
+    try {
+        const res = await fetch('/api/consultas.php', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+                action:      'toggle_proveedor',
+                business_id: BIZ_ID,
+            }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            // Sincronizar el checkbox con el nuevo estado real
+            toggle.checked = data.data.es_proveedor === 1;
+            const label = document.getElementById('proveedor-label');
+            if (label) label.textContent = toggle.checked ? '📦 Proveedor activo' : 'Proveedor inactivo';
+            msgEl.style.color   = '#065f46';
+            msgEl.textContent   = '✅ ' + data.message;
+        } else {
+            msgEl.style.color   = '#c0392b';
+            msgEl.textContent   = '❌ ' + (data.error || 'Error al guardar.');
+        }
+    } catch {
+        msgEl.style.color   = '#c0392b';
+        msgEl.textContent   = '❌ Error de red.';
+    } finally {
+        btn.disabled    = false;
+        btn.textContent = '💾 Guardar designación P';
+    }
 }
 <?php endif; ?>
 </script>

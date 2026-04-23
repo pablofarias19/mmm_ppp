@@ -57,11 +57,12 @@ function cq_require_login(): int {
 }
 
 /**
- * Tipos de negocio que se consideran "servicios especiales" y por tanto
- * solo reciben CONSULTA GENERAL si el admin los habilitó individualmente.
+ * Tipos de negocio RESTRINGIDOS: solo participan en consultas masivas/generales
+ * si el admin activó consulta_habilitada = 1 en ese negocio específico.
+ * (Estudio Jurídico, Inmobiliaria, Productor de Seguros)
  */
-function cq_service_types(): array {
-    return ['agente_inpi', 'estudio_juridico', 'abogado', 'inmobiliaria', 'seguros', 'productor_seguros'];
+function cq_restricted_types(): array {
+    return ['abogado', 'inmobiliaria', 'seguros'];
 }
 
 /**
@@ -92,74 +93,114 @@ function cq_own_business(\PDO $db, int $userId, int $businessId): bool {
 
 /**
  * Resuelve la lista de business_id destinatarios según el tipo de consulta.
+ *
+ * Filtros soportados en $input:
+ *   tipo        — 'masiva' | 'general' | 'global_proveedor' | 'envio'
+ *   geo_bounds  — {north,south,east,west}  (masiva, envio)
+ *   rubro       — business_type exacto     (global_proveedor)
+ *   biz_type    — filtro opcional por business_type (masiva, general)
+ *
+ * Regla de tipos restringidos (masiva y general):
+ *   abogado, inmobiliaria, seguros → excluidos SALVO que consulta_habilitada = 1
  */
 function cq_resolve_recipients(\PDO $db, array $input): array {
-    $tipo   = $input['tipo'] ?? '';
-    $bounds = $input['geo_bounds'] ?? null;
-    $rubro  = trim($input['rubro'] ?? '');
+    $tipo    = $input['tipo']    ?? '';
+    $bounds  = $input['geo_bounds'] ?? null;
+    $rubro   = trim($input['rubro']    ?? '');
+    $bizType = trim($input['biz_type'] ?? '');   // filtro opcional
+
+    // Cláusula para excluir tipos restringidos sin habilitación admin
+    $restrictedTypes  = cq_restricted_types();
+    $placeholders     = implode(',', array_fill(0, count($restrictedTypes), '?'));
+    // La condición excluye los tipos restringidos salvo que consulta_habilitada = 1
+    $excludeRestricted = "(b.business_type NOT IN ($placeholders) OR b.consulta_habilitada = 1)";
 
     switch ($tipo) {
-        // ── CONSULTA MASIVA: todos los negocios visibles dentro del área ──────
-        case 'masiva':
+        // ── CONSULTA MASIVA: negocios visibles dentro del área ────────────────
+        case 'masiva': {
             if (!$bounds || !isset($bounds['north'], $bounds['south'], $bounds['east'], $bounds['west'])) {
                 cq_err('geo_bounds requerido para consulta masiva.');
             }
-            $n = (float)$bounds['north'];
-            $s = (float)$bounds['south'];
-            $e = (float)$bounds['east'];
-            $w = (float)$bounds['west'];
-            $stmt = $db->prepare(
-                "SELECT b.id, b.name FROM businesses b
-                 LEFT JOIN wt_user_preferences wup ON wup.user_id = b.user_id
-                 WHERE b.visible = 1
-                   AND b.lat BETWEEN ? AND ?
-                   AND b.lng BETWEEN ? AND ?
-                   AND (wup.wt_mode IS NULL OR wup.wt_mode != 'closed')
-                 LIMIT 200"
-            );
-            $stmt->execute([$s, $n, $w, $e]);
+            $params = [];
+            $sql  = "SELECT b.id, b.name, b.business_type FROM businesses b
+                     LEFT JOIN wt_user_preferences wup ON wup.user_id = b.user_id
+                     WHERE b.visible = 1
+                       AND b.lat BETWEEN ? AND ?
+                       AND b.lng BETWEEN ? AND ?
+                       AND (wup.wt_mode IS NULL OR wup.wt_mode != 'closed')
+                       AND $excludeRestricted";
+            $params = [
+                (float)$bounds['south'],
+                (float)$bounds['north'],
+                (float)$bounds['west'],
+                (float)$bounds['east'],
+            ];
+            foreach ($restrictedTypes as $rt) $params[] = $rt;
+
+            if ($bizType !== '') {
+                $sql .= ' AND b.business_type = ?';
+                $params[] = $bizType;
+            }
+            $sql .= ' LIMIT 200';
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        }
 
         // ── CONSULTA GENERAL: servicios especiales habilitados por admin ──────
-        case 'general':
-            $stmt = $db->prepare(
-                "SELECT id, name FROM businesses
-                  WHERE visible = 1 AND consulta_habilitada = 1
-                  LIMIT 200"
-            );
-            $stmt->execute();
+        // También respeta filtro opcional de business_type
+        case 'general': {
+            $params = [];
+            $sql  = "SELECT b.id, b.name, b.business_type FROM businesses b
+                     WHERE b.visible = 1
+                       AND $excludeRestricted";
+            foreach ($restrictedTypes as $rt) $params[] = $rt;
+
+            if ($bizType !== '') {
+                $sql .= ' AND b.business_type = ?';
+                $params[] = $bizType;
+            }
+            // Para tipos restringidos ya filtramos por consulta_habilitada en excludeRestricted.
+            // Para el resto, todos los negocios visibles del tipo elegido son destinatarios.
+            $sql .= ' LIMIT 200';
+            $stmt = $db->prepare($sql);
+            $stmt->execute($params);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        }
 
         // ── CONSULTA GLOBAL PROVEEDORES: negocios P del rubro solicitado ──────
-        case 'global_proveedor':
+        case 'global_proveedor': {
             if ($rubro === '') cq_err('rubro requerido para consulta global proveedor.');
             $stmt = $db->prepare(
-                "SELECT id, name FROM businesses
+                "SELECT id, name, business_type FROM businesses
                   WHERE visible = 1 AND es_proveedor = 1 AND business_type = ?
                   LIMIT 200"
             );
             $stmt->execute([$rubro]);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        }
 
         // ── CONSULTA ENVIO: transportistas dentro del área ────────────────────
-        case 'envio':
+        case 'envio': {
             if (!$bounds || !isset($bounds['north'], $bounds['south'], $bounds['east'], $bounds['west'])) {
                 cq_err('geo_bounds requerido para consulta envío.');
             }
-            $n = (float)$bounds['north'];
-            $s = (float)$bounds['south'];
-            $e = (float)$bounds['east'];
-            $w = (float)$bounds['west'];
             $stmt = $db->prepare(
-                "SELECT b.id, b.name FROM businesses b
+                "SELECT b.id, b.name, b.business_type FROM businesses b
                   WHERE b.visible = 1
                     AND b.business_type IN ('transporte','transportista','logistica','flota')
                     AND b.lat BETWEEN ? AND ?
                     AND b.lng BETWEEN ? AND ?
                   LIMIT 200"
             );
-            $stmt->execute([$s, $n, $w, $e]);
+            $stmt->execute([
+                (float)$bounds['south'],
+                (float)$bounds['north'],
+                (float)$bounds['west'],
+                (float)$bounds['east'],
+            ]);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        }
 
         default:
             cq_err('Tipo de consulta no válido.');
@@ -188,13 +229,14 @@ if ($method === 'GET') {
     // ── preview: cuántos negocios recibirían la consulta ──────────────────────
     if ($action === 'preview') {
         cq_require_login();
-        $tipo   = trim($_GET['tipo'] ?? '');
-        $rubro  = trim($_GET['rubro'] ?? '');
-        $bounds = null;
+        $tipo    = trim($_GET['tipo'] ?? '');
+        $rubro   = trim($_GET['rubro'] ?? '');
+        $bizType = trim($_GET['biz_type'] ?? '');
+        $bounds  = null;
         if (!empty($_GET['geo_bounds'])) {
             $bounds = json_decode($_GET['geo_bounds'], true);
         }
-        $input = ['tipo' => $tipo, 'rubro' => $rubro, 'geo_bounds' => $bounds];
+        $input = ['tipo' => $tipo, 'rubro' => $rubro, 'geo_bounds' => $bounds, 'biz_type' => $bizType];
         try {
             $recipients = cq_resolve_recipients($db, $input);
             cq_ok(['count' => count($recipients)]);
@@ -349,6 +391,24 @@ if ($method === 'GET') {
         );
         cq_ok($stmt->fetchAll(\PDO::FETCH_COLUMN));
     }
+
+    // ── biz_types: business_type disponibles para filtrar masiva/general ──────
+    if ($action === 'biz_types') {
+        cq_require_login();
+        // Devuelve tipos que tienen al menos 1 negocio visible
+        // Los tipos restringidos se incluyen solo si tienen alguno con consulta_habilitada=1
+        $restricted   = cq_restricted_types();
+        $placeholders = implode(',', array_fill(0, count($restricted), '?'));
+        $params = $restricted;
+        $stmt = $db->prepare(
+            "SELECT DISTINCT b.business_type FROM businesses b
+              WHERE b.visible = 1
+                AND (b.business_type NOT IN ($placeholders) OR b.consulta_habilitada = 1)
+              ORDER BY b.business_type"
+        );
+        $stmt->execute($params);
+        cq_ok($stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
 }
 
 // ─── POST ─────────────────────────────────────────────────────────────────────
@@ -370,7 +430,8 @@ if ($method === 'POST') {
         $texto = mb_substr(trim($input['texto'] ?? ''), 0, 500);
         if ($texto === '') cq_err('El texto de la consulta es obligatorio.');
 
-        $rubro  = mb_substr(trim($input['rubro'] ?? ''), 0, 100) ?: null;
+        $rubro   = mb_substr(trim($input['rubro']    ?? ''), 0, 100) ?: null;
+        $bizType = mb_substr(trim($input['biz_type'] ?? ''), 0, 60)  ?: null;
         $bounds = $input['geo_bounds'] ?? null;
         if ($bounds && !is_array($bounds)) {
             $bounds = json_decode($bounds, true);
@@ -382,6 +443,7 @@ if ($method === 'POST') {
                 'tipo'       => $tipo,
                 'rubro'      => $rubro ?? '',
                 'geo_bounds' => $bounds,
+                'biz_type'   => $bizType ?? '',
             ]);
         } catch (\Throwable $e) {
             cq_err($e->getMessage());
@@ -423,9 +485,10 @@ if ($method === 'POST') {
         }
 
         auditLog('consulta_send', 'consulta_masiva', $consultaId, [
-            'tipo'  => $tipo,
-            'dest'  => count($recipients),
-            'rubro' => $rubro,
+            'tipo'     => $tipo,
+            'dest'     => count($recipients),
+            'rubro'    => $rubro,
+            'biz_type' => $bizType,
         ]);
 
         cq_ok([
