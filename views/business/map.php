@@ -593,6 +593,81 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         .mapita-home-panel__close:hover {
             background: #d9dffa;
         }
+        .quickstart-panel__list li {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 8px;
+        }
+        .quickstart-help-btn {
+            border: 1px solid #c8d0f2;
+            background: #eef2ff;
+            color: #1B3B6F;
+            width: 20px;
+            height: 20px;
+            border-radius: 999px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1;
+            flex: 0 0 20px;
+            margin-top: 1px;
+        }
+        .quickstart-help-btn:hover {
+            background: #e2e8ff;
+        }
+        .quickstart-help-btn:focus-visible {
+            outline: 2px solid #1B3B6F;
+            outline-offset: 2px;
+        }
+        .quickstart-help-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(15, 23, 42, 0.45);
+            padding: 16px;
+        }
+        .quickstart-help-modal.is-open {
+            display: flex;
+        }
+        .quickstart-help-modal__dialog {
+            width: min(440px, calc(100vw - 24px));
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.25);
+            padding: 16px 16px 14px;
+            position: relative;
+        }
+        .quickstart-help-modal__dialog h4 {
+            margin: 0 28px 8px 0;
+            font-size: 16px;
+            color: #1B3B6F;
+        }
+        .quickstart-help-modal__dialog p {
+            margin: 0;
+            color: #334155;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .quickstart-help-modal__close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            margin: 0;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            background: #e9ecfb;
+            color: #1B3B6F;
+            font-weight: 800;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+        }
     </style>
 </head>
 <body>
@@ -797,20 +872,6 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             <option value="otros">📍 Otros</option>
         </optgroup>
     </select>
-
-    <div class="sidebar-card quickstart-panel" id="quickstart-panel">
-        <span class="sidebar-card-label">Guía inicial</span>
-        <h3 class="quickstart-panel__title">🧭 Panel de Inicio</h3>
-        <p class="quickstart-panel__intro">Este panel te orienta rápidamente sobre lo básico del sistema y cómo empezar.</p>
-        <ul class="quickstart-panel__list">
-            <li>Ver y elegir negocios y marcas en el mapa.</li>
-            <li>Contactarte con sus titulares y hacer pedidos.</li>
-            <li>Ver novedades, ofertas y contenidos recientes.</li>
-            <li>Registrarte para ubicar tu negocio y marca en el mapa.</li>
-            <li>Crear canales de comunicación selectivos (WT).</li>
-            <li>Mostrar franquicias y generar oportunidades para todos.</li>
-        </ul>
-    </div>
 
     <!-- ADVANCED FILTERS ACCORDION -->
     <div class="sb-section" id="sb-sec-filters">
@@ -3151,14 +3212,6 @@ function buildPopup(n, isMarca) {
             const openStatus = estaAbierto(n);
             if (openStatus === true)  p += '<br><span class="status-badge">🟢 Abierto ahora</span>';
             if (openStatus === false) p += '<br><span class="status-badge">🔴 Cerrado</span>';
-        }
-    } else {
-        if (n.inpi_registrada == 1 || n.inpi_registrada === true || n.inpi_registrada === '1') {
-            p += '<br><span class="status-badge">✅ INPI Registrada</span>';
-        } else if (n.es_franquicia == 1 || n.es_franquicia === true || n.es_franquicia === '1') {
-            p += '<br><span class="status-badge">🏢 Franquicia</span>';
-        } else {
-            p += '<br><span class="status-badge">⚪ Marca de Hecho</span>';
         }
     }
     p += '</div>'; // Close popup-header-text
@@ -5834,11 +5887,59 @@ document.addEventListener('DOMContentLoaded', function() {
     const watermark = document.getElementById('mapita-map-watermark');
     const panel = document.getElementById('mapita-home-panel');
     const closeBtn = document.getElementById('mapita-home-panel-close');
+    const helpModal = document.getElementById('quickstart-help-modal');
+    const helpModalTitle = document.getElementById('quickstart-help-modal-title');
+    const helpModalText = document.getElementById('quickstart-help-modal-text');
+    const helpModalCloseBtn = document.getElementById('quickstart-help-modal-close');
+    const helpButtons = panel ? panel.querySelectorAll('.quickstart-help-btn') : [];
+    const quickstartHelpContent = {
+        explorar: {
+            title: 'Explorar el mapa',
+            text: 'Podés acercar/alejar, mover el mapa y tocar cada marcador para ver datos clave de negocios y marcas en tu zona.'
+        },
+        contacto: {
+            title: 'Contactar titulares',
+            text: 'Al abrir una ficha vas a encontrar canales de contacto para consultar disponibilidad, hacer pedidos o iniciar una conversación.'
+        },
+        novedades: {
+            title: 'Seguir novedades',
+            text: 'Revisá publicaciones y actualizaciones para enterarte de ofertas, lanzamientos y contenido reciente de cada perfil.'
+        },
+        registrar: {
+            title: 'Registrar tu perfil',
+            text: 'Si todavía no figurás en el mapa, completá el alta para ubicar tu negocio o marca y mejorar tu visibilidad.'
+        },
+        wt: {
+            title: 'Canales WT selectivos',
+            text: 'Usá WT para crear comunicación segmentada y mantener conversaciones más ordenadas según intereses y necesidades.'
+        },
+        franquicias: {
+            title: 'Franquicias y oportunidades',
+            text: 'Podés mostrar franquicias y propuestas de expansión para conectar con personas interesadas en nuevas oportunidades.'
+        }
+    };
     if (!watermark || !panel) return;
+
+    function closeHelpModal() {
+        if (!helpModal) return;
+        helpModal.classList.remove('is-open');
+        helpModal.setAttribute('aria-hidden', 'true');
+    }
+
+    function openHelpModal(key) {
+        if (!helpModal || !helpModalTitle || !helpModalText) return;
+        const content = quickstartHelpContent[key];
+        if (!content) return;
+        helpModalTitle.textContent = content.title;
+        helpModalText.textContent = content.text;
+        helpModal.classList.add('is-open');
+        helpModal.setAttribute('aria-hidden', 'false');
+    }
 
     function setOpen(open) {
         panel.classList.toggle('is-open', !!open);
         watermark.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (!open) closeHelpModal();
     }
 
     watermark.addEventListener('click', function(e) {
@@ -5860,15 +5961,37 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.addEventListener('click', function(e) {
         if (!panel.classList.contains('is-open')) return;
+        if (helpModal && helpModal.classList.contains('is-open')) return;
         if (panel.contains(e.target) || watermark.contains(e.target)) return;
         setOpen(false);
     });
 
     document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && helpModal && helpModal.classList.contains('is-open')) {
+            closeHelpModal();
+            return;
+        }
         if (e.key === 'Escape' && panel.classList.contains('is-open')) {
             setOpen(false);
         }
     });
+
+    helpButtons.forEach(function(btn) {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            openHelpModal(btn.getAttribute('data-help-key') || '');
+        });
+    });
+    if (helpModalCloseBtn) {
+        helpModalCloseBtn.addEventListener('click', function() {
+            closeHelpModal();
+        });
+    }
+    if (helpModal) {
+        helpModal.addEventListener('click', function(e) {
+            if (e.target === helpModal) closeHelpModal();
+        });
+    }
 });
 </script>
 <!-- ══ FIN MÓDULO DISPONIBLES ═══════════════════════════════════════════════ -->
@@ -5916,13 +6039,20 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <p class="quickstart-panel__intro">Este panel te orienta rápidamente sobre lo básico del sistema y cómo empezar.</p>
     <ul class="quickstart-panel__list">
-        <li>Ver y elegir negocios y marcas en el mapa.</li>
-        <li>Contactarte con sus titulares y hacer pedidos.</li>
-        <li>Ver novedades, ofertas y contenidos recientes.</li>
-        <li>Registrarte para ubicar tu negocio y marca en el mapa.</li>
-        <li>Crear canales de comunicación selectivos (WT).</li>
-        <li>Mostrar franquicias y generar oportunidades para todos.</li>
+        <li><span>Ver y elegir negocios y marcas en el mapa.</span><button type="button" class="quickstart-help-btn" data-help-key="explorar" aria-label="Ayuda sobre explorar el mapa">?</button></li>
+        <li><span>Contactarte con sus titulares y hacer pedidos.</span><button type="button" class="quickstart-help-btn" data-help-key="contacto" aria-label="Ayuda sobre contacto con titulares">?</button></li>
+        <li><span>Ver novedades, ofertas y contenidos recientes.</span><button type="button" class="quickstart-help-btn" data-help-key="novedades" aria-label="Ayuda sobre novedades y ofertas">?</button></li>
+        <li><span>Registrarte para ubicar tu negocio y marca en el mapa.</span><button type="button" class="quickstart-help-btn" data-help-key="registrar" aria-label="Ayuda sobre registro en el mapa">?</button></li>
+        <li><span>Crear canales de comunicación selectivos (WT).</span><button type="button" class="quickstart-help-btn" data-help-key="wt" aria-label="Ayuda sobre canales WT selectivos">?</button></li>
+        <li><span>Mostrar franquicias y generar oportunidades para todos.</span><button type="button" class="quickstart-help-btn" data-help-key="franquicias" aria-label="Ayuda sobre franquicias y oportunidades">?</button></li>
     </ul>
+</div>
+<div id="quickstart-help-modal" class="quickstart-help-modal" role="dialog" aria-modal="true" aria-labelledby="quickstart-help-modal-title" aria-hidden="true">
+    <div class="quickstart-help-modal__dialog" role="document">
+        <button id="quickstart-help-modal-close" class="quickstart-help-modal__close" type="button" aria-label="Cerrar ayuda">✕</button>
+        <h4 id="quickstart-help-modal-title">Ayuda rápida</h4>
+        <p id="quickstart-help-modal-text"></p>
+    </div>
 </div>
 
 </body>
