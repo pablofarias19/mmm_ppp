@@ -5835,10 +5835,35 @@ document.addEventListener('DOMContentLoaded', function() {
     const panel = document.getElementById('mapita-home-panel');
     const closeBtn = document.getElementById('mapita-home-panel-close');
     if (!watermark || !panel) return;
+    let globalHandlersBound = false;
 
-    function setOpen(open) {
+    function onDocumentClick(e) {
+        if (!panel.classList.contains('is-open')) return;
+        if (panel.contains(e.target) || watermark.contains(e.target)) return;
+        setOpen(false, true);
+    }
+
+    function onDocumentKeydown(e) {
+        if (e.key === 'Escape' && panel.classList.contains('is-open')) {
+            setOpen(false, true);
+        }
+    }
+
+    function setOpen(open, restoreFocus) {
         panel.classList.toggle('is-open', !!open);
         watermark.setAttribute('aria-expanded', open ? 'true' : 'false');
+        if (open && !globalHandlersBound) {
+            document.addEventListener('click', onDocumentClick);
+            document.addEventListener('keydown', onDocumentKeydown);
+            globalHandlersBound = true;
+        } else if (!open && globalHandlersBound) {
+            document.removeEventListener('click', onDocumentClick);
+            document.removeEventListener('keydown', onDocumentKeydown);
+            globalHandlersBound = false;
+        }
+        if (!open && restoreFocus) {
+            watermark.focus();
+        }
     }
 
     watermark.addEventListener('click', function(e) {
@@ -5854,21 +5879,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (closeBtn) {
         closeBtn.addEventListener('click', function() {
-            setOpen(false);
+            setOpen(false, true);
         });
     }
-
-    document.addEventListener('click', function(e) {
-        if (!panel.classList.contains('is-open')) return;
-        if (panel.contains(e.target) || watermark.contains(e.target)) return;
-        setOpen(false);
-    });
-
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Escape' && panel.classList.contains('is-open')) {
-            setOpen(false);
-        }
-    });
 });
 </script>
 <!-- ══ FIN MÓDULO DISPONIBLES ═══════════════════════════════════════════════ -->
@@ -5906,7 +5919,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <span class="mapita-wordmark">INICIO</span>
 </div>
 
-<div id="mapita-home-panel" role="dialog" aria-modal="false" aria-label="Panel de Inicio">
+<div id="mapita-home-panel" role="region" aria-label="Panel de Inicio">
     <div class="mapita-home-panel__header">
         <div>
             <span class="sidebar-card-label">Guía inicial</span>
