@@ -3218,10 +3218,13 @@ function buildPopup(n, isMarca) {
             ? '/brand_form?id=' + n.id
             : '/brand_detail?id=' + n.id;
         p += '<a href="' + detalleUrl + '" class="popup-action" style="background:#6a2fa2;">📋 Detalle</a>';
-        if (n.website) p += '<a href="' + escapeHtml(n.website) + '" target="_blank" rel="noopener" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
+        if (n.website) {
+            const safeWebsite = /^https?:\/\//i.test(n.website) ? escapeHtml(n.website) : null;
+            if (safeWebsite) p += '<a href="' + safeWebsite + '" target="_blank" rel="noopener" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
+        }
         if (n.whatsapp) {
-            const waNum = escapeHtml(String(n.whatsapp).replace(/\D/g, ''));
-            p += '<a href="https://wa.me/' + waNum + '" target="_blank" rel="noopener" class="popup-action" style="background:#25d366;">💬 WA</a>';
+            const waNum = String(n.whatsapp).replace(/\D/g, '');
+            p += '<a href="https://wa.me/' + escapeHtml(waNum) + '" target="_blank" rel="noopener" class="popup-action" style="background:#25d366;">💬 WA</a>';
         }
         p += '</div>';
 
