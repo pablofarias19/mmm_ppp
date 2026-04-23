@@ -56,13 +56,19 @@ function cq_require_login(): int {
     return $uid;
 }
 
-/** Máximo de destinatarios por consulta. */
-define('CQ_MAX_RECIPIENTS', 200);
+/** Máximo de destinatarios por consulta general. */
+define('CQ_MAX_GENERAL',    30);
+
+/** Radio máximo en km para Consulta General. */
+define('CQ_GENERAL_RADIUS_KM', 10);
 
 /**
- * Tipos de negocio RESTRINGIDOS: solo participan en consultas masivas/generales
+ * Tipos de negocio RESTRINGIDOS para consultas generales:
+ * solo participan si el admin activó consulta_habilitada = 1 en ese negocio.
+ * (Estudio Jurídico, Inmobiliaria, Productor de Seguros, Agente INPI)
+ */
 function cq_restricted_types(): array {
-    return ['abogado', 'inmobiliaria', 'seguros'];
+    return ['abogado', 'inmobiliaria', 'seguros', 'agente_inpi'];
 }
 
 /**
@@ -148,21 +154,53 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
         }
 
         // ── CONSULTA GENERAL: servicios especiales habilitados por admin ──────
-        // También respeta filtro opcional de business_type
+        // - Solo tipos restringidos con consulta_habilitada = 1
+        // - Radio máximo de CQ_GENERAL_RADIUS_KM km desde posición del usuario
+        // - Máximo CQ_MAX_GENERAL destinatarios, ordenados por proximidad
         case 'general': {
-            $params = [];
-            $sql  = "SELECT b.id, b.name, b.business_type FROM businesses b
-                     WHERE b.visible = 1
-                       AND $excludeRestricted";
-            foreach ($restrictedTypes as $rt) $params[] = $rt;
+            $userLat = isset($input['user_lat']) ? (float)$input['user_lat'] : null;
+            $userLng = isset($input['user_lng']) ? (float)$input['user_lng'] : null;
 
-            if ($bizType !== '') {
+            if ($userLat === null || $userLng === null) {
+                cq_err('Se requiere la posición del mapa (user_lat, user_lng) para Consulta General.');
+            }
+
+            $restrictedForGeneral = cq_restricted_types();
+            $phGeneral = implode(',', array_fill(0, count($restrictedForGeneral), '?'));
+
+            // Haversine inline en SQL (MySQL)
+            $havSql = "(6371 * ACOS(
+                         COS(RADIANS(?)) * COS(RADIANS(b.lat))
+                         * COS(RADIANS(b.lng) - RADIANS(?))
+                         + SIN(RADIANS(?)) * SIN(RADIANS(b.lat))
+                       ))";
+
+            $params = [];
+            $sql = "SELECT b.id, b.name, b.business_type,
+                           $havSql AS distancia_km
+                      FROM businesses b
+                     WHERE b.visible = 1
+                       AND b.consulta_habilitada = 1
+                       AND b.business_type IN ($phGeneral)
+                       AND b.lat IS NOT NULL AND b.lng IS NOT NULL
+                       AND $havSql <= ?";
+
+            // Params: Haversine SELECT (lat, lng, lat), IN types, Haversine WHERE (lat, lng, lat), radius
+            $params = [
+                $userLat, $userLng, $userLat,
+            ];
+            foreach ($restrictedForGeneral as $rt) $params[] = $rt;
+            $params[] = $userLat;
+            $params[] = $userLng;
+            $params[] = $userLat;
+            $params[] = (float)CQ_GENERAL_RADIUS_KM;
+
+            if ($bizType !== '' && in_array($bizType, $restrictedForGeneral, true)) {
                 $sql .= ' AND b.business_type = ?';
                 $params[] = $bizType;
             }
-            // Para tipos restringidos ya filtramos por consulta_habilitada en excludeRestricted.
-            // Para el resto, todos los negocios visibles del tipo elegido son destinatarios.
-            $sql .= ' LIMIT ' . CQ_MAX_RECIPIENTS . '';
+
+            $sql .= ' ORDER BY distancia_km ASC LIMIT ' . CQ_MAX_GENERAL;
             $stmt = $db->prepare($sql);
             $stmt->execute($params);
             return $stmt->fetchAll(\PDO::FETCH_ASSOC);
@@ -236,7 +274,16 @@ if ($method === 'GET') {
         if (!empty($_GET['geo_bounds'])) {
             $bounds = json_decode($_GET['geo_bounds'], true);
         }
-        $input = ['tipo' => $tipo, 'rubro' => $rubro, 'geo_bounds' => $bounds, 'biz_type' => $bizType];
+        $userLat = isset($_GET['user_lat']) ? (float)$_GET['user_lat'] : null;
+        $userLng = isset($_GET['user_lng']) ? (float)$_GET['user_lng'] : null;
+        $input = [
+            'tipo'      => $tipo,
+            'rubro'     => $rubro,
+            'geo_bounds'=> $bounds,
+            'biz_type'  => $bizType,
+            'user_lat'  => $userLat,
+            'user_lng'  => $userLng,
+        ];
         try {
             $recipients = cq_resolve_recipients($db, $input);
             cq_ok(['count' => count($recipients)]);
@@ -392,7 +439,7 @@ if ($method === 'GET') {
         cq_ok($stmt->fetchAll(\PDO::FETCH_COLUMN));
     }
 
-    // ── biz_types: business_type disponibles para filtrar masiva/general ──────
+    // ── biz_types: business_type disponibles para filtrar masiva ──────────────
     if ($action === 'biz_types') {
         cq_require_login();
         // Devuelve tipos que tienen al menos 1 negocio visible
@@ -407,6 +454,23 @@ if ($method === 'GET') {
               ORDER BY b.business_type"
         );
         $stmt->execute($params);
+        cq_ok($stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    // ── general_service_types: tipos disponibles solo para Consulta General ───
+    // Solo los 4 rubros restringidos que tienen al menos un negocio habilitado
+    if ($action === 'general_service_types') {
+        cq_require_login();
+        $restricted   = cq_restricted_types();
+        $placeholders = implode(',', array_fill(0, count($restricted), '?'));
+        $stmt = $db->prepare(
+            "SELECT DISTINCT b.business_type FROM businesses b
+              WHERE b.visible = 1
+                AND b.consulta_habilitada = 1
+                AND b.business_type IN ($placeholders)
+              ORDER BY b.business_type"
+        );
+        $stmt->execute($restricted);
         cq_ok($stmt->fetchAll(\PDO::FETCH_COLUMN));
     }
 }
@@ -432,6 +496,8 @@ if ($method === 'POST') {
 
         $rubro   = mb_substr(trim($input['rubro']    ?? ''), 0, 100) ?: null;
         $bizType = mb_substr(trim($input['biz_type'] ?? ''), 0, 60)  ?: null;
+        $userLat = isset($input['user_lat']) ? (float)$input['user_lat'] : null;
+        $userLng = isset($input['user_lng']) ? (float)$input['user_lng'] : null;
         $bounds = $input['geo_bounds'] ?? null;
         if ($bounds && !is_array($bounds)) {
             $bounds = json_decode($bounds, true);
@@ -444,6 +510,8 @@ if ($method === 'POST') {
                 'rubro'      => $rubro ?? '',
                 'geo_bounds' => $bounds,
                 'biz_type'   => $bizType ?? '',
+                'user_lat'   => $userLat,
+                'user_lng'   => $userLng,
             ]);
         } catch (\Throwable $e) {
             cq_err($e->getMessage());

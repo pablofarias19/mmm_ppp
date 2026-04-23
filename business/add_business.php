@@ -166,6 +166,7 @@ $tipos = [
         'inmobiliaria'   => ['🏠', 'Inmobiliaria'],
         'seguros'        => ['🛡️', 'Seguros'],
         'abogado'        => ['⚖️', 'Estudio Jurídico'],
+        'agente_inpi'    => ['📋', 'Agente INPI'],
         'contador'       => ['📊', 'Contaduría'],
         'arquitectura'   => ['📐', 'Arquitectura'],
         'ingenieria'     => ['⚙️', 'Ingeniería'],
@@ -262,7 +263,7 @@ $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domin
 $professionalLicensedTypes = [
     'gasista','electricista','enfermeria','medico_pediatra','medico_traumatologo','arquitectura','ingenieria_civil'
 ];
-$restrictedApprovalTypes = ['abogado','seguros','inmobiliaria'];
+$restrictedApprovalTypes = ['abogado', 'seguros', 'inmobiliaria', 'agente_inpi'];
 
 $descriptionPlaceholders = [
     'default' => 'Contá de forma clara y respetuosa qué servicio brindás, en qué zona trabajás y cómo contactarte.',
