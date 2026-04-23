@@ -536,6 +536,63 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             letter-spacing: 1.5px;
             font-size: 11px;
         }
+
+        #mapita-map-watermark {
+            pointer-events: auto !important;
+            cursor: pointer;
+            transition: box-shadow 0.2s ease, transform 0.15s ease, background 0.2s ease;
+            user-select: none;
+        }
+        #mapita-map-watermark:hover {
+            background: rgba(255,255,255,0.96) !important;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.16) !important;
+            transform: translateY(-1px);
+        }
+        #mapita-map-watermark:focus-visible {
+            outline: 2px solid #1B3B6F;
+            outline-offset: 2px;
+        }
+
+        #mapita-home-panel {
+            position: fixed;
+            bottom: 76px;
+            left: 16px;
+            z-index: 1002;
+            width: min(340px, calc(100vw - 24px));
+            max-height: min(70vh, 520px);
+            overflow-y: auto;
+            display: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 28px rgba(0, 0, 0, 0.22);
+            background: linear-gradient(180deg, #ffffff 0%, #f7f9ff 100%);
+            border-left: 4px solid #667eea;
+            padding: 12px 14px 14px;
+        }
+        #mapita-home-panel.is-open { display: block; }
+        .mapita-home-panel__header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 10px;
+            margin-bottom: 8px;
+        }
+        .mapita-home-panel__close {
+            margin: 0;
+            border: none;
+            width: 26px;
+            height: 26px;
+            border-radius: 999px;
+            background: #e9ecfb;
+            color: #1B3B6F;
+            font-weight: 800;
+            cursor: pointer;
+            line-height: 1;
+            padding: 0;
+            flex-shrink: 0;
+        }
+        .mapita-home-panel__close:hover {
+            background: #d9dffa;
+        }
     </style>
 </head>
 <body>
@@ -2902,10 +2959,7 @@ function mostrarMarcadores(lista) {
 
         const name = n.nombre || n.name || 'Sin nombre';
 
-        if (!isMarca) {
-            // For businesses: use standard popup
-            marker.bindPopup(buildPopup(n, isMarca), { maxWidth: 290 });
-        }
+        marker.bindPopup(buildPopup(n, isMarca), { maxWidth: 290 });
 
         marker._selectionKey = getSelectionKey(itemKind, itemId);
         marker._selectionItem = {
@@ -2927,7 +2981,7 @@ function mostrarMarcadores(lista) {
                 return;
             }
             if (isMarca) {
-                abrirBrandPopupPremium(n.id, n.nombre, n.rubro, n);
+                marker.openPopup();
             }
         });
         marker.on('preclick', function(e) {
@@ -5775,18 +5829,63 @@ function dispMsg(text, type) {
     el.className = 'disp-msg ' + (type === 'ok' ? 'ok' : (type === 'err' ? 'err' : ''));
     el.textContent = text;
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const watermark = document.getElementById('mapita-map-watermark');
+    const panel = document.getElementById('mapita-home-panel');
+    const closeBtn = document.getElementById('mapita-home-panel-close');
+    if (!watermark || !panel) return;
+
+    function setOpen(open) {
+        panel.classList.toggle('is-open', !!open);
+        watermark.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+
+    watermark.addEventListener('click', function(e) {
+        e.stopPropagation();
+        setOpen(!panel.classList.contains('is-open'));
+    });
+    watermark.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setOpen(!panel.classList.contains('is-open'));
+        }
+    });
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', function() {
+            setOpen(false);
+        });
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!panel.classList.contains('is-open')) return;
+        if (panel.contains(e.target) || watermark.contains(e.target)) return;
+        setOpen(false);
+    });
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape' && panel.classList.contains('is-open')) {
+            setOpen(false);
+        }
+    });
+});
 </script>
 <!-- ══ FIN MÓDULO DISPONIBLES ═══════════════════════════════════════════════ -->
 <!-- ── MAPITA map watermark ── -->
 <div id="mapita-map-watermark" style="
     position:fixed;bottom:28px;left:16px;
-    z-index:999;pointer-events:none;
+    z-index:999;
     display:flex;align-items:center;gap:5px;
     background:rgba(255,255,255,0.88);
     backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
     border-radius:20px;padding:5px 11px 5px 8px;
     box-shadow:0 2px 10px rgba(0,0,0,0.12);
-    color:#1B3B6F;">
+    color:#1B3B6F;"
+    role="button"
+    tabindex="0"
+    aria-controls="mapita-home-panel"
+    aria-expanded="false">
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="18" height="18"
          style="border-radius:4px;flex-shrink:0;" role="img" aria-label="Mapita">
         <defs>
@@ -5804,7 +5903,26 @@ function dispMsg(text, type) {
         <path d="M16.2 22 Q20 31 23.8 22" fill="url(#wmPin)"/>
         <circle cx="20" cy="16.5" r="3.2" fill="#1B3B6F"/>
     </svg>
-    <span class="mapita-wordmark">MAPITA</span>
+    <span class="mapita-wordmark">INICIO</span>
+</div>
+
+<div id="mapita-home-panel" role="dialog" aria-modal="false" aria-label="Panel de Inicio">
+    <div class="mapita-home-panel__header">
+        <div>
+            <span class="sidebar-card-label">Guía inicial</span>
+            <h3 class="quickstart-panel__title" style="margin-bottom:0;">🧭 Panel de Inicio</h3>
+        </div>
+        <button id="mapita-home-panel-close" class="mapita-home-panel__close" type="button" aria-label="Cerrar panel de inicio">✕</button>
+    </div>
+    <p class="quickstart-panel__intro">Este panel te orienta rápidamente sobre lo básico del sistema y cómo empezar.</p>
+    <ul class="quickstart-panel__list">
+        <li>Ver y elegir negocios y marcas en el mapa.</li>
+        <li>Contactarte con sus titulares y hacer pedidos.</li>
+        <li>Ver novedades, ofertas y contenidos recientes.</li>
+        <li>Registrarte para ubicar tu negocio y marca en el mapa.</li>
+        <li>Crear canales de comunicación selectivos (WT).</li>
+        <li>Mostrar franquicias y generar oportunidades para todos.</li>
+    </ul>
 </div>
 
 </body>
