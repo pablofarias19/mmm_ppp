@@ -52,6 +52,9 @@ $routes = [
     '/business_model' => __DIR__ . '/business_model.php',
     '/panel-disponibles' => __DIR__ . '/business/panel_disponibles.php',
     '/panel-trabajo'     => __DIR__ . '/business/panel_trabajo.php',
+    '/industrias'        => __DIR__ . '/views/industry/dashboard_industries.php',
+    '/industry_new'      => __DIR__ . '/views/industry/form.php',
+    '/industry_edit'     => __DIR__ . '/views/industry/form.php',
 ];
 
 // Route the request

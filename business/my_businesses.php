@@ -62,6 +62,14 @@ try {
     $marcasCount = (int)$sm->fetchColumn();
 } catch (Exception $e) {}
 
+// ── Contar industrias del usuario ─────────────────────────────────────────────
+$industriasCount = 0;
+try {
+    $si = $db->prepare("SELECT COUNT(*) FROM industries WHERE user_id = ?");
+    $si->execute([$userId]);
+    $industriasCount = (int)$si->fetchColumn();
+} catch (Exception $e) {}
+
 // Emojis por tipo de negocio
 $tipoEmojis = [
     'restaurante'  => '🍽️', 'cafeteria'   => '☕',  'bar'         => '🍺',
@@ -441,6 +449,7 @@ $tipoLabels = [
         <a href="/" class="btn-nav-ghost">← Mapa principal</a>
         <a href="/add" class="btn-nav-primary">➕ Nuevo negocio</a>
         <a href="/brand_form" class="btn-nav-teal">🏷️ Nueva marca</a>
+        <a href="/industrias" style="background:#1B3B6F;color:white;padding:8px 16px;border-radius:8px;font-size:.82em;font-weight:700;text-decoration:none;">🏭 Industrias</a>
         <?php if (isAdmin()): ?>
         <a href="/admin" style="background:#7c3aed;color:white;padding:8px 16px;border-radius:8px;font-size:.82em;font-weight:700;text-decoration:none;">⚙️ Admin</a>
         <?php endif; ?>
@@ -493,6 +502,12 @@ $tipoLabels = [
         <div class="stat-card teal">
             <div class="stat-num"><?php echo $marcasCount; ?></div>
             <div class="stat-label">Marcas registradas</div>
+        </div>
+        <div class="stat-card" style="border-left-color:#1B3B6F;">
+            <a href="/industrias" style="text-decoration:none;color:inherit;">
+                <div class="stat-num"><?php echo $industriasCount; ?></div>
+                <div class="stat-label">🏭 Industrias</div>
+            </a>
         </div>
     </div>
 

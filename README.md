@@ -144,7 +144,10 @@ source migrations/008_entity_delegations.sql
 - `POST /api/ownership_transfers/accept.php` (`transfer_id`) → acepta y cambia titularidad
 - `POST /api/ownership_transfers/reject.php` (`transfer_id`) → rechaza transferencia
 
-## Módulo Sectores Industriales
+## Módulo Sectores Industriales (Catálogo Admin)
+
+> Este módulo es un **catálogo de taxonomía** gestionado por administradores.
+> Los usuarios registrados crean sus **Industrias** usando este catálogo como clasificador.
 
 ### Migración
 
@@ -174,36 +177,75 @@ source migrations/014_industrial_sectors.sql
 | `investment_level` | `bajo`, `medio`, `alto` |
 | `risk_level` | `bajo`, `medio`, `alto` |
 
-### Ejemplo de payload (crear)
-
-```json
-{
-  "name": "Parque Industrial Norte",
-  "type": "industrial",
-  "subtype": "Parque tecnológico",
-  "status": "activo",
-  "investment_level": "alto",
-  "risk_level": "bajo",
-  "jurisdiction": "Córdoba",
-  "description": "Parque industrial de alta tecnología en la zona norte.",
-  "geometry": {
-    "type": "Polygon",
-    "coordinates": [[
-      [-64.18, -31.41],
-      [-64.17, -31.41],
-      [-64.17, -31.42],
-      [-64.18, -31.42],
-      [-64.18, -31.41]
-    ]]
-  }
-}
-```
-
 ### Integración con el mapa
 
 Los sectores industriales se visualizan en el mapa principal como capas GeoJSON.
 Activar la capa desde la barra lateral: **🏭 Sectores Industriales**.
 Cada tipo se diferencia por color y el estado por opacidad.
+
+---
+
+## Módulo Industrias (Usuario registrado)
+
+Los usuarios registrados pueden crear, editar y archivar sus **Industrias** — entidades
+propias con datos completos, asociadas a un sector del catálogo admin.
+
+### Migraciones (ejecutar en orden)
+
+```sql
+source migrations/014_industrial_sectors.sql   -- catálogo de sectores
+source migrations/015_industries.sql           -- tabla de industrias de usuarios
+```
+
+### Rutas UI
+
+| Ruta | Descripción | Auth |
+|------|-------------|------|
+| `/industrias` | Dashboard: listado con búsqueda y filtros | Usuario |
+| `/industry_new` | Formulario para crear una industria | Usuario |
+| `/industry_edit?id=N` | Formulario para editar una industria | Owner / Admin |
+| `/admin?tab=sectores` | Catálogo de sectores (admin) | Admin |
+
+### Endpoints API
+
+| Método | URL | Descripción | Auth |
+|--------|-----|-------------|------|
+| GET | `/api/industries.php` | Lista mis industrias | Usuario |
+| GET | `/api/industries.php?id=N` | Detalle de una industria | Owner / Admin |
+| GET | `/api/industries.php?status=activa` | Filtrar por estado | Usuario |
+| GET | `/api/industries.php?sector_id=N` | Filtrar por sector | Usuario |
+| GET | `/api/industries.php?search=texto` | Buscar por nombre | Usuario |
+| POST | `/api/industries.php?action=create` | Crear industria | Usuario |
+| POST | `/api/industries.php?action=update&id=N` | Actualizar industria | Owner / Admin |
+| POST | `/api/industries.php?action=archive&id=N` | Archivar industria | Owner / Admin |
+| POST | `/api/industries.php?action=delete&id=N` | Eliminar industria | Owner / Admin |
+
+### Campos de la tabla `industries`
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `id` | INT | PK |
+| `user_id` | INT | Propietario (FK a users) |
+| `industrial_sector_id` | INT | Sector del catálogo (FK, nullable) |
+| `business_id` | INT | Negocio relacionado (nullable) |
+| `brand_id` | INT | Marca relacionada (nullable) |
+| `name` | VARCHAR(255) | Nombre de la industria |
+| `description` | TEXT | Descripción |
+| `website` | VARCHAR(500) | URL del sitio |
+| `contact_email` | VARCHAR(255) | Email de contacto |
+| `contact_phone` | VARCHAR(50) | Teléfono |
+| `country` / `region` / `city` | VARCHAR | Ubicación |
+| `employees_range` | ENUM | Rango de empleados |
+| `annual_revenue` | ENUM | Escala (micro → corporación) |
+| `certifications` | TEXT | Certs separadas por coma |
+| `naics_code` / `isic_code` | VARCHAR(20) | Códigos de clasificación |
+| `status` | ENUM | `borrador` / `activa` / `archivada` |
+| `created_at` / `updated_at` | DATETIME | Timestamps |
+
+### Permisos
+
+- **Usuario registrado**: ve y gestiona solo sus propias industrias.
+- **Admin**: puede ver/editar todas las industrias y gestionar el catálogo de sectores.
 
 
 

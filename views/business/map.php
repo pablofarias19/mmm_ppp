@@ -50,6 +50,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
     <link rel="stylesheet" href="/css/map-styles.css">
     <link rel="stylesheet" href="/css/wt-panel.css">
     <link rel="stylesheet" href="/css/disponibles.css">
+    <link rel="stylesheet" href="/css/consultas-panel.css">
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1119,6 +1120,30 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 <div id="selection-mode-status" style="font-size:11px;color:#546e7a;">
                     Modo normal. Para salir del modo selección: botón "Salir del modo selección" o tecla S.
                 </div>
+
+                <!-- ── CONSULTAS MASIVAS ─────────────────────────────────── -->
+                <div class="cq-section-label">── Consultas ───</div>
+                <button type="button" class="cq-btn"
+                        onclick="startGeoSelect('masiva')"
+                        title="Dibujá un área y enviá una consulta a todos los negocios dentro">
+                    📣 Consulta Masiva
+                </button>
+                <button type="button" class="cq-btn cq-btn--general"
+                        onclick="openConsultaModal('general')"
+                        title="Enviá una consulta a servicios específicos habilitados">
+                    🏛️ Consulta General
+                </button>
+                <button type="button" class="cq-btn cq-btn--proveedor"
+                        onclick="openConsultaModal('global_proveedor')"
+                        title="Consultá negocios designados como Proveedor (P) por rubro">
+                    📦 Consulta Proveedores (P)
+                </button>
+                <button type="button" class="cq-btn cq-btn--envio"
+                        onclick="startGeoSelect('envio')"
+                        title="Consultá transportistas en un área geográfica">
+                    🚚 Consulta Envío
+                </button>
+                <!-- ── FIN CONSULTAS MASIVAS ─────────────────────────────── -->
             </div>
             <div id="selection-panel" class="selection-panel" aria-live="polite" style="display:none;">
                 <div class="selection-panel__header">
@@ -6514,6 +6539,42 @@ document.addEventListener('DOMContentLoaded', function() {
         <p id="quickstart-help-modal-text"></p>
     </div>
 </div>
+
+<!-- ══ MÓDULO CONSULTAS MASIVAS ════════════════════════════════════════════ -->
+<script>
+/* Globals para consultas-panel.js */
+var SESSION_USER_ID = <?php echo (int)($_SESSION['user_id'] ?? 0); ?>;
+var BUSINESS_TYPE_LABELS = {
+    'restaurante':'Restaurante','cafeteria':'Cafetería','bar':'Bar / Pub','panaderia':'Panadería',
+    'heladeria':'Heladería','pizzeria':'Pizzería','supermercado':'Supermercado','comercio':'Tienda / Local',
+    'autos_venta':'Autos a la venta','motos_venta':'Motos a la venta','indumentaria':'Indumentaria',
+    'verduleria':'Verdulería / Frutería','carniceria':'Carnicería','pastas':'Fábrica de Pastas',
+    'ferreteria':'Ferretería','electronica':'Tecnología','muebleria':'Mueblería','floristeria':'Floristería',
+    'libreria':'Librería','productora_audiovisual':'Productora audiovisual','escuela_musicos':'Escuela de músicos',
+    'taller_artes':'Taller de artes','biodecodificacion':'Biodecodificación','libreria_cristiana':'Librería cristiana',
+    'farmacia':'Farmacia','hospital':'Clínica / Hospital','medico_pediatra':'Médico Pediatra',
+    'medico_traumatologo':'Médico Traumatólogo','laboratorio':'Laboratorio','odontologia':'Odontología',
+    'psicologo':'Psicología','psicopedagogo':'Psicopedagogía','fonoaudiologo':'Fonoaudiología',
+    'grafologo':'Grafología','enfermeria':'Enfermería','asistencia_ancianos':'Asistencia a Ancianos',
+    'veterinaria':'Veterinaria','optica':'Óptica','salon_belleza':'Peluquería / Salón','barberia':'Barbería',
+    'spa':'Spa / Estética','gimnasio':'Gimnasio','danza':'Danza / Ballet','banco':'Banco / Financiera',
+    'inmobiliaria':'Inmobiliaria','seguros':'Seguros','abogado':'Estudio Jurídico','contador':'Contaduría',
+    'arquitectura':'Arquitectura','ingenieria':'Ingeniería','ingenieria_civil':'Ingeniería Civil',
+    'electricista':'Electricista','gasista':'Gasista matriculado','gas_en_garrafa':'Gas en garrafa',
+    'seguridad':'Seguridad','grafica':'Gráfica','astrologo':'Astrólogo','zapatero':'Zapatero',
+    'videojuegos':'Videojuegos','maestro_particular':'Maestro particular',
+    'alquiler_mobiliario_fiestas':'Alquiler de mobiliario para fiestas','propalacion_musica':'Propalación (música)',
+    'animacion_fiestas':'Animación de fiestas','taller':'Taller Mecánico','herreria':'Herrería',
+    'carpinteria':'Carpintería','modista':'Modista / Costura','construccion':'Construcción',
+    'centro_vecinal':'Centro Vecinal / ONG','remate':'Remates / Subastas','academia':'Academia / Instituto',
+    'idiomas':'Instituto de Idiomas','escuela':'Escuela / Jardín','hotel':'Hotel / Alojamiento',
+    'turismo':'Turismo / Agencia','cine':'Cine / Teatro / Arte','transporte':'Transporte',
+    'transportista':'Transportista','logistica':'Logística','flota':'Flota',
+    'otros':'Otro tipo'
+};
+</script>
+<script src="/consultas-panel.js"></script>
+<!-- ══ FIN MÓDULO CONSULTAS MASIVAS ════════════════════════════════════════ -->
 
 </body>
 </html>

@@ -270,7 +270,7 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         <button id="tab-btn-ofertas"        class="tab-btn <?php echo $tab==='ofertas'        ? 'active' : ''; ?>" onclick="switchTab('ofertas')">🏷️ Ofertas</button>
         <button id="tab-btn-transmisiones"  class="tab-btn <?php echo $tab==='transmisiones'  ? 'active' : ''; ?>" onclick="switchTab('transmisiones')">📡 En Vivo</button>
         <button id="tab-btn-moderacion"     class="tab-btn <?php echo $tab==='moderacion'     ? 'active' : ''; ?>" onclick="switchTab('moderacion')">🚨 Moderación</button>
-        <button id="tab-btn-sectores"       class="tab-btn <?php echo $tab==='sectores'       ? 'active' : ''; ?>" onclick="switchTab('sectores')">🏭 Sectores Industriales</button>
+        <button id="tab-btn-sectores"       class="tab-btn <?php echo $tab==='sectores'       ? 'active' : ''; ?>" onclick="switchTab('sectores')">🏭 Catálogo: Sectores Ind.</button>
     </div>
 
     <!-- NEGOCIOS -->
@@ -403,14 +403,16 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         <div id="transmisiones-list"></div>
     </div>
 
-    <!-- SECTORES INDUSTRIALES -->
+    <!-- CATÁLOGO: SECTORES INDUSTRIALES (Admin) -->
     <div class="tab-content <?php echo $tab==='sectores' ? 'active' : ''; ?>" id="tab-sectores">
         <div class="section-header">
-            <h2>🏭 Sectores Industriales</h2>
+            <h2>🏭 Catálogo: Sectores Industriales</h2>
             <button class="btn btn-primary" onclick="openSectorModal()">+ Nuevo Sector</button>
         </div>
-        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;">
-            ⚠️ <strong>Requiere migración:</strong> Ejecutar <code>migrations/014_industrial_sectors.sql</code> antes de usar este módulo.
+        <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#0369a1;">
+            ℹ️ <strong>Este es el catálogo de sectores</strong> — taxonomía usada por el módulo de Industrias de los usuarios.
+            Los usuarios crean sus industrias en <a href="/industrias" style="color:#0369a1;font-weight:700;">🏭 Industrias</a>.
+            Asegurate de haber ejecutado <code>migrations/014_industrial_sectors.sql</code> antes de usar este módulo.
         </div>
         <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <input type="text" id="search-sectores" placeholder="🔍 Buscar por nombre…"
@@ -1407,6 +1409,9 @@ function renderNegocios(items) {
         return;
     }
 
+    // Tipos restringidos que requieren habilitación manual para consultas
+    const RESTRICTED_TYPES = ['abogado', 'inmobiliaria', 'seguros', 'agente_inpi'];
+
     el.innerHTML = `
     <div style="overflow-x:auto;">
     <table style="width:100%;border-collapse:collapse;font-size:13px;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
@@ -1418,15 +1423,55 @@ function renderNegocios(items) {
                 <th style="padding:10px 12px;text-align:left;font-weight:600;">Mapita ID</th>
                 <th style="padding:10px 12px;text-align:left;font-weight:600;">Dirección</th>
                 <th style="padding:10px 12px;text-align:left;font-weight:600;">Propietario</th>
+                <th style="padding:10px 12px;text-align:center;font-weight:600;" title="Solo aplica a Estudio Jurídico, Inmobiliaria, Seguros y Agente INPI">Consulta Hab.</th>
+                <th style="padding:10px 12px;text-align:center;font-weight:600;" title="Cualquier negocio: siempre entra en Consulta Masiva de su área">Masiva Siempre</th>
+                <th style="padding:10px 12px;text-align:center;font-weight:600;" title="Solo negocios P: siempre entra en Consulta Proveedores de su rubro">P Siempre</th>
                 <th style="padding:10px 12px;text-align:center;font-weight:600;">Acciones</th>
             </tr>
         </thead>
         <tbody>
             ${items.map((n, i) => {
-                const nombre = n.name || n.nombre || '—';
-                const tipo   = n.type || n.tipo || '—';
-                const dir    = (n.address || n.direccion || '—').substring(0, 40);
-                const owner  = n.owner_name || n.username || '—';
+                const nombre       = n.name || n.nombre || '—';
+                const tipo         = n.type || n.tipo || n.business_type || '—';
+                const dir          = (n.address || n.direccion || '—').substring(0, 40);
+                const owner        = n.owner_name || n.username || '—';
+                const isRestricted = RESTRICTED_TYPES.includes(tipo);
+                const habilitada   = n.consulta_habilitada == 1;
+                const siempre      = n.consulta_siempre == 1;
+                const pSiempre     = n.proveedor_siempre == 1;
+                const isP          = n.es_proveedor == 1;
+
+                const toggleHabCell = isRestricted
+                    ? `<td style="padding:9px 12px;text-align:center;">
+                         <button onclick="toggleConsultaHabilitada(${n.id}, this)"
+                                 title="${habilitada ? 'Deshabilitar' : 'Habilitar'} consultas para este negocio"
+                                 style="padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;
+                                        background:${habilitada ? '#065f46' : '#9ca3af'};color:white;transition:background .2s;">
+                           ${habilitada ? '✅ Hab.' : '⛔ No hab.'}
+                         </button>
+                       </td>`
+                    : `<td style="padding:9px 12px;text-align:center;color:#d1d5db;font-size:11px;">—</td>`;
+
+                const toggleSiempreCell = `<td style="padding:9px 12px;text-align:center;">
+                     <button onclick="toggleConsultaSiempre(${n.id}, this)"
+                             title="${siempre ? 'Quitar inclusión forzada en masivas' : 'Forzar inclusión en Consulta Masiva'}"
+                             style="padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;
+                                    background:${siempre ? '#1d4ed8' : '#9ca3af'};color:white;transition:background .2s;">
+                       ${siempre ? '🔒 Siempre' : '🎲 A veces'}
+                     </button>
+                   </td>`;
+
+                const togglePSiempreCell = isP
+                    ? `<td style="padding:9px 12px;text-align:center;">
+                         <button onclick="toggleProveedorSiempre(${n.id}, this)"
+                                 title="${pSiempre ? 'Volver a modo aleatorio' : 'Forzar inclusión en Consulta Proveedores'}"
+                                 style="padding:4px 10px;border:none;border-radius:6px;cursor:pointer;font-size:11px;font-weight:700;
+                                        background:${pSiempre ? '#7e22ce' : '#9ca3af'};color:white;transition:background .2s;">
+                           ${pSiempre ? '🔒 Siempre' : '🎲 Aleatorio'}
+                         </button>
+                       </td>`
+                    : `<td style="padding:9px 12px;text-align:center;color:#d1d5db;font-size:11px;">—</td>`;
+
                 return `
                 <tr style="border-bottom:1px solid #f0f0f0;background:${i%2===0?'white':'#fafafa'};">
                     <td style="padding:9px 12px;color:#888;font-size:11px;">#${n.id}</td>
@@ -1435,6 +1480,9 @@ function renderNegocios(items) {
                     <td style="padding:9px 12px;color:#4b5563;font-size:12px;">${n.mapita_id||'—'}</td>
                     <td style="padding:9px 12px;color:var(--text-secondary);font-size:12px;">${dir}</td>
                     <td style="padding:9px 12px;font-size:12px;color:#555;">${owner}</td>
+                    ${toggleHabCell}
+                    ${toggleSiempreCell}
+                    ${togglePSiempreCell}
                     <td style="padding:9px 12px;text-align:center;">
                         <div style="display:flex;gap:6px;justify-content:center;">
                             <a href="/edit?id=${n.id}" style="padding:5px 12px;background:#0ea5e9;color:white;border-radius:6px;font-size:12px;font-weight:600;text-decoration:none;">✏️ Editar</a>
@@ -1446,6 +1494,93 @@ function renderNegocios(items) {
         </tbody>
     </table>
     </div>`;
+}
+
+async function toggleConsultaHabilitada(businessId, btn) {
+    const prevText = btn.textContent.trim();
+    btn.disabled   = true;
+    btn.textContent = '⏳';
+    try {
+        const res  = await fetch('/api/consultas.php', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ action: 'toggle_consulta_habilitada', business_id: businessId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            const on = data.data.consulta_habilitada === 1;
+            btn.textContent      = on ? '✅ Hab.' : '⛔ No hab.';
+            btn.style.background = on ? '#065f46' : '#9ca3af';
+            btn.title            = (on ? 'Deshabilitar' : 'Habilitar') + ' consultas para este negocio';
+            showToast(data.message, 'success');
+        } else {
+            btn.textContent = prevText;
+            showToast('❌ ' + (data.error || 'Error'), 'error');
+        }
+    } catch {
+        btn.textContent = prevText;
+        showToast('❌ Error de red', 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function toggleConsultaSiempre(businessId, btn) {
+    const prevText = btn.textContent.trim();
+    btn.disabled   = true;
+    btn.textContent = '⏳';
+    try {
+        const res  = await fetch('/api/consultas.php', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ action: 'toggle_consulta_siempre', business_id: businessId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            const on = data.data.consulta_siempre === 1;
+            btn.textContent      = on ? '🔒 Siempre' : '🎲 A veces';
+            btn.style.background = on ? '#1d4ed8' : '#9ca3af';
+            btn.title            = on ? 'Quitar inclusión forzada en masivas' : 'Forzar inclusión en Consulta Masiva';
+            showToast(data.message, 'success');
+        } else {
+            btn.textContent = prevText;
+            showToast('❌ ' + (data.error || 'Error'), 'error');
+        }
+    } catch {
+        btn.textContent = prevText;
+        showToast('❌ Error de red', 'error');
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+async function toggleProveedorSiempre(businessId, btn) {
+    const prevText = btn.textContent.trim();
+    btn.disabled   = true;
+    btn.textContent = '⏳';
+    try {
+        const res  = await fetch('/api/consultas.php', {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ action: 'toggle_proveedor_siempre', business_id: businessId }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            const on = data.data.proveedor_siempre === 1;
+            btn.textContent      = on ? '🔒 Siempre' : '🎲 Aleatorio';
+            btn.style.background = on ? '#7e22ce' : '#9ca3af';
+            btn.title            = on ? 'Volver a modo aleatorio' : 'Forzar inclusión en Consulta Proveedores';
+            showToast(data.message, 'success');
+        } else {
+            btn.textContent = prevText;
+            showToast('❌ ' + (data.error || 'Error'), 'error');
+        }
+    } catch {
+        btn.textContent = prevText;
+        showToast('❌ Error de red', 'error');
+    } finally {
+        btn.disabled = false;
+    }
 }
 
 // ── Bulk import ──────────────────────────────────
