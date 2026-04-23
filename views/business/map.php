@@ -1059,6 +1059,13 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             🏠 Zonas de influencia (inmobiliarias)
         </label>
     </div>
+    <!-- Sectores Industriales -->
+    <div id="sectores-industriales-container" style="padding:10px 14px 12px;border-top:1px solid #eef0f8;">
+        <label style="display:flex;align-items:center;cursor:pointer;font-size:12px;">
+            <input type="checkbox" id="show-sectores-industriales" onchange="toggleSectoresIndustriales()" style="width:auto;margin-right:8px;">
+            🏭 Sectores Industriales
+        </label>
+    </div>
         </div><!-- /sb-section-body -->
     </div><!-- /sb-sec-filters -->
 
@@ -3686,6 +3693,85 @@ function toggleInmuebles() {
             c.bindPopup('<b>🏠 ' + (n.name||'') + '</b><br>Zona inmobiliaria');
             c.addTo(mapa); propertyZoneMarkers.push(c);
         });
+}
+
+// ─── Sectores Industriales ────────────────────────────────────────────────────
+let sectorIndustrialLayers = [];
+let sectoresIndustrialesData = [];
+
+const SECTOR_TYPE_COLORS = {
+    mineria:         '#8B4513',
+    energia:         '#FFD700',
+    agro:            '#228B22',
+    infraestructura: '#4682B4',
+    inmobiliario:    '#E67E22',
+    industrial:      '#6A5ACD',
+};
+const SECTOR_STATUS_OPACITY = {
+    activo:    0.4,
+    proyecto:  0.2,
+    potencial: 0.15,
+};
+
+function getSectorStyle(sector) {
+    const color   = SECTOR_TYPE_COLORS[sector.type]   || '#667eea';
+    const opacity = SECTOR_STATUS_OPACITY[sector.status] || 0.2;
+    const style   = { color, fillColor: color, fillOpacity: opacity, weight: 2 };
+    if (sector.status === 'proyecto') style.dashArray = '8,6';
+    return style;
+}
+
+function toggleSectoresIndustriales() {
+    sectorIndustrialLayers.forEach(l => mapa.removeLayer(l));
+    sectorIndustrialLayers = [];
+    if (!document.getElementById('show-sectores-industriales').checked) return;
+    if (!sectoresIndustrialesData.length) {
+        fetch('/api/industrial_sectors.php')
+            .then(r => r.json())
+            .then(result => {
+                if (result.success) { sectoresIndustrialesData = result.data || []; renderSectorLayers(); }
+            })
+            .catch(e => console.error('Error cargando sectores industriales', e));
+    } else {
+        renderSectorLayers();
+    }
+}
+
+function renderSectorLayers() {
+    sectoresIndustrialesData.forEach(sector => {
+        if (!sector.geometry) return;
+        let geo;
+        try {
+            geo = typeof sector.geometry === 'string' ? JSON.parse(sector.geometry) : sector.geometry;
+        } catch(parseErr) {
+            console.warn('Sector industrial con JSON de geometría inválido (id=' + sector.id + '):', parseErr);
+            return;
+        }
+        try {
+            const style  = getSectorStyle(sector);
+            const layer  = L.geoJSON(geo, {
+                style: () => style,
+                pointToLayer: (feature, latlng) => L.circleMarker(latlng, Object.assign({ radius: 10 }, style)),
+            });
+            const typeLabel   = { mineria:'⛏ Minería', energia:'⚡ Energía', agro:'🌾 Agro',
+                                  infraestructura:'🏗 Infraestructura', inmobiliario:'🏢 Inmobiliario', industrial:'🏭 Industrial' }[sector.type] || sector.type;
+            const statusLabel = { activo:'✅ Activo', proyecto:'📐 Proyecto', potencial:'💡 Potencial' }[sector.status] || sector.status;
+            const invLabel    = { bajo:'🟢 Bajo', medio:'🟡 Medio', alto:'🔴 Alto' }[sector.investment_level] || '';
+            const riskLabel   = { bajo:'🟢 Bajo', medio:'🟡 Medio', alto:'🔴 Alto' }[sector.risk_level] || '';
+            layer.bindPopup(
+                '<b>🏭 ' + (sector.name||'') + '</b>' +
+                '<br>' + typeLabel + (sector.subtype ? ' — ' + sector.subtype : '') +
+                '<br>Estado: ' + statusLabel +
+                '<br>Inversión: ' + invLabel + ' &nbsp; Riesgo: ' + riskLabel +
+                (sector.jurisdiction ? '<br>📍 ' + sector.jurisdiction : '') +
+                (sector.description  ? '<br><span style="font-size:11px;color:#555;">' + sector.description.substring(0,120) + '</span>' : '')
+            );
+            layer.addTo(mapa);
+            sectorIndustrialLayers.push(layer);
+        } catch(e) {
+            console.warn('Sector industrial con geometría inválida:', sector.id, e);
+        }
+    });
 }
 
 function toggleZonasMarca() {

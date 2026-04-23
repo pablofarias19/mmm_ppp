@@ -9,7 +9,7 @@ session_start();
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/helpers.php';
 
-$validTabs = ['negocios','marcas','noticias','eventos','trivias','encuestas','ofertas','transmisiones','moderacion'];
+$validTabs = ['negocios','marcas','noticias','eventos','trivias','encuestas','ofertas','transmisiones','moderacion','sectores'];
 $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
 ?>
 <!DOCTYPE html>
@@ -270,6 +270,7 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         <button id="tab-btn-ofertas"        class="tab-btn <?php echo $tab==='ofertas'        ? 'active' : ''; ?>" onclick="switchTab('ofertas')">🏷️ Ofertas</button>
         <button id="tab-btn-transmisiones"  class="tab-btn <?php echo $tab==='transmisiones'  ? 'active' : ''; ?>" onclick="switchTab('transmisiones')">📡 En Vivo</button>
         <button id="tab-btn-moderacion"     class="tab-btn <?php echo $tab==='moderacion'     ? 'active' : ''; ?>" onclick="switchTab('moderacion')">🚨 Moderación</button>
+        <button id="tab-btn-sectores"       class="tab-btn <?php echo $tab==='sectores'       ? 'active' : ''; ?>" onclick="switchTab('sectores')">🏭 Sectores Industriales</button>
     </div>
 
     <!-- NEGOCIOS -->
@@ -402,6 +403,41 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         <div id="transmisiones-list"></div>
     </div>
 
+    <!-- SECTORES INDUSTRIALES -->
+    <div class="tab-content <?php echo $tab==='sectores' ? 'active' : ''; ?>" id="tab-sectores">
+        <div class="section-header">
+            <h2>🏭 Sectores Industriales</h2>
+            <button class="btn btn-primary" onclick="openSectorModal()">+ Nuevo Sector</button>
+        </div>
+        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;">
+            ⚠️ <strong>Requiere migración:</strong> Ejecutar <code>migrations/014_industrial_sectors.sql</code> antes de usar este módulo.
+        </div>
+        <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="search-sectores" placeholder="🔍 Buscar por nombre…"
+                   oninput="filtrarSectores(this.value)"
+                   style="flex:1;padding:10px 14px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;">
+            <select id="filter-sector-type" onchange="filtrarSectores(document.getElementById('search-sectores').value)"
+                    style="padding:10px 12px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;background:white;">
+                <option value="">Todos los tipos</option>
+                <option value="mineria">⛏ Minería</option>
+                <option value="energia">⚡ Energía</option>
+                <option value="agro">🌾 Agro</option>
+                <option value="infraestructura">🏗 Infraestructura</option>
+                <option value="inmobiliario">🏢 Inmobiliario</option>
+                <option value="industrial">🏭 Industrial</option>
+            </select>
+            <select id="filter-sector-status" onchange="filtrarSectores(document.getElementById('search-sectores').value)"
+                    style="padding:10px 12px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;background:white;">
+                <option value="">Todos los estados</option>
+                <option value="activo">✅ Activo</option>
+                <option value="proyecto">📐 Proyecto</option>
+                <option value="potencial">💡 Potencial</option>
+            </select>
+            <span id="count-sectores" style="font-size:12px;color:var(--text-tertiary);white-space:nowrap;"></span>
+        </div>
+        <div id="sectores-list"></div>
+    </div>
+
     <!-- MODERACIÓN -->
     <div class="tab-content <?php echo $tab==='moderacion' ? 'active' : ''; ?>" id="tab-moderacion">
         <div class="section-header">
@@ -432,6 +468,85 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
             <button class="btn btn-secondary" style="font-size:13px;" onclick="loadAuditLog()">🔄 Actualizar</button>
         </div>
         <div id="audit-log-list"></div>
+    </div>
+</div>
+
+<!-- ── MODAL SECTORES INDUSTRIALES ──────────── -->
+<div id="sector-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:white;border-radius:12px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.22);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 16px;border-bottom:1px solid #e5e7eb;">
+            <h3 id="sector-modal-title" style="margin:0;font-size:1.1rem;">Nuevo Sector Industrial</h3>
+            <button onclick="closeSectorModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#6b7280;">×</button>
+        </div>
+        <form id="sector-form" onsubmit="handleSectorSubmit(event)" style="padding:20px 24px;">
+            <div class="form-group">
+                <label>Nombre *</label>
+                <input type="text" id="sector-form-name" required maxlength="255" placeholder="Ej: Parque Industrial Norte">
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label>Tipo *</label>
+                    <select id="sector-form-type">
+                        <option value="industrial">🏭 Industrial</option>
+                        <option value="mineria">⛏ Minería</option>
+                        <option value="energia">⚡ Energía</option>
+                        <option value="agro">🌾 Agro</option>
+                        <option value="infraestructura">🏗 Infraestructura</option>
+                        <option value="inmobiliario">🏢 Inmobiliario</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Subtipo</label>
+                    <input type="text" id="sector-form-subtype" maxlength="100" placeholder="Ej: Parque tecnológico">
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label>Estado *</label>
+                    <select id="sector-form-status">
+                        <option value="potencial">💡 Potencial</option>
+                        <option value="proyecto">📐 Proyecto</option>
+                        <option value="activo">✅ Activo</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nivel de inversión</label>
+                    <select id="sector-form-investment">
+                        <option value="bajo">🟢 Bajo</option>
+                        <option value="medio">🟡 Medio</option>
+                        <option value="alto">🔴 Alto</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Nivel de riesgo</label>
+                    <select id="sector-form-risk">
+                        <option value="bajo">🟢 Bajo</option>
+                        <option value="medio">🟡 Medio</option>
+                        <option value="alto">🔴 Alto</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Jurisdicción</label>
+                <input type="text" id="sector-form-jurisdiction" maxlength="255" placeholder="Ej: Provincia de Córdoba">
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="sector-form-description" rows="3" placeholder="Descripción del sector…"></textarea>
+            </div>
+            <div class="form-group">
+                <label>GeoJSON *
+                    <span style="font-weight:400;font-size:12px;color:var(--text-tertiary);">— Pegá el objeto GeoJSON de la geometría (Polygon, Point, etc.)</span>
+                </label>
+                <textarea id="sector-form-geometry" rows="6" required
+                          placeholder='{"type":"Polygon","coordinates":[[[lng,lat],[lng,lat],[lng,lat]]]}'
+                          style="font-family:monospace;font-size:12px;"></textarea>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:4px;">
+                <button type="button" class="btn btn-secondary" onclick="closeSectorModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary" id="sector-btn-submit">Guardar</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -469,6 +584,7 @@ function switchTab(tab) {
     if (tab === 'marcas')         loadMarcas();
     else if (tab === 'negocios')  loadNegocios();
     else if (tab === 'moderacion') { loadReports(); loadAuditLog(); }
+    else if (tab === 'sectores')  loadSectores();
     else                          loadData(tab);
     window.history.pushState({tab}, '', '?tab=' + tab);
 }
@@ -1525,13 +1641,198 @@ async function loadAuditLog() {
     }
 }
 
+// ── SECTORES INDUSTRIALES ─────────────────────────
+let allSectores = [];
+let editingSectorId = null;
+
+const SECTOR_TYPE_LABELS = {
+    mineria:'⛏ Minería', energia:'⚡ Energía', agro:'🌾 Agro',
+    infraestructura:'🏗 Infraestructura', inmobiliario:'🏢 Inmobiliario', industrial:'🏭 Industrial'
+};
+const SECTOR_STATUS_LABELS = {
+    activo:'✅ Activo', proyecto:'📐 Proyecto', potencial:'💡 Potencial'
+};
+const SECTOR_LEVEL_LABELS = {
+    bajo:'🟢 Bajo', medio:'🟡 Medio', alto:'🔴 Alto'
+};
+
+async function loadSectores() {
+    const el = document.getElementById('sectores-list');
+    if (!el) return;
+    el.innerHTML = '<p style="padding:16px;color:#888">⏳ Cargando sectores...</p>';
+    try {
+        const res    = await fetch('/api/industrial_sectors.php');
+        const result = await res.json();
+        allSectores = result.success ? (result.data || []) : [];
+        renderSectores(allSectores);
+    } catch(e) {
+        el.innerHTML = '<p style="padding:16px;color:red">❌ Error cargando sectores: ' + e.message + '</p>';
+    }
+}
+
+function filtrarSectores(q) {
+    const s    = (q || '').toLowerCase();
+    const type = document.getElementById('filter-sector-type')?.value || '';
+    const stat = document.getElementById('filter-sector-status')?.value || '';
+    const filtered = allSectores.filter(sec => {
+        const matchQ    = !s    || (sec.name||'').toLowerCase().includes(s) || (sec.jurisdiction||'').toLowerCase().includes(s);
+        const matchType = !type || sec.type === type;
+        const matchStat = !stat || sec.status === stat;
+        return matchQ && matchType && matchStat;
+    });
+    renderSectores(filtered);
+}
+
+function renderSectores(items) {
+    const el    = document.getElementById('sectores-list');
+    const count = document.getElementById('count-sectores');
+    if (count) count.textContent = items.length + ' sector' + (items.length !== 1 ? 'es' : '');
+
+    if (!items.length) {
+        el.innerHTML = `
+        <div style="text-align:center;padding:40px;color:var(--text-tertiary);">
+            <p style="font-size:2rem;">🏭</p>
+            <p>No hay sectores industriales creados aún</p>
+            <button class="btn btn-primary" onclick="openSectorModal()">Crear primero</button>
+        </div>`;
+        return;
+    }
+
+    el.innerHTML = `
+    <div style="overflow-x:auto;">
+    <table style="width:100%;border-collapse:collapse;font-size:13px;background:white;border-radius:8px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+        <thead>
+            <tr style="background:var(--primary);color:white;">
+                <th style="padding:10px 12px;text-align:left;">ID</th>
+                <th style="padding:10px 12px;text-align:left;">Nombre</th>
+                <th style="padding:10px 12px;text-align:left;">Tipo</th>
+                <th style="padding:10px 12px;text-align:left;">Subtipo</th>
+                <th style="padding:10px 12px;text-align:left;">Estado</th>
+                <th style="padding:10px 12px;text-align:left;">Inversión</th>
+                <th style="padding:10px 12px;text-align:left;">Riesgo</th>
+                <th style="padding:10px 12px;text-align:left;">Jurisdicción</th>
+                <th style="padding:10px 12px;text-align:center;">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${items.map((s, i) => `
+            <tr style="border-bottom:1px solid #f0f0f0;background:${i%2===0?'white':'#fafafa'};">
+                <td style="padding:9px 12px;color:#888;font-size:11px;">#${s.id}</td>
+                <td style="padding:9px 12px;font-weight:600;color:var(--text-primary);">${s.name||'—'}</td>
+                <td style="padding:9px 12px;">${SECTOR_TYPE_LABELS[s.type]||s.type}</td>
+                <td style="padding:9px 12px;color:#6b7280;font-size:12px;">${s.subtype||'—'}</td>
+                <td style="padding:9px 12px;">${SECTOR_STATUS_LABELS[s.status]||s.status}</td>
+                <td style="padding:9px 12px;">${SECTOR_LEVEL_LABELS[s.investment_level]||s.investment_level}</td>
+                <td style="padding:9px 12px;">${SECTOR_LEVEL_LABELS[s.risk_level]||s.risk_level}</td>
+                <td style="padding:9px 12px;color:#6b7280;font-size:12px;">${s.jurisdiction||'—'}</td>
+                <td style="padding:9px 12px;text-align:center;">
+                    <div style="display:flex;gap:6px;justify-content:center;">
+                        <button class="btn btn-sm btn-secondary" onclick="editSector(${s.id})">✏️ Editar</button>
+                        <button class="btn btn-sm btn-danger"    onclick="deleteSector(${s.id})">🗑 Eliminar</button>
+                    </div>
+                </td>
+            </tr>`).join('')}
+        </tbody>
+    </table>
+    </div>`;
+}
+
+function openSectorModal(data) {
+    editingSectorId = data ? data.id : null;
+    const v = data || {};
+    document.getElementById('sector-modal-title').textContent = editingSectorId ? 'Editar Sector Industrial' : 'Nuevo Sector Industrial';
+    document.getElementById('sector-form-name').value         = v.name || '';
+    document.getElementById('sector-form-type').value         = v.type || 'industrial';
+    document.getElementById('sector-form-subtype').value      = v.subtype || '';
+    document.getElementById('sector-form-status').value       = v.status || 'potencial';
+    document.getElementById('sector-form-investment').value   = v.investment_level || 'medio';
+    document.getElementById('sector-form-risk').value         = v.risk_level || 'medio';
+    document.getElementById('sector-form-jurisdiction').value = v.jurisdiction || '';
+    document.getElementById('sector-form-description').value  = v.description || '';
+    const geo = v.geometry ? (typeof v.geometry === 'string' ? v.geometry : JSON.stringify(v.geometry, null, 2)) : '';
+    document.getElementById('sector-form-geometry').value = geo;
+    document.getElementById('sector-modal').style.display = 'flex';
+}
+
+function closeSectorModal() {
+    document.getElementById('sector-modal').style.display = 'none';
+    editingSectorId = null;
+}
+
+async function editSector(id) {
+    try {
+        const res    = await fetch('/api/industrial_sectors.php?id=' + id);
+        const result = await res.json();
+        if (result.success && result.data) openSectorModal(result.data);
+        else showToast('No se pudo cargar el sector', 'error');
+    } catch(e) {
+        showToast('Error: ' + e.message, 'error');
+    }
+}
+
+async function deleteSector(id) {
+    if (!confirm('¿Eliminar este sector industrial? Esta acción no se puede deshacer.')) return;
+    try {
+        const res    = await fetch('/api/industrial_sectors.php?action=delete&id=' + id, { method: 'POST' });
+        const result = await res.json();
+        if (result.success) { loadSectores(); showToast('✅ Sector eliminado', 'success'); }
+        else showToast('❌ ' + (result.message || 'Error'), 'error');
+    } catch(e) {
+        showToast('❌ Error: ' + e.message, 'error');
+    }
+}
+
+async function handleSectorSubmit(e) {
+    e.preventDefault();
+    const geoRaw = document.getElementById('sector-form-geometry').value.trim();
+    let geo;
+    try { geo = JSON.parse(geoRaw); } catch(err) {
+        showToast('❌ El GeoJSON ingresado no es válido', 'error'); return;
+    }
+    if (!geo.type) { showToast('❌ El GeoJSON debe tener la clave "type"', 'error'); return; }
+
+    const payload = {
+        name:             document.getElementById('sector-form-name').value.trim(),
+        type:             document.getElementById('sector-form-type').value,
+        subtype:          document.getElementById('sector-form-subtype').value.trim() || null,
+        status:           document.getElementById('sector-form-status').value,
+        investment_level: document.getElementById('sector-form-investment').value,
+        risk_level:       document.getElementById('sector-form-risk').value,
+        jurisdiction:     document.getElementById('sector-form-jurisdiction').value.trim() || null,
+        description:      document.getElementById('sector-form-description').value.trim() || null,
+        geometry:         geo,
+    };
+    if (editingSectorId) payload.id = editingSectorId;
+
+    const action = editingSectorId ? 'update' : 'create';
+    const url    = '/api/industrial_sectors.php?action=' + action + (editingSectorId ? '&id=' + editingSectorId : '');
+
+    const btn = document.getElementById('sector-btn-submit');
+    btn.disabled = true; btn.textContent = 'Guardando...';
+    try {
+        const res    = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const result = await res.json();
+        if (result.success) {
+            closeSectorModal(); loadSectores();
+            showToast('✅ Sector industrial ' + (editingSectorId ? 'actualizado' : 'creado') + ' correctamente', 'success');
+        } else {
+            showToast('❌ ' + (result.message || 'Error al guardar'), 'error');
+        }
+    } catch(err) {
+        showToast('❌ Error de red: ' + err.message, 'error');
+    } finally {
+        btn.disabled = false; btn.textContent = 'Guardar';
+    }
+}
+
 // ── Init ─────────────────────────────────────────
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeSectorModal(); } });
 window.addEventListener('load', () => {
     const tab = '<?php echo $tab; ?>';
     if (tab === 'marcas')          loadMarcas();
     else if (tab === 'negocios')   loadNegocios();
     else if (tab === 'moderacion') { loadReports(); loadAuditLog(); }
+    else if (tab === 'sectores')   loadSectores();
     else                           loadData(tab);
 });
 </script>
