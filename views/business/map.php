@@ -202,7 +202,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             #sidebar {
                 position: fixed;
                 top: 0; left: 0;
-                width: 290px;
+                width: 260px;
                 height: 100%;
                 transform: translateX(-100%);
                 border-right: none;
@@ -210,15 +210,6 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 z-index: 900;
             }
             #sidebar.active { transform: translateX(0); }
-
-            /* overlay oscuro detrás del sidebar */
-            #sidebar.active::before {
-                content: '';
-                position: fixed;
-                inset: 0;
-                background: rgba(0,0,0,0.4);
-                z-index: -1;
-            }
 
             #togglePanel {
                 display: flex;
@@ -230,11 +221,14 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 font-size: 13px;
                 border-radius: 10px;
             }
+            /* Ocultar el toggle de apertura cuando el sidebar ya está abierto */
+            #sidebar.active ~ #togglePanel,
+            body.sidebar-open #togglePanel { opacity: 0; pointer-events: none; }
         }
 
         /* ── RESPONSIVE: Mobile (≤480px) ────────────────────────── */
         @media (max-width: 480px) {
-            #sidebar { width: 86vw; max-width: 320px; }
+            #sidebar { width: 75vw; max-width: 260px; }
 
             #togglePanel {
                 top: 10px; left: 10px; bottom: auto;
@@ -242,6 +236,48 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 font-size: 13px;
                 border-radius: 8px;
             }
+        }
+
+        /* ── Backdrop (overlay real click-to-close) ───────────────── */
+        #sidebar-backdrop {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 850;
+            touch-action: none;
+        }
+        #sidebar-backdrop.active { display: block; }
+
+        /* ── Botón de cierre dentro del sidebar ───────────────────── */
+        #sidebar-close-btn {
+            display: none;
+            width: 30px;
+            height: 30px;
+            flex-shrink: 0;
+            margin-left: 4px;
+            border: 1.5px solid #dde2f0;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            color: #667eea;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s;
+            padding: 0;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            font-size: 16px;
+            font-weight: 700;
+            line-height: 1;
+        }
+        #sidebar-close-btn:hover {
+            background: #e74c3c;
+            color: white;
+            border-color: #e74c3c;
+            box-shadow: 0 2px 8px rgba(231,76,60,0.3);
+        }
+        @media (max-width: 768px) {
+            #sidebar-close-btn { display: flex; }
         }
 
         /* ── Floating selector (REDISEÑADO) ─────────────────────── */
@@ -710,6 +746,9 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
     </button>
 </div>
 
+<!-- Backdrop: overlay real click-to-close (visible solo en móvil/tablet) -->
+<div id="sidebar-backdrop" onclick="closeSidebar()" aria-hidden="true"></div>
+
 <!-- Sidebar -->
 <div id="sidebar">
     <!-- ── MAPITA Brand Header ──────────────────────────────── -->
@@ -774,6 +813,9 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 <line x1="21" y1="18" x2="3" y2="18"/>
             </svg>
         </button>
+        <button type="button" id="sidebar-close-btn"
+                onclick="event.stopPropagation();closeSidebar()"
+                title="Cerrar panel" aria-label="Cerrar panel lateral">✕</button>
     </div>
 
     <input type="text" id="busqueda" placeholder="🔍 Buscar..." oninput="filtrar()"
@@ -3742,8 +3784,31 @@ function setVer(val) {
     filtrar();
 }
 
+function openSidebar() {
+    const sidebar  = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const toggle   = document.getElementById('togglePanel');
+    sidebar.classList.add('active');
+    if (backdrop) backdrop.classList.add('active');
+    if (toggle)   toggle.style.opacity = '0', toggle.style.pointerEvents = 'none';
+}
+
+function closeSidebar() {
+    const sidebar  = document.getElementById('sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    const toggle   = document.getElementById('togglePanel');
+    sidebar.classList.remove('active');
+    if (backdrop) backdrop.classList.remove('active');
+    if (toggle)   toggle.style.opacity = '', toggle.style.pointerEvents = '';
+}
+
 function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('active');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar.classList.contains('active')) {
+        closeSidebar();
+    } else {
+        openSidebar();
+    }
 }
 
 // ─── Touch swipe for sidebar ─────────────────────────────────────────────────────
@@ -3761,8 +3826,8 @@ let _verSelectorDragging = false;
         tActive = false;
         const dx = e.changedTouches[0].clientX - txStart;
         const sidebar = document.getElementById('sidebar');
-        if (dx >  SWIPE && txStart < EDGE) sidebar.classList.add('active');
-        if (dx < -SWIPE && sidebar.classList.contains('active')) sidebar.classList.remove('active');
+        if (dx >  SWIPE && txStart < EDGE) openSidebar();
+        if (dx < -SWIPE && sidebar.classList.contains('active')) closeSidebar();
     }, { passive: true });
 })();
 
