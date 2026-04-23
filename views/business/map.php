@@ -593,7 +593,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         .mapita-home-panel__close:hover {
             background: #d9dffa;
         }
-        .quickstart-panel__list li {
+        #mapita-home-panel .quickstart-panel__list li {
             display: flex;
             align-items: flex-start;
             justify-content: space-between;
@@ -667,6 +667,13 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             cursor: pointer;
             line-height: 1;
             padding: 0;
+        }
+        .quickstart-help-modal__close:hover {
+            background: #d9dffa;
+        }
+        .quickstart-help-modal__close:focus-visible {
+            outline: 2px solid #1B3B6F;
+            outline-offset: 2px;
         }
     </style>
 </head>
@@ -5887,11 +5894,14 @@ document.addEventListener('DOMContentLoaded', function() {
     const watermark = document.getElementById('mapita-map-watermark');
     const panel = document.getElementById('mapita-home-panel');
     const closeBtn = document.getElementById('mapita-home-panel-close');
+    if (!watermark || !panel) return;
     const helpModal = document.getElementById('quickstart-help-modal');
     const helpModalTitle = document.getElementById('quickstart-help-modal-title');
     const helpModalText = document.getElementById('quickstart-help-modal-text');
     const helpModalCloseBtn = document.getElementById('quickstart-help-modal-close');
     const helpButtons = panel ? panel.querySelectorAll('.quickstart-help-btn') : [];
+    const hasQuickstartHelpModal = helpModal && helpModalTitle && helpModalText;
+    let quickstartHelpTriggerBtn = null;
     const quickstartHelpContent = {
         explorar: {
             title: 'Explorar el mapa',
@@ -5918,22 +5928,29 @@ document.addEventListener('DOMContentLoaded', function() {
             text: 'Podés mostrar franquicias y propuestas de expansión para conectar con personas interesadas en nuevas oportunidades.'
         }
     };
-    if (!watermark || !panel) return;
 
     function closeHelpModal() {
-        if (!helpModal) return;
+        if (!hasQuickstartHelpModal) return;
         helpModal.classList.remove('is-open');
         helpModal.setAttribute('aria-hidden', 'true');
+        if (quickstartHelpTriggerBtn) {
+            quickstartHelpTriggerBtn.focus();
+        }
+        quickstartHelpTriggerBtn = null;
     }
 
-    function openHelpModal(key) {
-        if (!helpModal || !helpModalTitle || !helpModalText) return;
+    function openHelpModal(key, triggerBtn) {
+        if (!hasQuickstartHelpModal) return;
+        if (!Object.prototype.hasOwnProperty.call(quickstartHelpContent, key)) return;
         const content = quickstartHelpContent[key];
-        if (!content) return;
+        quickstartHelpTriggerBtn = triggerBtn || null;
         helpModalTitle.textContent = content.title;
         helpModalText.textContent = content.text;
         helpModal.classList.add('is-open');
         helpModal.setAttribute('aria-hidden', 'false');
+        if (helpModalCloseBtn) {
+            helpModalCloseBtn.focus();
+        }
     }
 
     function setOpen(open) {
@@ -5967,6 +5984,25 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.addEventListener('keydown', function(e) {
+        if (e.key === 'Tab' && helpModal && helpModal.classList.contains('is-open')) {
+            const focusables = helpModal.querySelectorAll('button:not(:disabled), [href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex="0"]');
+            if (!focusables.length) {
+                e.preventDefault();
+                return;
+            }
+            const first = focusables[0];
+            const last = focusables[focusables.length - 1];
+            if (e.shiftKey && document.activeElement === first) {
+                e.preventDefault();
+                last.focus();
+                return;
+            }
+            if (!e.shiftKey && document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
+                return;
+            }
+        }
         if (e.key === 'Escape' && helpModal && helpModal.classList.contains('is-open')) {
             closeHelpModal();
             return;
@@ -5976,20 +6012,29 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    helpButtons.forEach(function(btn) {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
-            openHelpModal(btn.getAttribute('data-help-key') || '');
+    if (hasQuickstartHelpModal) {
+        helpButtons.forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                const key = btn.getAttribute('data-help-key');
+                if (!key) return;
+                e.stopPropagation();
+                openHelpModal(key, btn);
+            });
         });
-    });
-    if (helpModalCloseBtn) {
-        helpModalCloseBtn.addEventListener('click', function() {
-            closeHelpModal();
-        });
-    }
-    if (helpModal) {
-        helpModal.addEventListener('click', function(e) {
-            if (e.target === helpModal) closeHelpModal();
+        if (helpModalCloseBtn) {
+            helpModalCloseBtn.addEventListener('click', function() {
+                closeHelpModal();
+            });
+        }
+        if (helpModal) {
+            helpModal.addEventListener('click', function(e) {
+                e.stopPropagation();
+                if (e.target === helpModal) closeHelpModal();
+            });
+        }
+    } else {
+        helpButtons.forEach(function(btn) {
+            btn.hidden = true;
         });
     }
 });
