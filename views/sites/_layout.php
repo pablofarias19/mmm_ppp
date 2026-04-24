@@ -62,6 +62,7 @@ function siteHeader(string $title, string $activePage = ''): void {
                 <a href="/inversion"<?= $activePage === 'inversion' ? ' class="active"' : '' ?>>📈 Inversión</a>
                 <a href="/compliance"<?= $activePage === 'compliance' ? ' class="active"' : '' ?>>🛡️ Compliance</a>
                 <a href="/marca-expansion"<?= $activePage === 'marca' ? ' class="active"' : '' ?>>🚀 Marca y Expansión</a>
+                <a href="/tasacion"<?= $activePage === 'tasacion' ? ' class="active"' : '' ?>>💎 Tasación de Marcas</a>
             </nav>
     <?php
 }

@@ -61,6 +61,7 @@ $routes = [
     '/inversion'         => __DIR__ . '/views/sites/inversion.php',
     '/compliance'        => __DIR__ . '/views/sites/compliance.php',
     '/marca-expansion'   => __DIR__ . '/views/sites/marca_expansion.php',
+    '/tasacion'          => __DIR__ . '/views/sites/tasacion.php',
 ];
 
 // Route the request

@@ -68,6 +68,17 @@ siteHeader('Marca y Expansión — Estrategia y Escalabilidad', 'marca');
     </div>
 </div>
 
+<div class="card" style="border-left:4px solid #1B3B6F;">
+    <h2>💎 Tasación de Marcas</h2>
+    <p>
+        Las marcas son activos intangibles con valor patrimonial real. Conocé cómo tasar tu marca,
+        incrementar el capital social de tu empresa y habilitarla para modelos asociativos como <strong>franquicias</strong>.
+    </p>
+    <div class="cta-row">
+        <a class="btn btn-primary" href="/tasacion">💎 Ver módulo de tasación</a>
+    </div>
+</div>
+
 <div class="card">
     <h2>¿Querés hacer crecer tu marca?</h2>
     <p class="muted">Nuestro equipo te ayuda a diseñar una estrategia de expansión realista y ejecutable para tu negocio.</p>
