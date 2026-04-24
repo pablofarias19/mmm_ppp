@@ -614,9 +614,11 @@ $tipoLabels = [
                 <?php if (!empty($comercioData['horario_apertura']) && !empty($comercioData['horario_cierre'])): ?>
                 <div class="card-info">
                     <span class="icon">🕐</span>
-                    <?php echo htmlspecialchars(substr($comercioData['horario_apertura'],0,5)); ?>
-                    –
-                    <?php echo htmlspecialchars(substr($comercioData['horario_cierre'],0,5)); ?>
+                    <?php echo formatHorarioLocal(
+                        $comercioData['horario_apertura'],
+                        $comercioData['horario_cierre'],
+                        $comercioData['timezone'] ?? 'America/Argentina/Buenos_Aires'
+                    ); ?>
                     <?php if (!empty($comercioData['dias_cierre'])): ?>
                     <span style="color:#9ca3af;font-size:.9em;">· Cierra: <?php echo htmlspecialchars($comercioData['dias_cierre']); ?></span>
                     <?php endif; ?>

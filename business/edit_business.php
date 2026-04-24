@@ -232,6 +232,24 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
                     </div>
 
                     <div class="form-group">
+                        <label for="timezone">Zona horaria del negocio</label>
+                        <select id="timezone" name="timezone">
+                            <?php
+                            $currentTimezone = $comercioData['timezone'] ?? 'America/Argentina/Buenos_Aires';
+                            foreach (getTimezoneOptions() as $group => $zones):
+                            ?>
+                            <optgroup label="<?= htmlspecialchars($group) ?>">
+                                <?php foreach ($zones as $tz => $label): ?>
+                                <option value="<?= htmlspecialchars($tz) ?>"<?= $currentTimezone === $tz ? ' selected' : '' ?>>
+                                    <?= htmlspecialchars($label) ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
                         <label for="categorias_productos">Categorías de Productos</label>
                         <input type="text" id="categorias_productos" name="categorias_productos"
                                placeholder="Ej: alimentos,bebidas,limpieza"

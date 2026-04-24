@@ -259,4 +259,6 @@ CREATE TABLE IF NOT EXISTS wt_user_blocks (
 -- FIN DE MIGRACIÓN
 -- Nota: ejecutar también migrations/010_moderation.sql
 --       para el sistema de moderación y seguridad.
+--       y migrations/018_business_timezone.sql
+--       para soporte de zonas horarias por negocio.
 -- ─────────────────────────────────────────────────────────────

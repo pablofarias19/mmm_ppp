@@ -880,6 +880,35 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         <button type="button" id="sidebar-close-btn"
                 onclick="event.stopPropagation();closeSidebar()"
                 title="Cerrar panel" aria-label="Cerrar panel lateral">✕</button>
+        <!-- Selector de idioma de interfaz -->
+        <div style="position:relative;margin-left:4px;">
+            <button type="button" id="lang-globe-btn"
+                    onclick="event.stopPropagation();toggleLangPicker()"
+                    title="Idioma de la interfaz" aria-label="Cambiar idioma de la interfaz"
+                    style="background:none;border:1.5px solid rgba(27,59,111,.3);border-radius:8px;
+                           cursor:pointer;padding:5px 8px;font-size:14px;line-height:1;color:#1B3B6F;">
+                🌐
+            </button>
+            <div id="lang-picker" style="display:none;position:absolute;right:0;top:calc(100% + 6px);
+                 background:white;border:1.5px solid #e2e8f0;border-radius:10px;
+                 box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:170px;z-index:9999;overflow:hidden;">
+                <div style="padding:8px 12px;font-size:11px;font-weight:700;color:#6b7280;
+                             text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #f1f5f9;">
+                    Idioma de interfaz
+                </div>
+                <?php foreach (['es'=>'Español','en'=>'English','pt'=>'Português','fr'=>'Français','de'=>'Deutsch','no'=>'Norsk','zh'=>'中文','ar'=>'العربية'] as $lc => $lname): ?>
+                <button type="button" id="lang-btn-option" data-lang="<?= $lc ?>"
+                        onclick="setMapUILang('<?= $lc ?>')"
+                        style="display:block;width:100%;text-align:left;background:none;border:none;
+                               padding:9px 14px;font-size:13px;cursor:pointer;color:#374151;
+                               transition:background .15s;"
+                        onmouseover="this.style.background='#f8fafc'"
+                        onmouseout="this.style.background='none'">
+                    <?= htmlspecialchars($lname) ?>
+                </button>
+                <?php endforeach; ?>
+            </div>
+        </div>
     </div>
 
     <input type="text" id="busqueda" placeholder="🔍 Buscar..." oninput="filtrar()"
@@ -1090,6 +1119,46 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 <div id="filter-sector-list" style="max-height:200px;overflow-y:auto;">
                     <!-- Se llena dinámicamente -->
                 </div>
+            </div>
+        </div>
+
+        <!-- PAÍS DE LA ENTIDAD -->
+        <div class="accordion-item" id="filter-country-container">
+            <button class="accordion-btn" onclick="toggleAccordion(this)">
+                🌍 País
+                <span style="font-size:10px;">▼</span>
+            </button>
+            <div class="accordion-content">
+                <select id="filter-country-code" onchange="filtrar()"
+                        style="width:100%;padding:8px 10px;border:1px solid #d0d5dd;border-radius:8px;
+                               font-size:12px;background:white;color:#374151;">
+                    <option value="">🌍 Todos los países</option>
+                    <?php foreach (getCountryOptions() as $regionLabel => $countries): ?>
+                    <optgroup label="<?= htmlspecialchars($regionLabel) ?>">
+                        <?php foreach ($countries as $cc => $cname): ?>
+                        <option value="<?= htmlspecialchars($cc) ?>"><?= htmlspecialchars($cname) ?></option>
+                        <?php endforeach; ?>
+                    </optgroup>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <!-- IDIOMA DE OPERACIÓN -->
+        <div class="accordion-item" id="filter-language-container">
+            <button class="accordion-btn" onclick="toggleAccordion(this)">
+                🗣️ Idioma
+                <span style="font-size:10px;">▼</span>
+            </button>
+            <div class="accordion-content">
+                <select id="filter-language-code" onchange="filtrar()"
+                        style="width:100%;padding:8px 10px;border:1px solid #d0d5dd;border-radius:8px;
+                               font-size:12px;background:white;color:#374151;">
+                    <option value="">🗣️ Todos los idiomas</option>
+                    <?php foreach (getLanguageOptions() as $lc => $lname): ?>
+                    <option value="<?= htmlspecialchars($lc) ?>"><?= htmlspecialchars($lname) ?></option>
+                    <?php endforeach; ?>
+                </select>
             </div>
         </div>
 
@@ -1415,6 +1484,107 @@ const SESSION_USER_NAME = <?= json_encode($_sessionUserName) ?>;
 const SESSION_USER_EMAIL = <?= json_encode($_profileEmail) ?>;
 const SESSION_USER_PHONE = <?= json_encode($_profilePhone) ?>;
 const MAPITA_LOCALE = document.documentElement.lang || 'es-AR';
+
+// ─── UI_STRINGS: etiquetas multilenguaje del popup y la interfaz ──────────────
+const UI_STRINGS = {
+    es: {
+        lbl_hours: 'Horario', lbl_phone: 'Teléfono', lbl_address: 'Dirección',
+        lbl_type: 'Tipo', lbl_specialty: 'Especialidad', lbl_products: 'Productos/Servicios',
+        lbl_email: 'Email', lbl_website: 'Sitio web', lbl_open_now: 'Abierto ahora',
+        lbl_closed: 'Cerrado', lbl_niza_class: 'Clase Niza', lbl_protection: 'Protección',
+        lbl_country: 'País', lbl_language: 'Idioma', lbl_currency: 'Moneda',
+        lbl_registry: 'Registro', btn_website: 'Ver sitio web', btn_directions: 'Cómo llegar',
+        filter_all_countries: 'Todos los países', filter_all_languages: 'Todos los idiomas',
+    },
+    en: {
+        lbl_hours: 'Hours', lbl_phone: 'Phone', lbl_address: 'Address',
+        lbl_type: 'Type', lbl_specialty: 'Specialty', lbl_products: 'Products/Services',
+        lbl_email: 'Email', lbl_website: 'Website', lbl_open_now: 'Open now',
+        lbl_closed: 'Closed', lbl_niza_class: 'Nice Class', lbl_protection: 'Protection',
+        lbl_country: 'Country', lbl_language: 'Language', lbl_currency: 'Currency',
+        lbl_registry: 'Registry', btn_website: 'Visit website', btn_directions: 'Get directions',
+        filter_all_countries: 'All countries', filter_all_languages: 'All languages',
+    },
+    pt: {
+        lbl_hours: 'Horário', lbl_phone: 'Telefone', lbl_address: 'Endereço',
+        lbl_type: 'Tipo', lbl_specialty: 'Especialidade', lbl_products: 'Produtos/Serviços',
+        lbl_email: 'E-mail', lbl_website: 'Site', lbl_open_now: 'Aberto agora',
+        lbl_closed: 'Fechado', lbl_niza_class: 'Classe de Nice', lbl_protection: 'Proteção',
+        lbl_country: 'País', lbl_language: 'Idioma', lbl_currency: 'Moeda',
+        lbl_registry: 'Registro', btn_website: 'Visitar site', btn_directions: 'Como chegar',
+        filter_all_countries: 'Todos os países', filter_all_languages: 'Todos os idiomas',
+    },
+    fr: {
+        lbl_hours: 'Horaires', lbl_phone: 'Téléphone', lbl_address: 'Adresse',
+        lbl_type: 'Type', lbl_specialty: 'Spécialité', lbl_products: 'Produits/Services',
+        lbl_email: 'E-mail', lbl_website: 'Site web', lbl_open_now: 'Ouvert maintenant',
+        lbl_closed: 'Fermé', lbl_niza_class: 'Classe de Nice', lbl_protection: 'Protection',
+        lbl_country: 'Pays', lbl_language: 'Langue', lbl_currency: 'Devise',
+        lbl_registry: 'Enregistrement', btn_website: 'Voir le site', btn_directions: 'Itinéraire',
+        filter_all_countries: 'Tous les pays', filter_all_languages: 'Toutes les langues',
+    },
+    de: {
+        lbl_hours: 'Öffnungszeiten', lbl_phone: 'Telefon', lbl_address: 'Adresse',
+        lbl_type: 'Typ', lbl_specialty: 'Spezialität', lbl_products: 'Produkte/Dienste',
+        lbl_email: 'E-Mail', lbl_website: 'Website', lbl_open_now: 'Jetzt geöffnet',
+        lbl_closed: 'Geschlossen', lbl_niza_class: 'Nizza-Klasse', lbl_protection: 'Schutz',
+        lbl_country: 'Land', lbl_language: 'Sprache', lbl_currency: 'Währung',
+        lbl_registry: 'Register', btn_website: 'Website besuchen', btn_directions: 'Route',
+        filter_all_countries: 'Alle Länder', filter_all_languages: 'Alle Sprachen',
+    },
+    no: {
+        lbl_hours: 'Åpningstider', lbl_phone: 'Telefon', lbl_address: 'Adresse',
+        lbl_type: 'Type', lbl_specialty: 'Spesialitet', lbl_products: 'Produkter/Tjenester',
+        lbl_email: 'E-post', lbl_website: 'Nettsted', lbl_open_now: 'Åpent nå',
+        lbl_closed: 'Stengt', lbl_niza_class: 'Nice-klassifikasjon', lbl_protection: 'Beskyttelse',
+        lbl_country: 'Land', lbl_language: 'Språk', lbl_currency: 'Valuta',
+        lbl_registry: 'Register', btn_website: 'Besøk nettsted', btn_directions: 'Veibeskrivelse',
+        filter_all_countries: 'Alle land', filter_all_languages: 'Alle språk',
+    },
+    zh: {
+        lbl_hours: '营业时间', lbl_phone: '电话', lbl_address: '地址',
+        lbl_type: '类型', lbl_specialty: '专业', lbl_products: '产品/服务',
+        lbl_email: '电子邮件', lbl_website: '网站', lbl_open_now: '现在营业',
+        lbl_closed: '已关闭', lbl_niza_class: '尼斯分类', lbl_protection: '保护',
+        lbl_country: '国家', lbl_language: '语言', lbl_currency: '货币',
+        lbl_registry: '注册', btn_website: '访问网站', btn_directions: '获取路线',
+        filter_all_countries: '所有国家', filter_all_languages: '所有语言',
+    },
+    ar: {
+        lbl_hours: 'ساعات العمل', lbl_phone: 'الهاتف', lbl_address: 'العنوان',
+        lbl_type: 'النوع', lbl_specialty: 'التخصص', lbl_products: 'المنتجات/الخدمات',
+        lbl_email: 'البريد الإلكتروني', lbl_website: 'الموقع', lbl_open_now: 'مفتوح الآن',
+        lbl_closed: 'مغلق', lbl_niza_class: 'فئة نيس', lbl_protection: 'حماية',
+        lbl_country: 'الدولة', lbl_language: 'اللغة', lbl_currency: 'العملة',
+        lbl_registry: 'تسجيل', btn_website: 'زيارة الموقع', btn_directions: 'الاتجاهات',
+        filter_all_countries: 'جميع الدول', filter_all_languages: 'جميع اللغات',
+    },
+};
+
+/** Idioma activo de la interfaz del visitante (persiste en localStorage). */
+let MAPITA_UI_LANG = (function() {
+    const stored = localStorage.getItem('mapita_ui_lang');
+    const supported = Object.keys(UI_STRINGS);
+    if (stored && supported.includes(stored)) return stored;
+    const browser = (navigator.language || 'es').split('-')[0].toLowerCase();
+    return supported.includes(browser) ? browser : 'es';
+})();
+
+/** Devuelve el string traducido para la clave dada. */
+function uiStr(key) {
+    return (UI_STRINGS[MAPITA_UI_LANG] || UI_STRINGS.es)[key] || key;
+}
+
+/** Cambia el idioma de interfaz y redibuja el mapa. */
+function setMapUILang(lang) {
+    if (!UI_STRINGS[lang]) return;
+    MAPITA_UI_LANG = lang;
+    localStorage.setItem('mapita_ui_lang', lang);
+    document.querySelectorAll('#lang-btn-option').forEach(el => {
+        el.style.fontWeight = (el.dataset.lang === lang) ? '700' : '400';
+    });
+    filtrar();
+}
 
 let negocios  = [];
 let marcas    = [];
@@ -1957,15 +2127,51 @@ async function cargarIconosDesdeAPI() {
 }
 
 // ─── A2: Open/Closed logic ───────────────────────────────────────────────────────
+/**
+ * Quita tildes del español y convierte a minúsculas para normalizar nombres de días.
+ * Ej: 'Miércoles' → 'miercoles', 'sábado' → 'sabado'
+ */
+function normalizeSpanishDay(str) {
+    return str.toLowerCase()
+        .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i')
+        .replace(/ó/g,'o').replace(/ú/g,'u');
+}
+
+/**
+ * Obtiene la fecha/hora actual en la timezone del negocio usando Intl.DateTimeFormat.
+ * Retorna { day: 'lunes', mins: 540 } (minutos desde medianoche en esa TZ).
+ */
+function getNowInTimezone(tz) {
+    const now = new Date();
+    try {
+        const fmt = new Intl.DateTimeFormat('es-AR', {
+            timeZone: tz,
+            weekday: 'long',
+            hour:    'numeric',
+            minute:  'numeric',
+            hour12:  false,
+        });
+        const parts = fmt.formatToParts(now);
+        const get   = type => (parts.find(p => p.type === type) || {}).value || '';
+        const weekday = normalizeSpanishDay(get('weekday'));
+        const hour   = parseInt(get('hour'),   10) || 0;
+        const minute = parseInt(get('minute'), 10) || 0;
+        return { day: weekday, mins: hour * 60 + minute };
+    } catch (e) {
+        // Fallback: hora local del visitante si el timezone es inválido
+        const d = new Date();
+        const days = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+        return { day: days[d.getDay()], mins: d.getHours() * 60 + d.getMinutes() };
+    }
+}
+
 function estaAbierto(n) {
     if (!n.horario_apertura || !n.horario_cierre) return null;
-    const now  = new Date();
-    const days = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
-    const day  = days[now.getDay()];
+    const tz = n.timezone || 'America/Argentina/Buenos_Aires';
+    const { day, mins } = getNowInTimezone(tz);
     if (n.dias_cierre && n.dias_cierre.toLowerCase().replace(/\s/g,'').split(',').includes(day)) return false;
     const [oh, om] = n.horario_apertura.split(':').map(Number);
     const [ch, cm] = n.horario_cierre.split(':').map(Number);
-    const mins = now.getHours() * 60 + now.getMinutes();
     return mins >= oh * 60 + om && mins <= ch * 60 + cm;
 }
 
@@ -2382,18 +2588,20 @@ function renderSelectionMetaItem(item) {
 function buildNegocioMetadata(n) {
     const openHour = truncateHourLabel(n.horario_apertura);
     const closeHour = truncateHourLabel(n.horario_cierre);
-    return buildSelectionMetadata({
-        'Tipo': n.business_type,
-        'Especialidad': n.tipo_comercio,
-        'Productos/Servicios': n.categorias_productos,
-        'Horario': (openHour && closeHour) ? `${openHour} a ${closeHour}` : null,
-        'Dirección': n.address || n.ubicacion,
-        'Ciudad': n.ciudad,
-        'Teléfono': n.phone,
-        'Email': n.email,
-        'Web': n.website,
-        'Mapita ID': n.mapita_id
-    });
+    const meta = {
+        [uiStr('lbl_type')]:       n.business_type,
+        [uiStr('lbl_specialty')]:  n.tipo_comercio,
+        [uiStr('lbl_products')]:   n.categorias_productos,
+        [uiStr('lbl_hours')]:      (openHour && closeHour) ? `${openHour} a ${closeHour}` : null,
+        [uiStr('lbl_address')]:    n.address || n.ubicacion,
+        'Ciudad':                  n.ciudad,
+        [uiStr('lbl_phone')]:      n.phone,
+        [uiStr('lbl_email')]:      n.email,
+        'Web':                     n.website,
+        'Mapita ID':               n.mapita_id,
+    };
+    if (n.country_code) meta[uiStr('lbl_country')] = n.country_code;
+    return buildSelectionMetadata(meta);
 }
 
 function buildMarcaMetadata(n) {
@@ -2958,6 +3166,8 @@ function filtrar() {
     const companyTypeFilter = getCompanyTypeFilter();
     const protectionFilter = getProtectionFilter();
     const sectorFilter = getSectorFilter();
+    const countryFilter = (document.getElementById('filter-country-code')?.value || '').trim();
+    const languageFilter = (document.getElementById('filter-language-code')?.value || '').trim().toLowerCase();
 
     // Update UI visibility for brand/business-only filters
     const showBrandFilters = (currentVer === 'marcas' || currentVer === 'ambos');
@@ -2991,9 +3201,7 @@ function filtrar() {
 
             // Days filter
             if (daysFilter && daysFilter.length > 0) {
-                const now = new Date();
-                const days = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
-                const currentDay = days[now.getDay()];
+                const { day: currentDay } = getNowInTimezone(n.timezone || 'America/Argentina/Buenos_Aires');
                 if (!daysFilter.includes(currentDay)) return false;
                 // Also check if closed on this day
                 if (n.dias_cierre && n.dias_cierre.toLowerCase().replace(/\s/g,'').split(',').includes(currentDay)) {
@@ -3003,6 +3211,15 @@ function filtrar() {
 
             // Company type filter
             if (companyTypeFilter && !companyTypeFilter.includes(inferCompanyType(n))) return false;
+
+            // Country filter
+            if (countryFilter && n.country_code !== countryFilter) return false;
+
+            // Language filter
+            if (languageFilter) {
+                const nLang = (n.language_code || '').toLowerCase();
+                if (!nLang || !nLang.startsWith(languageFilter.split('-')[0])) return false;
+            }
 
             return true;
         }).map(n => ({...n, tipo: 'negocio'}));
@@ -3022,6 +3239,15 @@ function filtrar() {
             if (sectorFilter) {
                 if (sectorFilter.text && !(m.rubro||'').toLowerCase().includes(sectorFilter.text)) return false;
                 if (sectorFilter.selected.length > 0 && !sectorFilter.selected.includes(m.rubro)) return false;
+            }
+
+            // Country filter (marcas)
+            if (countryFilter && m.country_code !== countryFilter) return false;
+
+            // Language filter (marcas)
+            if (languageFilter) {
+                const mLang = (m.language_code || '').toLowerCase();
+                if (!mLang || !mLang.startsWith(languageFilter.split('-')[0])) return false;
             }
 
             return true;
@@ -5919,6 +6145,30 @@ function compartirMarca(brandName, brandId) {
         navigator.clipboard.writeText(texto).then(() => {
             alert('¡Enlace copiado al portapapeles!');
         });
+    }
+}
+
+// ── Lang picker toggle ───────────────────────────────────────────────────────
+function toggleLangPicker() {
+    const picker = document.getElementById('lang-picker');
+    if (!picker) return;
+    const isOpen = picker.style.display === 'block';
+    picker.style.display = isOpen ? 'none' : 'block';
+    if (!isOpen) {
+        // Resaltar el idioma activo
+        document.querySelectorAll('#lang-btn-option').forEach(el => {
+            el.style.fontWeight = (el.dataset.lang === MAPITA_UI_LANG) ? '700' : '400';
+            el.style.background = (el.dataset.lang === MAPITA_UI_LANG) ? '#f0f4ff' : 'none';
+        });
+        setTimeout(() => {
+            document.addEventListener('click', function _close(e) {
+                const btn = document.getElementById('lang-globe-btn');
+                if (!picker.contains(e.target) && e.target !== btn) {
+                    picker.style.display = 'none';
+                }
+                document.removeEventListener('click', _close);
+            });
+        }, 50);
     }
 }
 </script>

@@ -55,9 +55,8 @@ siteHeader('Fiscal — Estructura Fiscal y Contable', 'fiscal');
     <h2>¿Querés optimizar tu estructura fiscal?</h2>
     <p class="muted">Nuestro equipo te ayuda a reducir la carga impositiva de forma legal y a ordenar tu contabilidad.</p>
     <div class="cta-row">
-        <a class="btn btn-primary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">
-            📩 Consultar con un contador / asesor fiscal
-        </a>
+        <a class="btn btn-primary" href="/contacto?tema=fiscal">📩 Consultar con un asesor fiscal</a>
+        <a class="btn btn-secondary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">🔗 Contacto externo</a>
         <a class="btn btn-secondary" href="/avanzado">Ver todos los módulos</a>
     </div>
 </div>

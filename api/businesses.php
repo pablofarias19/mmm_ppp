@@ -43,7 +43,9 @@ if ($method === 'GET') {
             $db   = getDbConnection();
             $stmt = $db->prepare("
                 SELECT b.*, c.tipo_comercio, c.horario_apertura, c.horario_cierre,
-                       c.dias_cierre, c.categorias_productos
+                       c.dias_cierre, c.timezone, c.categorias_productos,
+                       b.country_code, b.language_code, b.currency_code,
+                       b.phone_country_code, b.address_format
                 FROM businesses b
                 LEFT JOIN comercios c ON b.id = c.business_id
                 WHERE b.id = ?
@@ -72,14 +74,18 @@ if ($method === 'GET') {
         if ($adminReq) {
             $sql = "SELECT b.*, u.username AS owner_name,
                            c.tipo_comercio, c.horario_apertura, c.horario_cierre,
-                           c.dias_cierre, c.categorias_productos
+                           c.dias_cierre, c.timezone, c.categorias_productos,
+                           b.country_code, b.language_code, b.currency_code,
+                           b.phone_country_code, b.address_format
                     FROM businesses b
                     LEFT JOIN users u ON b.user_id = u.id
                     LEFT JOIN comercios c ON b.id = c.business_id
                     WHERE 1=1";
         } else {
             $sql = "SELECT b.*, c.tipo_comercio, c.horario_apertura, c.horario_cierre,
-                           c.dias_cierre, c.categorias_productos
+                           c.dias_cierre, c.timezone, c.categorias_productos,
+                           b.country_code, b.language_code, b.currency_code,
+                           b.phone_country_code, b.address_format
                     FROM businesses b
                     LEFT JOIN comercios c ON b.id = c.business_id
                     WHERE b.visible = 1";

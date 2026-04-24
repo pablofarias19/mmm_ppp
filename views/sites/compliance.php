@@ -63,9 +63,8 @@ siteHeader('Compliance — Prevención y Gobierno Corporativo', 'compliance');
     <h2>¿Tu empresa está protegida?</h2>
     <p class="muted">Te ayudamos a diseñar e implementar un programa de compliance a medida para tu negocio.</p>
     <div class="cta-row">
-        <a class="btn btn-primary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">
-            📩 Consultar sobre compliance
-        </a>
+        <a class="btn btn-primary" href="/contacto?tema=compliance">📩 Consultar sobre compliance</a>
+        <a class="btn btn-secondary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">🔗 Contacto externo</a>
         <a class="btn btn-secondary" href="/avanzado">Ver todos los módulos</a>
     </div>
 </div>

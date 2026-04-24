@@ -126,9 +126,11 @@ class Industry {
             $stmt = $db->prepare(
                 'INSERT INTO industries
                     (user_id, industrial_sector_id, business_id, brand_id, name, description,
-                     website, contact_email, contact_phone, country, region, city,
-                     employees_range, annual_revenue, certifications, naics_code, isic_code, status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+                     website, contact_email, contact_phone, country, country_code, region, city,
+                     employees_range, annual_revenue, certifications,
+                     naics_code, isic_code, nace_code, ciiu_code,
+                     language_code, currency_code, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
             );
             $result = $stmt->execute([
                 (int)$data['user_id'],
@@ -141,6 +143,7 @@ class Industry {
                 $data['contact_email']    ?? null,
                 $data['contact_phone']    ?? null,
                 $data['country']          ?? null,
+                $data['country_code']     ?? null,
                 $data['region']           ?? null,
                 $data['city']             ?? null,
                 $data['employees_range']  ?? null,
@@ -148,6 +151,10 @@ class Industry {
                 $data['certifications']   ?? null,
                 $data['naics_code']       ?? null,
                 $data['isic_code']        ?? null,
+                $data['nace_code']        ?? null,
+                $data['ciiu_code']        ?? null,
+                $data['language_code']    ?? null,
+                $data['currency_code']    ?? null,
                 $data['status']           ?? 'borrador',
             ]);
             return $result ? (int)$db->lastInsertId() : false;
@@ -167,8 +174,10 @@ class Industry {
             $params  = [];
             $allowed = [
                 'industrial_sector_id', 'business_id', 'brand_id', 'name', 'description',
-                'website', 'contact_email', 'contact_phone', 'country', 'region', 'city',
-                'employees_range', 'annual_revenue', 'certifications', 'naics_code', 'isic_code', 'status',
+                'website', 'contact_email', 'contact_phone', 'country', 'country_code', 'region', 'city',
+                'employees_range', 'annual_revenue', 'certifications',
+                'naics_code', 'isic_code', 'nace_code', 'ciiu_code',
+                'language_code', 'currency_code', 'status',
             ];
             foreach ($allowed as $field) {
                 if (array_key_exists($field, $data)) {

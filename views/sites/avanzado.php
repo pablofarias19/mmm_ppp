@@ -78,9 +78,8 @@ siteHeader('Avanzado — Desarrollo Estratégico', 'avanzado');
     <h2>Acción recomendada</h2>
     <p class="muted">¿Querés profundizar en la estructura de tu negocio? Nuestro equipo te ayuda a diagnosticar riesgos y potencial.</p>
     <div class="cta-row">
-        <a class="btn btn-primary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">
-            📩 Contactar / Agendar consulta
-        </a>
+        <a class="btn btn-primary" href="/contacto">📩 Contactar / Agendar consulta</a>
+        <a class="btn btn-secondary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">🔗 Contacto externo</a>
     </div>
 </div>
 

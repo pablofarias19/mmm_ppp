@@ -53,9 +53,8 @@ siteHeader('Jurídico — Arquitectura Legal y Patrimonial', 'juridico');
     <h2>¿Necesitás asesoramiento jurídico?</h2>
     <p class="muted">Nuestro equipo analiza la estructura legal de tu negocio y propone soluciones concretas.</p>
     <div class="cta-row">
-        <a class="btn btn-primary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">
-            📩 Consultar con un abogado
-        </a>
+        <a class="btn btn-primary" href="/contacto?tema=juridico">📩 Consultar con un abogado</a>
+        <a class="btn btn-secondary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">🔗 Contacto externo</a>
         <a class="btn btn-secondary" href="/avanzado">Ver todos los módulos</a>
     </div>
 </div>

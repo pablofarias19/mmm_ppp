@@ -79,8 +79,7 @@ siteHeader('Tasación de Marcas — Valor Patrimonial e Intangible', 'tasacion')
            href="https://www.mariacelesteortiz.com.ar" target="_blank" rel="noopener noreferrer">
             💎 Ver servicio de tasación
         </a>
-        <a class="btn btn-secondary"
-           href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">
+        <a class="btn btn-secondary" href="/contacto?tema=tasacion">
             📩 Consultar con nuestro equipo
         </a>
     </div>

@@ -61,9 +61,8 @@ siteHeader('Inversión — Estructuración Financiera', 'inversion');
     <h2>¿Buscás estructurar tu inversión?</h2>
     <p class="muted">Nuestro equipo te ayuda a evaluar opciones de financiamiento y estructurar tu inversión de forma segura.</p>
     <div class="cta-row">
-        <a class="btn btn-primary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">
-            📩 Consultar sobre inversión y financiamiento
-        </a>
+        <a class="btn btn-primary" href="/contacto?tema=inversion">📩 Consultar sobre inversión</a>
+        <a class="btn btn-secondary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">🔗 Contacto externo</a>
         <a class="btn btn-secondary" href="/avanzado">Ver todos los módulos</a>
     </div>
 </div>

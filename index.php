@@ -66,6 +66,7 @@ $routes = [
     '/compliance'        => __DIR__ . '/views/sites/compliance.php',
     '/marca-expansion'   => __DIR__ . '/views/sites/marca_expansion.php',
     '/tasacion'          => __DIR__ . '/views/sites/tasacion.php',
+    '/contacto'          => __DIR__ . '/views/sites/contacto.php',
 ];
 
 // Route the request
