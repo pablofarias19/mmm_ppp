@@ -409,11 +409,6 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
             <h2>🏭 Catálogo: Sectores Industriales</h2>
             <button class="btn btn-primary" onclick="openSectorModal()">+ Nuevo Sector</button>
         </div>
-        <div style="background:#e0f2fe;border:1px solid #7dd3fc;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;color:#0369a1;">
-            ℹ️ <strong>Este es el catálogo de sectores</strong> — taxonomía usada por el módulo de Industrias de los usuarios.
-            Los usuarios crean sus industrias en <a href="/industrias" style="color:#0369a1;font-weight:700;">🏭 Industrias</a>.
-            Asegurate de haber ejecutado <code>migrations/014_industrial_sectors.sql</code> antes de usar este módulo.
-        </div>
         <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
             <input type="text" id="search-sectores" placeholder="🔍 Buscar por nombre…"
                    oninput="filtrarSectores(this.value)"

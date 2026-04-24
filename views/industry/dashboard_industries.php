@@ -114,17 +114,6 @@ $userName = htmlspecialchars($_SESSION['user_name'] ?? 'Usuario');
         }
         .btn-primary:hover { background: #0d2247; }
 
-        /* ── MIGRATION NOTICE ───────────────────────────────── */
-        .migration-notice {
-            background: #fffbeb;
-            border: 1px solid #fcd34d;
-            border-radius: 10px;
-            padding: 12px 16px;
-            margin-bottom: 20px;
-            font-size: 13px;
-            color: #92400e;
-        }
-
         /* ── FILTERS BAR ────────────────────────────────────── */
         .filters-bar {
             display: flex;
@@ -316,13 +305,6 @@ $userName = htmlspecialchars($_SESSION['user_name'] ?? 'Usuario');
             <p class="page-subtitle">Gestioná tus industrias: creá, editá y archivá tus registros industriales.</p>
         </div>
         <a href="/industry_new" class="btn-primary">+ Nueva Industria</a>
-    </div>
-
-    <!-- MIGRATION NOTICE -->
-    <div class="migration-notice">
-        ⚠️ <strong>Nota:</strong> Para usar este módulo asegurate de haber ejecutado
-        <code>migrations/014_industrial_sectors.sql</code> y <code>migrations/015_industries.sql</code>
-        en tu base de datos.
     </div>
 
     <!-- ALERTS -->
