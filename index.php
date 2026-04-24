@@ -67,6 +67,7 @@ $routes = [
     '/marca-expansion'   => __DIR__ . '/views/sites/marca_expansion.php',
     '/tasacion'          => __DIR__ . '/views/sites/tasacion.php',
     '/contacto'          => __DIR__ . '/views/sites/contacto.php',
+    '/cms-editor'        => __DIR__ . '/views/cms_editor.php',
 ];
 
 // Route the request

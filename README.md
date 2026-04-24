@@ -264,3 +264,85 @@ source migrations/015_industries.sql           -- tabla de industrias de usuario
 ```
 
 Los tests cubren validación de negocios, validación de contraseñas y helpers CSRF.
+
+---
+
+## CMS Multilingüe (contenido técnico/avanzado)
+
+El CMS interno permite gestionar páginas de contenido técnico (módulos Avanzado, Jurídico, Fiscal, etc.)
+con traducciones independientes por idioma y un glosario controlado de términos legales/estratégicos.
+
+### 1. Configurar las tablas
+
+Ejecutar el archivo SQL provisto (requiere acceso a MySQL):
+
+```sql
+source sql/cms.sql
+```
+
+Crea tres tablas:
+
+| Tabla | Descripción |
+|-------|-------------|
+| `cms_pages` | Páginas canónicas (slug, módulo, estado) |
+| `cms_page_translations` | Traducciones por idioma: título, body Markdown, resumen, estado de revisión |
+| `cms_glossary_terms` | Glosario técnico: término + definición por dominio e idioma |
+
+### 2. Usar el editor (admin)
+
+Navegar a `/cms-editor` (requiere sesión de administrador).
+
+Funciones disponibles:
+
+- **Listar / crear páginas**: panel lateral con botón **+ Nueva página**.
+- **Editar traducciones**: seleccionar una página → elegir idioma en las pestañas de colores → editar título, resumen y contenido Markdown → guardar.
+- **Glosario técnico**: sección colapsable al pie del editor para añadir/actualizar términos por dominio (`legal`, `tax`, `strategy`, `web`, `branding`) e idioma.
+
+### 3. API CMS
+
+| Método | URL | Descripción | Auth |
+|--------|-----|-------------|------|
+| GET | `/api/cms.php` | Lista todas las páginas | No |
+| GET | `/api/cms.php?slug=&lang=` | Obtiene traducción con fallback (exact→base→en→es) | No |
+| POST | `/api/cms.php` + `action=create_page` | Crea una página | Admin |
+| PUT | `/api/cms.php` + `action=upsert_translation` | Crea/actualiza traducción | Admin |
+| PUT | `/api/cms.php` + `action=upsert_glossary` | Crea/actualiza término de glosario | Admin |
+
+Ejemplo de respuesta GET con `slug=legal-assistance&lang=it`:
+
+```json
+{
+  "success": true,
+  "data": {
+    "page": { "id": 1, "slug": "legal-assistance", "module": "advanced", "status": "published" },
+    "translation": { "lang": "it", "title": "Assistenza legale", "body_md": "...", "summary": "..." },
+    "resolved_lang": "it",
+    "requested_lang": "it"
+  }
+}
+```
+
+Cadena de fallback: idioma exacto (`it-IT`) → base (`it`) → `en` → `es`.
+
+### 4. Idiomas soportados
+
+Los siguientes idiomas están habilitados en la interfaz y en el CMS:
+
+| Código | Idioma |
+|--------|--------|
+| `es` | Español (base) |
+| `en` | English |
+| `de` | Deutsch |
+| `fr` | Français |
+| `pt` | Português |
+| `it` | Italiano |
+| `ru` | Русский |
+| `el` | Ελληνικά |
+| `tr` | Türkçe |
+| `ar` | العربية |
+| `zh` | 中文 |
+| `ja` | 日本語 |
+| `ko` | 한국어 |
+| `no` | Norsk |
+
+Los archivos de traducción de interfaz viven en `lang/{código}.php`.
