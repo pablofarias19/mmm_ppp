@@ -92,6 +92,7 @@ function bv(array|null $b, string $k, mixed $def = ''): string {
 $selectedType    = $business['business_type'] ?? '';
 $currentTags     = array_filter(array_map('trim', explode(',', ($comercioData['categorias_productos'] ?? ''))));
 $currentDias     = array_filter(array_map('trim', explode(',', ($comercioData['dias_cierre']          ?? ''))));
+$currentTimezone = $comercioData['timezone'] ?? 'America/Argentina/Buenos_Aires';
 $certifVal       = $business['certifications'] ?? '';
 $dispActivo      = !empty($business['disponibles_activo']);
 $jobOfferActivo  = !empty($business['job_offer_active']);
@@ -861,9 +862,23 @@ $descriptionPlaceholders = [
                         <?php endforeach; ?>
                     </div>
                 </div>
+                <div class="divider"></div>
+                <div class="field">
+                    <label for="timezone">Zona horaria del negocio <span class="hint">— para calcular apertura/cierre correctamente en cualquier país</span></label>
+                    <select id="timezone" name="timezone" class="field-input">
+                        <?php foreach (getTimezoneOptions() as $group => $zones): ?>
+                        <optgroup label="<?= htmlspecialchars($group) ?>">
+                            <?php foreach ($zones as $tz => $label): ?>
+                            <option value="<?= htmlspecialchars($tz) ?>"<?= $currentTimezone === $tz ? ' selected' : '' ?>>
+                                <?= htmlspecialchars($label) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
             </div>
         </div>
-
         <!-- ══ SERVICIOS Y CARACTERÍSTICAS ═════════════════════════════════ -->
         <div class="form-section">
             <div class="section-head">

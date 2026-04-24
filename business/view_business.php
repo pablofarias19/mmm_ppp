@@ -470,7 +470,11 @@ a{text-decoration:none;color:inherit}
                 <div class="icont">
                     <div class="ilabel">Horario de atención</div>
                     <div class="ival">
-                        <?= htmlspecialchars(substr($comercioData['horario_apertura'],0,5)) ?> — <?= htmlspecialchars(substr($comercioData['horario_cierre'],0,5)) ?>
+                        <?= formatHorarioLocal(
+                            $comercioData['horario_apertura'],
+                            $comercioData['horario_cierre'],
+                            $comercioData['timezone'] ?? 'America/Argentina/Buenos_Aires'
+                        ) ?>
                         <?php if (!empty($comercioData['dias_cierre'])): ?>
                             <span style="color:#9ca3af;font-size:.88em"> · Cierra: <?= htmlspecialchars($comercioData['dias_cierre']) ?></span>
                         <?php endif; ?>

@@ -12,6 +12,96 @@ if (!empty($allowedOrigin)) {
 
 date_default_timezone_set('America/Argentina/Buenos_Aires');
 
+// ─── Timezone helpers ────────────────────────────────────────────────────────
+
+/**
+ * Lista de timezones IANA frecuentes para el selector del formulario.
+ * Agrupadas por región.
+ */
+function getTimezoneOptions(): array {
+    return [
+        'América — Argentina' => [
+            'America/Argentina/Buenos_Aires' => 'Buenos Aires (ART UTC-3)',
+            'America/Argentina/Cordoba'      => 'Córdoba (ART UTC-3)',
+            'America/Argentina/Mendoza'      => 'Mendoza (ART UTC-3)',
+        ],
+        'América — Latinoamérica' => [
+            'America/Santiago'     => 'Santiago de Chile (CLT UTC-4)',
+            'America/Montevideo'   => 'Montevideo (UYT UTC-3)',
+            'America/Asuncion'     => 'Asunción (PYT UTC-4)',
+            'America/La_Paz'       => 'La Paz (BOT UTC-4)',
+            'America/Lima'         => 'Lima (PET UTC-5)',
+            'America/Bogota'       => 'Bogotá (COT UTC-5)',
+            'America/Caracas'      => 'Caracas (VET UTC-4)',
+            'America/Mexico_City'  => 'Ciudad de México (CST UTC-6)',
+            'America/Sao_Paulo'    => 'São Paulo (BRT UTC-3)',
+        ],
+        'América — EE.UU. / Canadá' => [
+            'America/New_York'     => 'Nueva York (ET UTC-5)',
+            'America/Chicago'      => 'Chicago (CT UTC-6)',
+            'America/Denver'       => 'Denver (MT UTC-7)',
+            'America/Los_Angeles'  => 'Los Ángeles (PT UTC-8)',
+        ],
+        'Europa' => [
+            'Europe/Madrid'    => 'Madrid (CET UTC+1)',
+            'Europe/Lisbon'    => 'Lisboa (WET UTC+0)',
+            'Europe/London'    => 'Londres (GMT UTC+0)',
+            'Europe/Paris'     => 'París (CET UTC+1)',
+            'Europe/Berlin'    => 'Berlín (CET UTC+1)',
+            'Europe/Rome'      => 'Roma (CET UTC+1)',
+            'Europe/Moscow'    => 'Moscú (MSK UTC+3)',
+        ],
+        'Asia / Pacífico' => [
+            'Asia/Dubai'     => 'Dubái (GST UTC+4)',
+            'Asia/Kolkata'   => 'India (IST UTC+5:30)',
+            'Asia/Bangkok'   => 'Bangkok (ICT UTC+7)',
+            'Asia/Shanghai'  => 'China (CST UTC+8)',
+            'Asia/Tokyo'     => 'Tokio (JST UTC+9)',
+            'Asia/Seoul'     => 'Seúl (KST UTC+9)',
+            'Australia/Sydney' => 'Sídney (AEST UTC+10)',
+        ],
+        'África / Oceanía' => [
+            'Africa/Cairo'       => 'Cairo (EET UTC+2)',
+            'Africa/Johannesburg'=> 'Johannesburgo (SAST UTC+2)',
+            'Pacific/Auckland'   => 'Auckland (NZST UTC+12)',
+        ],
+        'UTC' => [
+            'UTC' => 'UTC (UTC+0)',
+        ],
+    ];
+}
+
+/**
+ * Valida que un string sea un identificador de timezone IANA válido.
+ */
+function isValidTimezone(string $tz): bool {
+    return in_array($tz, DateTimeZone::listIdentifiers(), true);
+}
+
+/**
+ * Formatea un horario HH:MM con la abreviatura de timezone del negocio.
+ * Ejemplo: "09:00 – 18:00 (JST)"
+ *
+ * @param string $apertura Hora de apertura en formato HH:MM
+ * @param string $cierre   Hora de cierre en formato HH:MM
+ * @param string $tz       Timezone IANA del negocio
+ * @return string          Cadena formateada lista para mostrar
+ */
+function formatHorarioLocal(string $apertura, string $cierre, string $tz = 'America/Argentina/Buenos_Aires'): string {
+    $apertura = htmlspecialchars(substr($apertura, 0, 5), ENT_QUOTES, 'UTF-8');
+    $cierre   = htmlspecialchars(substr($cierre, 0, 5), ENT_QUOTES, 'UTF-8');
+    if (!$apertura && !$cierre) return '';
+    try {
+        $dttz = new DateTimeZone($tz);
+        $dt   = new DateTime('now', $dttz);
+        $abbr = $dt->format('T'); // e.g. ART, JST, CET
+    } catch (\Exception $e) {
+        $abbr = '';
+    }
+    $label = $apertura && $cierre ? "{$apertura} – {$cierre}" : ($apertura ?: $cierre);
+    return $abbr ? "{$label} ({$abbr})" : $label;
+}
+
 // ─── Admin helper ────────────────────────────────────────────────────────────
 
 /**

@@ -1957,15 +1957,44 @@ async function cargarIconosDesdeAPI() {
 }
 
 // ─── A2: Open/Closed logic ───────────────────────────────────────────────────────
+/**
+ * Obtiene la fecha/hora actual en la timezone del negocio usando Intl.DateTimeFormat.
+ * Retorna { day: 'lunes', mins: 540 } (minutos desde medianoche en esa TZ).
+ */
+function getNowInTimezone(tz) {
+    const now = new Date();
+    try {
+        const fmt = new Intl.DateTimeFormat('es-AR', {
+            timeZone: tz,
+            weekday: 'long',
+            hour:    'numeric',
+            minute:  'numeric',
+            hour12:  false,
+        });
+        const parts = fmt.formatToParts(now);
+        const get   = type => (parts.find(p => p.type === type) || {}).value || '';
+        // Normalizar día: quitar tildes y minúsculas para comparar con dias_cierre
+        const weekday = get('weekday').toLowerCase()
+            .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i')
+            .replace(/ó/g,'o').replace(/ú/g,'u');
+        const hour   = parseInt(get('hour'),   10) || 0;
+        const minute = parseInt(get('minute'), 10) || 0;
+        return { day: weekday, mins: hour * 60 + minute };
+    } catch (e) {
+        // Fallback: hora local del visitante si el timezone es inválido
+        const d = new Date();
+        const days = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+        return { day: days[d.getDay()], mins: d.getHours() * 60 + d.getMinutes() };
+    }
+}
+
 function estaAbierto(n) {
     if (!n.horario_apertura || !n.horario_cierre) return null;
-    const now  = new Date();
-    const days = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
-    const day  = days[now.getDay()];
+    const tz = n.timezone || 'America/Argentina/Buenos_Aires';
+    const { day, mins } = getNowInTimezone(tz);
     if (n.dias_cierre && n.dias_cierre.toLowerCase().replace(/\s/g,'').split(',').includes(day)) return false;
     const [oh, om] = n.horario_apertura.split(':').map(Number);
     const [ch, cm] = n.horario_cierre.split(':').map(Number);
-    const mins = now.getHours() * 60 + now.getMinutes();
     return mins >= oh * 60 + om && mins <= ch * 60 + cm;
 }
 
@@ -2991,9 +3020,7 @@ function filtrar() {
 
             // Days filter
             if (daysFilter && daysFilter.length > 0) {
-                const now = new Date();
-                const days = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
-                const currentDay = days[now.getDay()];
+                const { day: currentDay } = getNowInTimezone(n.timezone || 'America/Argentina/Buenos_Aires');
                 if (!daysFilter.includes(currentDay)) return false;
                 // Also check if closed on this day
                 if (n.dias_cierre && n.dias_cierre.toLowerCase().replace(/\s/g,'').split(',').includes(currentDay)) {

@@ -60,7 +60,7 @@ class Business {
         try {
             $db = Database::getInstance()->getConnection();
 
-            $sql = "SELECT b.*, c.tipo_comercio, c.horario_apertura, c.horario_cierre, c.dias_cierre, c.categorias_productos
+            $sql = "SELECT b.*, c.tipo_comercio, c.horario_apertura, c.horario_cierre, c.dias_cierre, c.timezone, c.categorias_productos
                     FROM businesses b
                     INNER JOIN comercios c ON b.id = c.business_id
                     WHERE b.visible = 1 AND b.business_type = 'comercio'
@@ -123,6 +123,7 @@ class Business {
                         c.horario_apertura,
                         c.horario_cierre,
                         c.dias_cierre,
+                        c.timezone,
                         c.categorias_productos
                     FROM businesses b
                     LEFT JOIN comercios c ON b.id = c.business_id";
@@ -169,6 +170,7 @@ class Business {
                         c.horario_apertura,
                         c.horario_cierre,
                         c.dias_cierre,
+                        c.timezone,
                         c.categorias_productos";
             $joins = " FROM businesses b
                     LEFT JOIN comercios c ON b.id = c.business_id";

@@ -178,6 +178,11 @@ function validateBusinessData(array $data): array {
     $clean['horario_cierre']       = trim($data['horario_cierre']       ?? '') ?: null;
     $clean['dias_cierre']          = mb_substr(trim($data['dias_cierre']          ?? ''), 0, 255) ?: null;
     $clean['categorias_productos'] = mb_substr(trim($data['categorias_productos'] ?? ''), 0, 500) ?: null;
+    // Timezone IANA del negocio — validar contra lista oficial
+    $rawTz = trim($data['timezone'] ?? '');
+    $clean['timezone'] = ($rawTz && isValidTimezone($rawTz))
+        ? $rawTz
+        : 'America/Argentina/Buenos_Aires';
 
     return [
         'valid'  => empty($errors),
@@ -258,10 +263,10 @@ function addBusiness($data, $userId) {
             $db->prepare("
                 INSERT INTO comercios (
                     business_id, tipo_comercio, horario_apertura, horario_cierre,
-                    dias_cierre, categorias_productos
+                    dias_cierre, timezone, categorias_productos
                 ) VALUES (
                     :business_id, :tipo_comercio, :horario_apertura, :horario_cierre,
-                    :dias_cierre, :categorias_productos
+                    :dias_cierre, :timezone, :categorias_productos
                 )
             ")->execute([
                 ':business_id'          => $businessId,
@@ -269,6 +274,7 @@ function addBusiness($data, $userId) {
                 ':horario_apertura'     => $data['horario_apertura']     ?? null,
                 ':horario_cierre'       => $data['horario_cierre']       ?? null,
                 ':dias_cierre'          => $data['dias_cierre']          ?? null,
+                ':timezone'             => $data['timezone']             ?? 'America/Argentina/Buenos_Aires',
                 ':categorias_productos' => $data['categorias_productos'] ?? null,
             ]);
         }
@@ -393,17 +399,17 @@ function updateBusiness($businessId, $data, $userId) {
                 UPDATE comercios
                 SET tipo_comercio = :tipo_comercio, horario_apertura = :horario_apertura,
                     horario_cierre = :horario_cierre, dias_cierre = :dias_cierre,
-                    categorias_productos = :categorias_productos
+                    timezone = :timezone, categorias_productos = :categorias_productos
                 WHERE business_id = :business_id
             ");
         } else {
             $stmtC = $db->prepare("
                 INSERT INTO comercios (
                     business_id, tipo_comercio, horario_apertura, horario_cierre,
-                    dias_cierre, categorias_productos
+                    dias_cierre, timezone, categorias_productos
                 ) VALUES (
                     :business_id, :tipo_comercio, :horario_apertura, :horario_cierre,
-                    :dias_cierre, :categorias_productos
+                    :dias_cierre, :timezone, :categorias_productos
                 )
             ");
         }
@@ -413,6 +419,7 @@ function updateBusiness($businessId, $data, $userId) {
             ':horario_apertura'     => $data['horario_apertura']     ?? null,
             ':horario_cierre'       => $data['horario_cierre']       ?? null,
             ':dias_cierre'          => $data['dias_cierre']          ?? null,
+            ':timezone'             => $data['timezone']             ?? 'America/Argentina/Buenos_Aires',
             ':categorias_productos' => $data['categorias_productos'] ?? null,
         ]);
 

@@ -83,9 +83,8 @@ siteHeader('Marca y Expansión — Estrategia y Escalabilidad', 'marca');
     <h2>¿Querés hacer crecer tu marca?</h2>
     <p class="muted">Nuestro equipo te ayuda a diseñar una estrategia de expansión realista y ejecutable para tu negocio.</p>
     <div class="cta-row">
-        <a class="btn btn-primary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">
-            📩 Consultar sobre expansión y marca
-        </a>
+        <a class="btn btn-primary" href="/contacto?tema=marca">📩 Consultar sobre expansión y marca</a>
+        <a class="btn btn-secondary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">🔗 Contacto externo</a>
         <a class="btn btn-secondary" href="/avanzado">Ver todos los módulos</a>
     </div>
 </div>
