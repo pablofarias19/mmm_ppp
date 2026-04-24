@@ -1175,7 +1175,7 @@ $descriptionPlaceholders = [
     $advBizType = '';
     if ($editing && !empty($business['business_type'])) {
         $bt = strtolower($business['business_type']);
-        if (in_array($bt, ['comercio','tienda','kiosk','farmacia','supermercado','ferreteria','libreria','bazar','joyeria','optica','bicicleteria','jugueteria','mueblerïa','colchoneria','electrodomesticos','herramientas'], true)
+        if (in_array($bt, ['comercio','tienda','kiosk','farmacia','supermercado','ferreteria','libreria','bazar','joyeria','optica','bicicleteria','jugueteria','muebleria','colchoneria','electrodomesticos','herramientas'], true)
             || preg_match('/comercio|tienda|kiosk|farmacia|supermercado|ferreteria|libreria|ropa|calzado|bazar|joyeria|optica/', $bt)) {
             $advBizType = 'comercio';
         } elseif (preg_match('/industria|fabrica|taller|manufactura|produccion|aserradero|metalurgica/', $bt)) {
