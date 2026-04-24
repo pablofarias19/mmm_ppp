@@ -619,8 +619,7 @@ $descriptionPlaceholders = [
         .web-help-btn:hover { background: #fde68a; transform: scale(1.1); }
         .web-help-btn:focus { outline: 2px solid #d97706; outline-offset: 2px; }
         .web-help-popover {
-            display: none; position: absolute; z-index: 9999;
-            top: calc(100% + 8px); right: 0;
+            display: none; position: fixed; z-index: 9999;
             width: min(340px, 90vw);
             background: #fff; border: 1px solid #e5e7eb;
             border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,.18);
@@ -1170,6 +1169,24 @@ $descriptionPlaceholders = [
         </div>
 
     </form>
+
+    <!-- ══ PANEL AVANZADO — Asistencia Jurídica y Estratégica ════════════════ -->
+    <?php
+    $advBizType = '';
+    if ($editing && !empty($business['business_type'])) {
+        $bt = strtolower($business['business_type']);
+        if (in_array($bt, ['comercio','tienda','kiosk','farmacia','supermercado','ferreteria','libreria','bazar','joyeria','optica','bicicleteria','jugueteria','mueblerïa','colchoneria','electrodomesticos','herramientas'], true)
+            || preg_match('/comercio|tienda|kiosk|farmacia|supermercado|ferreteria|libreria|ropa|calzado|bazar|joyeria|optica/', $bt)) {
+            $advBizType = 'comercio';
+        } elseif (preg_match('/industria|fabrica|taller|manufactura|produccion|aserradero|metalurgica/', $bt)) {
+            $advBizType = 'industria';
+        } else {
+            $advBizType = 'servicios';
+        }
+    }
+    require_once __DIR__ . '/../includes/avanzado_panel.php';
+    renderAvanzadoPanel('negocio', $advBizType);
+    ?>
 
     <!-- ══ SECCIONES SOLO EN MODO EDICIÓN ════════════════════════════════════ -->
     <?php if ($editing): ?>
@@ -2144,20 +2161,43 @@ async function guardarProveedor() {
 function toggleWebHelp(id) {
     const pop = document.getElementById(id);
     if (!pop) return;
-    const isOpen = pop.classList.toggle('open');
     const btn = pop.previousElementSibling;
+    const isOpen = pop.classList.toggle('open');
     if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
     if (isOpen) {
+        // Use fixed positioning to escape overflow:hidden parent containers
+        const rect = btn.getBoundingClientRect();
+        const popW = Math.min(340, window.innerWidth * 0.9);
+        let left = rect.right - popW;
+        if (left < 8) left = 8;
+        pop.style.top   = (rect.bottom + 8) + 'px';
+        pop.style.left  = left + 'px';
+        pop.style.width = popW + 'px';
+        const reposition = () => {
+            const r = btn.getBoundingClientRect();
+            pop.style.top = (r.bottom + 8) + 'px';
+        };
+        pop._reposition = reposition;
+        window.addEventListener('scroll', reposition, { passive: true });
         // Close on outside click
         setTimeout(() => {
             document.addEventListener('click', function _close(e) {
                 if (!pop.contains(e.target) && e.target !== btn) {
                     pop.classList.remove('open');
                     if (btn) btn.setAttribute('aria-expanded', 'false');
+                    if (pop._reposition) {
+                        window.removeEventListener('scroll', pop._reposition);
+                        pop._reposition = null;
+                    }
                 }
                 document.removeEventListener('click', _close);
             });
         }, 50);
+    } else {
+        if (pop._reposition) {
+            window.removeEventListener('scroll', pop._reposition);
+            pop._reposition = null;
+        }
     }
 }
 </script>
