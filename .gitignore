@@ -1,6 +1,8 @@
 # Environment / secrets
 .env
 
+# Contact form logs (server-side storage)
+storage/
 # Composer
 vendor/
 composer.lock
