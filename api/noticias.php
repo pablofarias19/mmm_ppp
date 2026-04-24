@@ -23,6 +23,56 @@ function respond_error($message, $code = 400) {
     exit;
 }
 
+/**
+ * Sanitize rich HTML content: allow only safe subset.
+ * Allowed: <b>, <strong>, <u>, <em>, <i>, <span style="color:...">
+ * Strips everything else and limits to 500 plain-text characters.
+ */
+function sanitizeNoticiaContenido(string $html): string {
+    // Strip dangerous tags/attributes; keep safe subset
+    // Remove all tags except allowed
+    $allowed = '<b><strong><u><em><i><span><br>';
+    $clean = strip_tags($html, $allowed);
+
+    // Allow only safe style on <span>: only color/font-weight/text-decoration
+    $clean = preg_replace_callback(
+        '/<span([^>]*)>/i',
+        function ($m) {
+            $attrs = $m[1];
+            $style = '';
+            if (preg_match('/style\s*=\s*["\']([^"\']*)["\']/', $attrs, $sm)) {
+                // Only allow color, font-weight, text-decoration
+                $allowed_props = [];
+                foreach (explode(';', $sm[1]) as $prop) {
+                    $prop = trim($prop);
+                    if (preg_match('/^(color|font-weight|text-decoration)\s*:/i', $prop)) {
+                        // Validate color value: no url(), no expression
+                        if (strpos(strtolower($prop), 'url') === false &&
+                            strpos(strtolower($prop), 'expression') === false &&
+                            strpos(strtolower($prop), 'javascript') === false) {
+                            $allowed_props[] = $prop;
+                        }
+                    }
+                }
+                if ($allowed_props) {
+                    $style = ' style="' . htmlspecialchars(implode(';', $allowed_props), ENT_QUOTES) . '"';
+                }
+            }
+            return '<span' . $style . '>';
+        },
+        $clean
+    );
+
+    // Enforce 500 plain-text character limit (strip tags for counting)
+    $plainText = html_entity_decode(strip_tags($clean), ENT_QUOTES, 'UTF-8');
+    if (mb_strlen($plainText) > 500) {
+        // Truncate plain text and rebuild (simple approach: strip and re-wrap)
+        $clean = htmlspecialchars(mb_substr($plainText, 0, 500), ENT_QUOTES, 'UTF-8');
+    }
+
+    return $clean;
+}
+
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/helpers.php';
 
@@ -129,28 +179,54 @@ if ($method === 'POST') {
 
     try {
         if ($action === 'create') {
-            $titulo    = $input['titulo']    ?? '';
-            $contenido = $input['contenido'] ?? '';
-            $categoria = $input['categoria'] ?? 'General';
-            $imagen    = $input['imagen']    ?? null;
-            $activa    = (bool)($input['activa'] ?? 1);
-            $lat       = isset($input['lat']) && $input['lat'] !== '' ? (float)$input['lat'] : null;
-            $lng       = isset($input['lng']) && $input['lng'] !== '' ? (float)$input['lng'] : null;
-            $ubicacion = $input['ubicacion'] ?? null;
+            $titulo        = trim($input['titulo']    ?? '');
+            $contenido     = sanitizeNoticiaContenido($input['contenido'] ?? '');
+            $categoria     = $input['categoria']     ?? 'General';
+            $link          = $input['link']          ?? null;
+            $resumen_popup = $input['resumen_popup'] ?? null;
+            $tags          = $input['tags']          ?? null;
+            $activa        = (bool)($input['activa'] ?? 1);
+            $lat           = isset($input['lat']) && $input['lat'] !== '' ? (float)$input['lat'] : null;
+            $lng           = isset($input['lng']) && $input['lng'] !== '' ? (float)$input['lng'] : null;
+            $ubicacion     = $input['ubicacion'] ?? null;
 
+            // Validate plain-text length
+            $plainLen = mb_strlen(html_entity_decode(strip_tags($contenido), ENT_QUOTES, 'UTF-8'));
             if (!$titulo || !$contenido) {
                 respond_error("Título y contenido son requeridos", 400);
             }
+            if ($plainLen > 500) {
+                respond_error("El contenido supera el límite de 500 caracteres de texto plano", 400);
+            }
 
-            $stmt = $db->prepare("
-                INSERT INTO noticias (titulo, contenido, categoria, imagen, activa, user_id, lat, lng, ubicacion, fecha_publicacion)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-            ");
-            $result = $stmt->execute([
-                $titulo, $contenido, $categoria, $imagen,
-                $activa ? 1 : 0, $_SESSION['user_id'] ?? 1,
-                $lat, $lng, $ubicacion
-            ]);
+            // Validate link URL if provided
+            if ($link !== null && $link !== '' && !filter_var($link, FILTER_VALIDATE_URL)) {
+                respond_error("El link no es una URL válida", 400);
+            }
+
+            // Use INSERT with IF EXISTS column check pattern via try/catch
+            try {
+                $stmt = $db->prepare("
+                    INSERT INTO noticias (titulo, contenido, categoria, link, resumen_popup, tags, activa, user_id, lat, lng, ubicacion, fecha_publicacion)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                ");
+                $result = $stmt->execute([
+                    $titulo, $contenido, $categoria, $link ?: null, $resumen_popup ?: null, $tags ?: null,
+                    $activa ? 1 : 0, $_SESSION['user_id'] ?? 1,
+                    $lat, $lng, $ubicacion
+                ]);
+            } catch (\PDOException $e2) {
+                // Fallback: columns may not exist yet (migration not run)
+                $stmt = $db->prepare("
+                    INSERT INTO noticias (titulo, contenido, categoria, activa, user_id, lat, lng, ubicacion, fecha_publicacion)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                ");
+                $result = $stmt->execute([
+                    $titulo, $contenido, $categoria,
+                    $activa ? 1 : 0, $_SESSION['user_id'] ?? 1,
+                    $lat, $lng, $ubicacion
+                ]);
+            }
 
             if ($result) {
                 respond_success(['id' => $db->lastInsertId()], "Noticia creada correctamente");
@@ -167,10 +243,21 @@ if ($method === 'POST') {
             $updates = [];
             $values = [];
 
-            if (isset($input['titulo']))    { $updates[] = "titulo = ?";    $values[] = $input['titulo']; }
-            if (isset($input['contenido'])) { $updates[] = "contenido = ?"; $values[] = $input['contenido']; }
+            if (isset($input['titulo']))    { $updates[] = "titulo = ?";    $values[] = trim($input['titulo']); }
+            if (isset($input['contenido'])) {
+                $safe = sanitizeNoticiaContenido($input['contenido']);
+                $plainLen = mb_strlen(html_entity_decode(strip_tags($safe), ENT_QUOTES, 'UTF-8'));
+                if ($plainLen > 500) respond_error("El contenido supera el límite de 500 caracteres de texto plano", 400);
+                $updates[] = "contenido = ?"; $values[] = $safe;
+            }
             if (isset($input['categoria'])) { $updates[] = "categoria = ?"; $values[] = $input['categoria']; }
-            if (isset($input['imagen']))    { $updates[] = "imagen = ?";    $values[] = $input['imagen']; }
+            if (array_key_exists('link', $input)) {
+                $lv = $input['link'];
+                if ($lv !== '' && $lv !== null && !filter_var($lv, FILTER_VALIDATE_URL)) respond_error("El link no es una URL válida", 400);
+                $updates[] = "link = ?"; $values[] = $lv ?: null;
+            }
+            if (array_key_exists('resumen_popup', $input)) { $updates[] = "resumen_popup = ?"; $values[] = $input['resumen_popup'] ?: null; }
+            if (array_key_exists('tags', $input))          { $updates[] = "tags = ?";          $values[] = $input['tags'] ?: null; }
             if (isset($input['activa']))    { $updates[] = "activa = ?";    $values[] = $input['activa'] ? 1 : 0; }
             if (array_key_exists('lat', $input)) { $updates[] = "lat = ?"; $values[] = $input['lat'] !== '' ? (float)$input['lat'] : null; }
             if (array_key_exists('lng', $input)) { $updates[] = "lng = ?"; $values[] = $input['lng'] !== '' ? (float)$input['lng'] : null; }

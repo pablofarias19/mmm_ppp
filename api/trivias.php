@@ -117,13 +117,19 @@ if ($method === 'POST') {
 
     try {
         if ($action === 'create') {
-            $titulo        = $input['titulo']       ?? '';
+            $titulo        = trim($input['titulo']       ?? '');
             $descripcion   = $input['descripcion']  ?? '';
             $dificultad    = $input['dificultad']   ?? 'medio';
             $tiempo_limite = (int)($input['tiempo_limite'] ?? 30);
             $lat           = isset($input['lat']) && $input['lat'] !== '' ? (float)$input['lat'] : null;
             $lng           = isset($input['lng']) && $input['lng'] !== '' ? (float)$input['lng'] : null;
             $ubicacion     = $input['ubicacion'] ?? null;
+            $svg           = $input['svg']        ?? null;
+            $referencia    = $input['referencia'] ?? null;
+            $tipo          = $input['tipo']       ?? null;
+            $edad          = $input['edad']       ?? null;
+            $emojis        = $input['emojis']     ?? null;
+            $app_path      = $input['app_path']   ?? null;
 
             if (!$titulo) {
                 respond_error("Título requerido", 400);
@@ -133,11 +139,36 @@ if ($method === 'POST') {
                 $dificultad = 'medio';
             }
 
-            $stmt = $db->prepare("
-                INSERT INTO trivias (titulo, descripcion, dificultad, tiempo_limite, activa, lat, lng, ubicacion, created_at)
-                VALUES (?, ?, ?, ?, 1, ?, ?, ?, NOW())
-            ");
-            $result = $stmt->execute([$titulo, $descripcion, $dificultad, $tiempo_limite, $lat, $lng, $ubicacion]);
+            // Validate SVG URL if provided
+            if ($svg !== null && $svg !== '' && !filter_var($svg, FILTER_VALIDATE_URL)) {
+                $svg = null;
+            }
+
+            // Sanitize app_path: only basename, no directory traversal
+            if ($app_path !== null && $app_path !== '') {
+                $app_path = basename(str_replace(['..', '/'], '', $app_path));
+                if (!preg_match('/^[a-zA-Z0-9_\-\.]+\.php$/', $app_path)) {
+                    $app_path = null;
+                }
+            } else {
+                $app_path = null;
+            }
+
+            try {
+                $stmt = $db->prepare("
+                    INSERT INTO trivias (titulo, descripcion, dificultad, tiempo_limite, activa, lat, lng, ubicacion, svg, referencia, tipo, edad, emojis, app_path, created_at)
+                    VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+                ");
+                $result = $stmt->execute([$titulo, $descripcion, $dificultad, $tiempo_limite, $lat, $lng, $ubicacion,
+                                          $svg ?: null, $referencia ?: null, $tipo ?: null, $edad ?: null, $emojis ?: null, $app_path]);
+            } catch (\PDOException $e2) {
+                // Fallback: new columns may not exist yet
+                $stmt = $db->prepare("
+                    INSERT INTO trivias (titulo, descripcion, dificultad, tiempo_limite, activa, lat, lng, ubicacion, created_at)
+                    VALUES (?, ?, ?, ?, 1, ?, ?, ?, NOW())
+                ");
+                $result = $stmt->execute([$titulo, $descripcion, $dificultad, $tiempo_limite, $lat, $lng, $ubicacion]);
+            }
 
             if ($result) {
                 respond_success(['id' => $db->lastInsertId()], "Trivia creada correctamente");
@@ -167,7 +198,7 @@ if ($method === 'POST') {
             $updates = [];
             $values = [];
 
-            if (isset($input['titulo']))       { $updates[] = "titulo = ?";       $values[] = $input['titulo']; }
+            if (isset($input['titulo']))       { $updates[] = "titulo = ?";       $values[] = trim($input['titulo']); }
             if (isset($input['descripcion']))  { $updates[] = "descripcion = ?";  $values[] = $input['descripcion']; }
             if (isset($input['dificultad']))   { $updates[] = "dificultad = ?";   $values[] = $input['dificultad']; }
             if (isset($input['tiempo_limite'])){ $updates[] = "tiempo_limite = ?";$values[] = (int)$input['tiempo_limite']; }
@@ -175,6 +206,20 @@ if ($method === 'POST') {
             if (array_key_exists('lat', $input)) { $updates[] = "lat = ?"; $values[] = $input['lat'] !== '' ? (float)$input['lat'] : null; }
             if (array_key_exists('lng', $input)) { $updates[] = "lng = ?"; $values[] = $input['lng'] !== '' ? (float)$input['lng'] : null; }
             if (isset($input['ubicacion']))    { $updates[] = "ubicacion = ?";    $values[] = $input['ubicacion']; }
+            if (array_key_exists('svg', $input)) {
+                $sv = $input['svg'];
+                if ($sv && !filter_var($sv, FILTER_VALIDATE_URL)) $sv = null;
+                $updates[] = "svg = ?"; $values[] = $sv ?: null;
+            }
+            if (array_key_exists('referencia', $input)) { $updates[] = "referencia = ?"; $values[] = $input['referencia'] ?: null; }
+            if (array_key_exists('tipo', $input))       { $updates[] = "tipo = ?";       $values[] = $input['tipo'] ?: null; }
+            if (array_key_exists('edad', $input))       { $updates[] = "edad = ?";       $values[] = $input['edad'] ?: null; }
+            if (array_key_exists('emojis', $input))     { $updates[] = "emojis = ?";     $values[] = $input['emojis'] ?: null; }
+            if (array_key_exists('app_path', $input)) {
+                $ap = basename(str_replace(['..', '/'], '', $input['app_path'] ?? ''));
+                if (!preg_match('/^[a-zA-Z0-9_\-\.]+\.php$/', $ap)) $ap = null;
+                $updates[] = "app_path = ?"; $values[] = $ap ?: null;
+            }
 
             if (empty($updates)) respond_error("No hay datos para actualizar", 400);
 
