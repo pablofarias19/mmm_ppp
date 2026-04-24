@@ -72,15 +72,23 @@ class Encuesta {
             $encuesta = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($encuesta) {
-                // Obtener preguntas
+                // Obtener preguntas con sus opciones parseadas
                 $sql_preguntas = "SELECT * FROM preguntas_encuesta
                                   WHERE encuesta_id = ?
-                                  ORDER BY id ASC";
+                                  ORDER BY orden ASC, id ASC";
 
                 $stmt_preguntas = $db->prepare($sql_preguntas);
                 $stmt_preguntas->execute([$id]);
 
-                $encuesta['preguntas'] = $stmt_preguntas->fetchAll(PDO::FETCH_ASSOC);
+                $rows = $stmt_preguntas->fetchAll(PDO::FETCH_ASSOC);
+                foreach ($rows as &$row) {
+                    // Normalizar campo de texto: texto_pregunta es la columna real
+                    $row['pregunta'] = $row['texto_pregunta'] ?? ($row['pregunta'] ?? '');
+                    // Parsear opciones (separadas por coma)
+                    $row['opciones_array'] = self::parseOpciones($row['opciones'] ?? '');
+                }
+                unset($row);
+                $encuesta['preguntas'] = $rows;
             }
 
             return $encuesta;
@@ -119,6 +127,65 @@ class Encuesta {
         } catch (Exception $e) {
             error_log("Error en Encuesta::getNearby - " . $e->getMessage());
             return [];
+        }
+    }
+
+    /**
+     * Parsea el campo opciones (separadas por coma) y devuelve un array limpio
+     * @param string $opciones
+     * @return array
+     */
+    public static function parseOpciones($opciones) {
+        if (empty($opciones)) return [];
+        $items = explode(',', $opciones);
+        return array_values(array_filter(array_map('trim', $items), 'strlen'));
+    }
+
+    /**
+     * Guarda preguntas con sus opciones para una encuesta.
+     * Borra las preguntas existentes antes de insertar (sólo en la acción crear).
+     * @param int $encuesta_id
+     * @param array $preguntas  Array de ['texto'=>..., 'opciones'=>[...]]
+     * @return bool
+     */
+    public static function savePreguntas($encuesta_id, array $preguntas) {
+        try {
+            $db = Database::getInstance()->getConnection();
+            $orden = 1;
+            foreach ($preguntas as $p) {
+                $texto = trim($p['texto'] ?? '');
+                if ($texto === '') continue;
+                $opts = array_filter(array_map('trim', (array)($p['opciones'] ?? [])), 'strlen');
+                $opts = array_slice(array_values($opts), 0, 5);
+                $opts_str = implode(',', $opts);
+                $stmt = $db->prepare(
+                    "INSERT INTO preguntas_encuesta
+                        (encuesta_id, texto_pregunta, tipo, opciones, orden)
+                     VALUES (?, ?, 'opcion_multiple', ?, ?)"
+                );
+                $stmt->execute([$encuesta_id, $texto, $opts_str, $orden]);
+                $orden++;
+            }
+            return true;
+        } catch (Exception $e) {
+            error_log("Error en Encuesta::savePreguntas - " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Elimina todas las preguntas de una encuesta
+     * @param int $encuesta_id
+     * @return bool
+     */
+    public static function deletePreguntas($encuesta_id) {
+        try {
+            $db = Database::getInstance()->getConnection();
+            $stmt = $db->prepare("DELETE FROM preguntas_encuesta WHERE encuesta_id = ?");
+            return $stmt->execute([$encuesta_id]);
+        } catch (Exception $e) {
+            error_log("Error en Encuesta::deletePreguntas - " . $e->getMessage());
+            return false;
         }
     }
 
@@ -266,6 +333,8 @@ class Encuesta {
 
             foreach ($preguntas as $pregunta) {
                 $pregunta_id = $pregunta['id'];
+                // Normalizar campo texto
+                $pregunta['pregunta'] = $pregunta['texto_pregunta'] ?? ($pregunta['pregunta'] ?? '');
 
                 // Contar respuestas por opción
                 $sql_respuestas = "SELECT respuesta, COUNT(*) as cantidad
@@ -275,7 +344,35 @@ class Encuesta {
 
                 $stmt_respuestas = $db->prepare($sql_respuestas);
                 $stmt_respuestas->execute([$pregunta_id]);
-                $respuestas = $stmt_respuestas->fetchAll(PDO::FETCH_ASSOC);
+                $respuestas_rows = $stmt_respuestas->fetchAll(PDO::FETCH_ASSOC);
+
+                // Indexar respuestas por texto para lookup rápido
+                $resp_map = [];
+                foreach ($respuestas_rows as $r) {
+                    $resp_map[$r['respuesta']] = (int)$r['cantidad'];
+                }
+
+                // Construir lista completa con opciones predefinidas (incluye ceros)
+                $opciones_def = self::parseOpciones($pregunta['opciones'] ?? '');
+                $respuestas = [];
+                if (!empty($opciones_def)) {
+                    foreach ($opciones_def as $opt) {
+                        $respuestas[] = [
+                            'respuesta' => $opt,
+                            'cantidad'  => $resp_map[$opt] ?? 0,
+                        ];
+                    }
+                    // Agregar respuestas no previstas (si existiera alguna)
+                    foreach ($resp_map as $txt => $cnt) {
+                        $found = false;
+                        foreach ($respuestas as $r) {
+                            if ($r['respuesta'] === $txt) { $found = true; break; }
+                        }
+                        if (!$found) $respuestas[] = ['respuesta' => $txt, 'cantidad' => $cnt];
+                    }
+                } else {
+                    $respuestas = $respuestas_rows;
+                }
 
                 $pregunta['respuestas'] = $respuestas;
                 $stats['preguntas'][] = $pregunta;

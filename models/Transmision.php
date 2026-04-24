@@ -47,12 +47,15 @@ class Transmision
     public static function getLive(): array
     {
         $db = Database::getInstance()->getConnection();
+        $now = date('Y-m-d H:i:s');
         $s  = $db->prepare(
             "SELECT * FROM transmisiones
              WHERE activo = 1 AND en_vivo = 1
+               AND (fecha_inicio IS NULL OR fecha_inicio <= ?)
+               AND (fecha_fin   IS NULL OR fecha_fin   >= ?)
              ORDER BY created_at DESC"
         );
-        $s->execute();
+        $s->execute([$now, $now]);
         return $s->fetchAll(PDO::FETCH_ASSOC);
     }
 
@@ -94,11 +97,17 @@ class Transmision
     {
         $db   = Database::getInstance()->getConnection();
         $tipo = in_array($data['tipo'] ?? '', self::TIPOS) ? $data['tipo'] : 'youtube_live';
+
+        // Construir datetime desde campos separados si vienen así
+        $fecha_inicio = self::buildDatetime($data, 'fecha_inicio', 'hora_inicio');
+        $fecha_fin    = self::buildDatetime($data, 'fecha_fin',    'hora_fin');
+
         $s    = $db->prepare(
             "INSERT INTO transmisiones
                 (titulo, descripcion, tipo, stream_url,
-                 lat, lng, business_id, evento_id, en_vivo, activo, created_at)
-             VALUES (?,?,?,?,?,?,?,?,?,?,NOW())"
+                 lat, lng, business_id, evento_id, en_vivo, activo,
+                 fecha_inicio, fecha_fin, created_at)
+             VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW())"
         );
         return $s->execute([
             $data['titulo'],
@@ -111,7 +120,33 @@ class Transmision
             isset($data['evento_id'])   && $data['evento_id']   !== '' ? (int)$data['evento_id']   : null,
             isset($data['en_vivo']) ? (int)(bool)$data['en_vivo'] : 0,
             isset($data['activo'])  ? (int)(bool)$data['activo']  : 1,
+            $fecha_inicio,
+            $fecha_fin,
         ]);
+    }
+
+    /**
+     * Combina fecha + hora en un string datetime, o devuelve el datetime directo.
+     * @param array $data
+     * @param string $fecha_key
+     * @param string $hora_key
+     * @return string|null
+     */
+    private static function buildDatetime(array $data, string $fecha_key, string $hora_key): ?string
+    {
+        // Primero intentar como datetime combinado (campo único)
+        if (!empty($data[$fecha_key]) && strlen($data[$fecha_key]) > 10) {
+            // Viene como datetime-local: "2025-06-01T14:30"
+            $dt = str_replace('T', ' ', $data[$fecha_key]);
+            return $dt ?: null;
+        }
+        // Combinar fecha + hora separados
+        if (!empty($data[$fecha_key])) {
+            $fecha = $data[$fecha_key];
+            $hora  = !empty($data[$hora_key]) ? $data[$hora_key] : '00:00';
+            return $fecha . ' ' . $hora . ':00';
+        }
+        return null;
     }
 
     public static function update(int $id, array $data): bool
@@ -127,6 +162,14 @@ class Transmision
         }
         foreach (['en_vivo','activo'] as $b) {
             if (isset($data[$b])) { $upd[] = "$b = ?"; $vals[] = (int)(bool)$data[$b]; }
+        }
+        foreach (['fecha_inicio','fecha_fin'] as $dt) {
+            if (array_key_exists($dt, $data)) {
+                $upd[]  = "$dt = ?";
+                $vals[] = ($data[$dt] === '' || $data[$dt] === null)
+                    ? null
+                    : str_replace('T', ' ', $data[$dt]);
+            }
         }
         if (empty($upd)) return false;
         $upd[]  = 'updated_at = NOW()';

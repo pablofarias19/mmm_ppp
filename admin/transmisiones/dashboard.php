@@ -27,19 +27,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         $titulo = trim($_POST['titulo'] ?? '');
         if ($titulo) {
-            if (Transmision::create([
-                'titulo'      => $titulo,
-                'descripcion' => $_POST['descripcion'] ?? null,
-                'tipo'        => $_POST['tipo']        ?? 'youtube_live',
-                'stream_url'  => trim($_POST['stream_url'] ?? ''),
-                'lat'         => $_POST['lat'] ?? '',
-                'lng'         => $_POST['lng'] ?? '',
-                'en_vivo'     => isset($_POST['en_vivo'])  ? 1 : 0,
-                'activo'      => isset($_POST['activo'])   ? 1 : 0,
-            ])) {
-                $message = 'Transmisión creada correctamente.'; $messageType = 'success';
+            // Construir datetimes a partir de los campos del formulario
+            $fecha_inicio_raw = trim($_POST['fecha_inicio'] ?? '');
+            $hora_inicio_raw  = trim($_POST['hora_inicio']  ?? '00:00');
+            $fecha_fin_raw    = trim($_POST['fecha_fin']    ?? '');
+            $hora_fin_raw     = trim($_POST['hora_fin']     ?? '23:59');
+
+            $datetime_inicio = $fecha_inicio_raw ? ($fecha_inicio_raw . ' ' . $hora_inicio_raw . ':00') : null;
+            $datetime_fin    = $fecha_fin_raw    ? ($fecha_fin_raw    . ' ' . $hora_fin_raw    . ':00') : null;
+
+            // Validar que inicio < fin si ambos están presentes
+            if ($datetime_inicio && $datetime_fin && strtotime($datetime_inicio) >= strtotime($datetime_fin)) {
+                $message = 'La fecha/hora de inicio debe ser anterior a la de fin.'; $messageType = 'error';
             } else {
-                $message = 'Error al crear la transmisión.'; $messageType = 'error';
+                if (Transmision::create([
+                    'titulo'       => $titulo,
+                    'descripcion'  => $_POST['descripcion'] ?? null,
+                    'tipo'         => $_POST['tipo']        ?? 'youtube_live',
+                    'stream_url'   => trim($_POST['stream_url'] ?? ''),
+                    'lat'          => $_POST['lat'] ?? '',
+                    'lng'          => $_POST['lng'] ?? '',
+                    'en_vivo'      => isset($_POST['en_vivo'])  ? 1 : 0,
+                    'activo'       => isset($_POST['activo'])   ? 1 : 0,
+                    'fecha_inicio' => $datetime_inicio,
+                    'fecha_fin'    => $datetime_fin,
+                ])) {
+                    $message = 'Transmisión creada correctamente.'; $messageType = 'success';
+                } else {
+                    $message = 'Error al crear la transmisión.'; $messageType = 'error';
+                }
             }
         } else {
             $message = 'El título es requerido.'; $messageType = 'error';
@@ -197,7 +213,7 @@ $tiposLabel = [
     <!-- Crear Transmisión -->
     <div class="section">
         <div class="section-header">➕ Crear Nueva Transmisión</div>
-        <form method="post" class="form-grid">
+        <form method="post" class="form-grid" id="form-create-trans">
             <?php echo csrfField(); ?>
             <input type="hidden" name="action" value="create">
 
@@ -236,6 +252,32 @@ $tiposLabel = [
                 </div>
             </div>
 
+            <!-- Ventana de tiempo -->
+            <div class="form-full">
+                <div style="background:#fff8f0;border:1px solid #fad7a0;border-radius:8px;padding:18px;margin-bottom:4px;">
+                    <div style="font-weight:700;color:#784212;margin-bottom:12px;">🕐 Ventana de tiempo del vivo <small style="font-weight:400;color:#7f8c8d;">(opcional — si se definen, el vivo sólo estará activo dentro de ese rango)</small></div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+                        <div class="form-group" style="margin:0;">
+                            <label>Fecha de inicio</label>
+                            <input type="date" name="fecha_inicio" id="fecha_inicio">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>Hora de inicio</label>
+                            <input type="time" name="hora_inicio" id="hora_inicio" value="08:00">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>Fecha de fin</label>
+                            <input type="date" name="fecha_fin" id="fecha_fin">
+                        </div>
+                        <div class="form-group" style="margin:0;">
+                            <label>Hora de fin</label>
+                            <input type="time" name="hora_fin" id="hora_fin" value="23:59">
+                        </div>
+                    </div>
+                    <p style="font-size:11px;color:#888;margin-top:8px;">Si se completan, la fecha de inicio debe ser anterior a la de fin.</p>
+                </div>
+            </div>
+
             <div class="form-full">
                 <div class="form-group">
                     <label>📍 Ubicación (click en mapa)</label>
@@ -267,13 +309,19 @@ $tiposLabel = [
                         <th>Título</th>
                         <th>Tipo</th>
                         <th>URL</th>
-                        <th>Geo</th>
+                        <th>Ventana</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     <?php foreach ($transmisiones as $t): ?>
+                    <?php
+                        $now = time();
+                        $fi  = !empty($t['fecha_inicio']) ? strtotime($t['fecha_inicio']) : null;
+                        $ff  = !empty($t['fecha_fin'])    ? strtotime($t['fecha_fin'])    : null;
+                        $en_ventana = (!$fi || $fi <= $now) && (!$ff || $ff >= $now);
+                    ?>
                     <tr>
                         <td><?php echo $t['id']; ?></td>
                         <td>
@@ -285,17 +333,27 @@ $tiposLabel = [
                         <td><span class="tipo-badge"><?php echo htmlspecialchars($tiposLabel[$t['tipo']] ?? $t['tipo']); ?></span></td>
                         <td>
                             <?php if ($t['stream_url']): ?>
-                                <a href="<?php echo htmlspecialchars($t['stream_url']); ?>" target="_blank" style="color:#c0392b;font-size:.82em;word-break:break-all;">
-                                    🔗 <?php echo htmlspecialchars(substr($t['stream_url'], 0, 40)); ?>…
+                                <a href="<?php echo htmlspecialchars($t['stream_url']); ?>" target="_blank" rel="noopener noreferrer" style="color:#c0392b;font-size:.82em;word-break:break-all;">
+                                    🔗 <?php echo htmlspecialchars(substr($t['stream_url'], 0, 35)); ?>…
                                 </a>
                             <?php else: ?>
                                 <span style="color:#ccc;">—</span>
                             <?php endif; ?>
                         </td>
-                        <td><?php echo ($t['lat'] && $t['lng']) ? '<span style="color:#27ae60;">📍</span>' : '<span style="color:#ccc;">—</span>'; ?></td>
+                        <td style="font-size:.8em;">
+                            <?php if ($fi || $ff): ?>
+                                <?php if ($fi): ?><div>▶ <?php echo date('d/m/Y H:i', $fi); ?></div><?php endif; ?>
+                                <?php if ($ff): ?><div>⏹ <?php echo date('d/m/Y H:i', $ff); ?></div><?php endif; ?>
+                                <?php if (!$en_ventana): ?><small style="color:#e74c3c;">Fuera de ventana</small><?php endif; ?>
+                            <?php else: ?>
+                                <span style="color:#ccc;">—</span>
+                            <?php endif; ?>
+                        </td>
                         <td>
-                            <?php if ($t['en_vivo']): ?>
+                            <?php if ($t['en_vivo'] && $en_ventana): ?>
                                 <span class="badge badge-live">🔴 En Vivo</span>
+                            <?php elseif ($t['en_vivo']): ?>
+                                <span class="badge badge-live" style="opacity:.5;">🔴 (fuera de ventana)</span>
                             <?php elseif ($t['activo']): ?>
                                 <span class="badge badge-active">Activa</span>
                             <?php else: ?>
@@ -303,6 +361,14 @@ $tiposLabel = [
                             <?php endif; ?>
                         </td>
                         <td style="white-space:nowrap;display:flex;gap:4px;flex-wrap:wrap;">
+                            <!-- Ver en vivo (nueva pestaña) -->
+                            <?php if ($t['stream_url'] && $t['en_vivo']): ?>
+                                <a href="<?php echo htmlspecialchars($t['stream_url']); ?>"
+                                   target="_blank" rel="noopener noreferrer"
+                                   class="btn btn-live" style="font-size:.78em;padding:5px 8px;text-decoration:none;">
+                                    📺 Ver
+                                </a>
+                            <?php endif; ?>
                             <!-- Toggle En Vivo -->
                             <form method="post" class="inline-form">
                                 <?php echo csrfField(); ?>
@@ -351,6 +417,28 @@ mapInst.on('click', function(e) {
     if (marker) marker.remove();
     marker = L.marker([lat, lng]).addTo(mapInst)
               .bindTooltip('📡 Origen de la transmisión').openTooltip();
+});
+
+// Validar ventana de tiempo al crear transmisión
+document.getElementById('form-create-trans').addEventListener('submit', function(e) {
+    var fi = document.getElementById('fecha_inicio').value;
+    var hi = document.getElementById('hora_inicio').value;
+    var ff = document.getElementById('fecha_fin').value;
+    var hf = document.getElementById('hora_fin').value;
+
+    if (fi && ff) {
+        var inicio = new Date(fi + 'T' + (hi || '00:00'));
+        var fin    = new Date(ff + 'T' + (hf || '23:59'));
+        if (inicio >= fin) {
+            e.preventDefault();
+            alert('La fecha/hora de inicio debe ser anterior a la de fin.');
+            return;
+        }
+    }
+    // Si solo se completa uno de los dos, advertir (no bloquear)
+    if ((fi && !ff) || (!fi && ff)) {
+        // Ambos son opcionales; no bloquear pero los datos se envían igualmente
+    }
 });
 </script>
 </body>

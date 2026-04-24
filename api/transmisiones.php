@@ -109,18 +109,21 @@ if ($method === 'POST') {
             }
             $s = $db->prepare("INSERT INTO transmisiones
                 (titulo, descripcion, tipo, stream_url, lat, lng,
-                 business_id, evento_id, en_vivo, activo, created_at)
-                VALUES (?,?,?,?,?,?,?,?,?,?,NOW())");
+                 business_id, evento_id, en_vivo, activo,
+                 fecha_inicio, fecha_fin, created_at)
+                VALUES (?,?,?,?,?,?,?,?,?,?,?,?,NOW())");
             $ok = $s->execute([
                 $titulo,
                 $input['descripcion'] ?? null,
                 $tipo, $url,
-                $input['lat'] !== '' ? (float)$input['lat'] : null,
-                $input['lng'] !== '' ? (float)$input['lng'] : null,
-                $input['business_id'] !== '' ? (int)$input['business_id'] : null,
-                $input['evento_id']   !== '' ? (int)$input['evento_id']   : null,
+                isset($input['lat']) && $input['lat'] !== '' ? (float)$input['lat'] : null,
+                isset($input['lng']) && $input['lng'] !== '' ? (float)$input['lng'] : null,
+                isset($input['business_id']) && $input['business_id'] !== '' ? (int)$input['business_id'] : null,
+                isset($input['evento_id'])   && $input['evento_id']   !== '' ? (int)$input['evento_id']   : null,
                 (int)(bool)($input['en_vivo'] ?? false),
                 (int)(bool)($input['activo']  ?? true),
+                !empty($input['fecha_inicio']) ? str_replace('T', ' ', $input['fecha_inicio']) : null,
+                !empty($input['fecha_fin'])    ? str_replace('T', ' ', $input['fecha_fin'])    : null,
             ]);
             if ($ok) respond_success(['id' => $db->lastInsertId()], 'Transmisión creada');
             respond_error('Error al crear', 500);
@@ -139,6 +142,14 @@ if ($method === 'POST') {
             }
             foreach (['en_vivo','activo'] as $b) {
                 if (isset($input[$b])) { $upd[] = "$b = ?"; $vals[] = (int)(bool)$input[$b]; }
+            }
+            foreach (['fecha_inicio','fecha_fin'] as $dt) {
+                if (array_key_exists($dt, $input)) {
+                    $upd[]  = "$dt = ?";
+                    $vals[] = ($input[$dt] === '' || $input[$dt] === null)
+                        ? null
+                        : str_replace('T', ' ', $input[$dt]);
+                }
             }
             if (empty($upd)) respond_error('Sin datos');
             $upd[] = 'updated_at = NOW()'; $vals[] = $id;
