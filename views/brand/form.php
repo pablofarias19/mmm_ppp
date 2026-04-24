@@ -1546,6 +1546,11 @@ function chanChk($brand, $val) {
 
 </form>
 
+<?php
+require_once __DIR__ . '/../../includes/avanzado_panel.php';
+renderAvanzadoPanel('marca', '');
+?>
+
 <script>
 // ── Mapa de ubicación ─────────────────────────────────────────────────────────
 const initLat = <?= ($brand['lat'] ?? null) ? (float)$brand['lat'] : -34.6037 ?>;

@@ -702,6 +702,11 @@ function fieldVal(string $key, ?array $row, $default = ''): string {
             </form>
         </div><!-- /form-card-body -->
     </div><!-- /form-card -->
+
+    <?php
+    require_once __DIR__ . '/../../includes/avanzado_panel.php';
+    renderAvanzadoPanel('industria', 'industria');
+    ?>
 </main>
 
 <script>

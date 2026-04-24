@@ -21,6 +21,10 @@ if ($basePath && $basePath !== '/' && strpos($uri, $basePath) === 0) {
 }
 $uri = '/' . ltrim($uri, '/');
 
+// Strip trailing punctuation (e.g. /tasacion. → /tasacion)
+$uri = rtrim($uri, '.');
+if ($uri === '') $uri = '/';
+
 // Route definitions
 $routes = [
     '/'              => __DIR__ . '/views/business/map.php',
