@@ -327,10 +327,14 @@ function t(string $key, array $vars = []): string {
     global $_mapitaLangCache;
 
     $lang = getUILanguage();
+    // La whitelist es la fuente de verdad para los archivos permitidos
+    if (!in_array($lang, MAPITA_SUPPORTED_LANGS, true)) {
+        $lang = 'es';
+    }
 
     if (!isset($_mapitaLangCache[$lang])) {
         $file = __DIR__ . '/../lang/' . $lang . '.php';
-        $_mapitaLangCache[$lang] = file_exists($file) ? (require $file) : [];
+        $_mapitaLangCache[$lang] = (file_exists($file)) ? (require $file) : [];
     }
 
     // Fallback a español si la clave no existe en el idioma activo

@@ -186,8 +186,11 @@ function validateBusinessData(array $data): array {
 
     // Campos i18n / l10n ──────────────────────────────────────────────────────
     $rawCountry = strtoupper(trim($data['country_code'] ?? ''));
-    $allCountryCodes = array_merge(...array_values(getCountryOptions()));
-    $clean['country_code'] = (strlen($rawCountry) === 2 && isset($allCountryCodes[$rawCountry]))
+    static $flatCountryCodes = null;
+    if ($flatCountryCodes === null) {
+        $flatCountryCodes = array_merge(...array_values(getCountryOptions()));
+    }
+    $clean['country_code'] = (strlen($rawCountry) === 2 && isset($flatCountryCodes[$rawCountry]))
         ? $rawCountry
         : null;
 
