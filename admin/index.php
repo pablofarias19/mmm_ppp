@@ -237,6 +237,32 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         .badge-success { background: #d4edda; color: #155724; }
         .badge-danger  { background: #f8d7da; color: #721c24; }
 
+        /* ── Rich Text Editor ───────────────────────── */
+        .rte-toolbar {
+            display: flex;
+            gap: 4px;
+            flex-wrap: wrap;
+            margin-bottom: 4px;
+        }
+        .rte-toolbar button {
+            padding: 4px 10px;
+            border: 1px solid var(--color-gray-300);
+            border-radius: 4px;
+            background: white;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: inherit;
+            line-height: 1.4;
+            color: var(--text-primary);
+            transition: background 0.15s;
+        }
+        .rte-toolbar button:hover { background: #f0f0f0; }
+        .rte-editor {
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+        .rte-editor:focus { outline: 2px solid var(--primary); outline-offset: 1px; }
+
         /* ── Responsive ────────────────────────────── */
         @media (max-width: 768px) {
             .admin-card { flex-direction: column; align-items: flex-start; gap: var(--space-sm); }
@@ -587,6 +613,66 @@ let miniMapMarker = null;
 let miniMapDest = null;
 let miniMapDestMarker = null;
 
+// ── HTML helpers ─────────────────────────────────
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+function escapeHtmlAttr(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+        .replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;')
+        .replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+// ── Rich text editor helpers ──────────────────────
+function rteCmd(cmd, val) {
+    document.execCommand(cmd, false, val || null);
+    syncRteToHidden('noticia');
+}
+
+function plainTextLen(el) {
+    return (el.innerText || el.textContent || '').trim().length;
+}
+
+function syncRteToHidden(name) {
+    const rte     = document.getElementById('rte-' + name);
+    const hidden  = document.getElementById('hidden-contenido-' + name);
+    const counter = document.getElementById(name + '-char-count');
+    if (!rte || !hidden) return;
+    hidden.value = rte.innerHTML;
+    const len = plainTextLen(rte);
+    if (counter) {
+        counter.textContent = '(' + len + '/500 caracteres)';
+        counter.style.color = len > 500 ? '#dc2626' : '#6b7280';
+    }
+}
+
+function limitRteChars(name, event, max) {
+    const rte = document.getElementById('rte-' + name);
+    if (!rte) return true;
+    const len = plainTextLen(rte);
+    const allowed = ['Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown',
+                     'Tab','Enter','Home','End','PageUp','PageDown'];
+    if (len >= max && !event.ctrlKey && !event.metaKey && !allowed.includes(event.key)) {
+        event.preventDefault();
+        return false;
+    }
+    return true;
+}
+
+// Initialise RTE char counter once the DOM content is in place
+function initRteNoticia() {
+    const rte = document.getElementById('rte-noticia');
+    if (rte) {
+        syncRteToHidden('noticia');
+        rte.focus();
+    }
+}
+
+
 // ── Tab management ──────────────────────────────
 function switchTab(tab) {
     document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
@@ -648,23 +734,26 @@ function renderList(type, items) {
         const hasGeo   = (item.lat && item.lng);
         const hasYT    = item.youtube_link;
         const title    = item.titulo || item.nombre || '(sin título)';
-        const desc     = (item.descripcion || item.contenido || '').substring(0, 120);
+        // Strip HTML tags for plain-text preview
+        const plainDesc = (item.descripcion || item.contenido || '').replace(/<[^>]+>/g, '').substring(0, 120);
         const date     = item.fecha_publicacion || item.fecha || item.fecha_creacion || '';
         const geoLabel = hasGeo
             ? `<span class="geo-badge">📍 ${parseFloat(item.lat).toFixed(4)}, ${parseFloat(item.lng).toFixed(4)}</span>`
             : `<span class="no-geo-badge">Sin ubicación</span>`;
         const ytLabel = hasYT ? `<span class="yt-badge">▶ YouTube</span>` : '';
-        const linkLabel = item.link ? `<span class="geo-badge" style="background:#3b82f6">🔗 Link</span>` : '';
+        const linkLabel = item.link ? `<a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer" class="geo-badge" style="background:#3b82f6;color:white;text-decoration:none;">🔗 Ver noticia</a>` : '';
+        const appLabel  = item.app_path ? `<span class="geo-badge" style="background:#7c3aed">🎮 App: ${escapeHtml(item.app_path)}</span>` : '';
+        const tagsLabel = item.tags ? `<span style="color:#6b7280;font-size:11px;">🏷 ${escapeHtml(item.tags)}</span>` : '';
 
         return `
         <div class="admin-card ${hasGeo ? 'has-geo' : 'no-geo'}">
             <div class="card-content">
-                <h3>${title}</h3>
-                <p style="font-size:var(--font-size-sm);color:var(--text-secondary);margin:0 0 4px;">${desc}${desc.length===120?'…':''}</p>
+                <h3>${escapeHtml(title)}</h3>
+                <p style="font-size:var(--font-size-sm);color:var(--text-secondary);margin:0 0 4px;">${escapeHtml(plainDesc)}${plainDesc.length===120?'…':''}</p>
                 <div class="card-meta">
                     ${date ? `<span>📅 ${date}</span>` : ''}
                     <span class="badge ${isActive ? 'badge-success' : 'badge-danger'}">${isActive ? 'Activo' : 'Inactivo'}</span>
-                    ${geoLabel} ${ytLabel} ${linkLabel}
+                    ${geoLabel} ${ytLabel} ${linkLabel} ${appLabel} ${tagsLabel}
                 </div>
             </div>
             <div class="card-actions" style="display:flex;gap:8px;flex-shrink:0;">
@@ -684,10 +773,10 @@ function openModal(type, data) {
     document.getElementById('form-content').innerHTML = getFormHTML(type, data);
     document.getElementById('modal').classList.add('active');
 
-    // Inicializar mini-mapas después de que el DOM esté listo
+    // Inicializar mini-mapas y editores después de que el DOM esté listo
     setTimeout(() => {
         if (type === 'evento')      initMiniMap('evento',      data);
-        if (type === 'noticia')     initMiniMap('noticia',     data);
+        if (type === 'noticia')     { initMiniMap('noticia', data); initRteNoticia(); }
         if (type === 'trivia')      initMiniMap('trivia',      data);
         if (type === 'encuesta')    initMiniMap('encuesta',    data);
         if (type === 'oferta')      initMiniMap('oferta',      data);
@@ -795,16 +884,38 @@ function getFormHTML(type, data) {
             <input type="text" name="titulo" required placeholder="Ej: Nueva tienda abierta" value="${v.titulo||''}">
         </div>
         <div class="form-group">
-            <label>Contenido *</label>
-            <textarea name="contenido" required placeholder="Contenido de la noticia...">${v.contenido||''}</textarea>
+            <label>Contenido * <span id="noticia-char-count" style="font-size:11px;color:#6b7280;font-weight:400;">(0/500 caracteres)</span></label>
+            <div class="rte-toolbar" id="rte-toolbar-noticia">
+                <button type="button" title="Negrita" onclick="rteCmd('bold')" style="font-weight:bold;">B</button>
+                <button type="button" title="Subrayado" onclick="rteCmd('underline')" style="text-decoration:underline;">U</button>
+                <button type="button" title="Color de texto" onclick="document.getElementById('rte-color-noticia').click()">A</button>
+                <input type="color" id="rte-color-noticia" style="width:0;height:0;opacity:0;position:absolute;"
+                       onchange="rteCmd('foreColor', this.value)">
+                <button type="button" title="Quitar formato" onclick="rteCmd('removeFormat')" style="font-size:10px;">✕fmt</button>
+            </div>
+            <div id="rte-noticia" contenteditable="true" class="rte-editor"
+                 oninput="syncRteToHidden('noticia')"
+                 onkeydown="return limitRteChars('noticia', event, 500)"
+                 style="min-height:100px;max-height:200px;overflow-y:auto;border:1px solid var(--color-gray-300);border-radius:6px;padding:10px;font-size:14px;line-height:1.5;"
+            >${v.contenido||''}</div>
+            <input type="hidden" name="contenido" id="hidden-contenido-noticia" value="${escapeHtmlAttr(v.contenido||'')}">
+            <p style="font-size:11px;color:#9ca3af;margin-top:4px;">Permitido: negrita, subrayado y colores. Máx. 500 caracteres (texto plano).</p>
+        </div>
+        <div class="form-group">
+            <label>Resumen para popup <span style="font-size:11px;color:#6b7280;font-weight:400;">(texto breve que aparece en el mapa)</span></label>
+            <textarea name="resumen_popup" maxlength="200" placeholder="Breve resumen visible en el popup del mapa..." rows="2">${escapeHtml(v.resumen_popup||'')}</textarea>
+        </div>
+        <div class="form-group">
+            <label>🔗 Link a la noticia completa</label>
+            <input type="url" name="link" placeholder="https://ejemplo.com/noticia-completa" value="${escapeHtmlAttr(v.link||'')}">
+        </div>
+        <div class="form-group">
+            <label>Etiquetas / Tags <span style="font-size:11px;color:#6b7280;font-weight:400;">(separadas por coma)</span></label>
+            <input type="text" name="tags" placeholder="Ej: economía, local, inauguración" value="${escapeHtmlAttr(v.tags||'')}">
         </div>
         <div class="form-group">
             <label>Categoría</label>
-            <input type="text" name="categoria" placeholder="Ej: General, Economía, Cultura" value="${v.categoria||''}">
-        </div>
-        <div class="form-group">
-            <label>Imagen (URL)</label>
-            <input type="url" name="imagen" placeholder="https://ejemplo.com/imagen.jpg" value="${v.imagen||''}">
+            <input type="text" name="categoria" placeholder="Ej: General, Economía, Cultura" value="${escapeHtmlAttr(v.categoria||'')}">
         </div>
         <hr style="margin:16px 0;border-color:var(--color-gray-200);">
         <p style="font-weight:600;margin-bottom:8px;">📍 Ubicación en el Mapa <span style="font-weight:400;font-size:12px;color:var(--text-tertiary)">(opcional — clic para marcar)</span></p>
@@ -823,7 +934,7 @@ function getFormHTML(type, data) {
         </div>
         <div class="form-group" style="margin-top:8px;">
             <label>Lugar (texto)</label>
-            <input type="text" name="ubicacion" placeholder="Ej: Plaza San Martín, Córdoba" value="${v.ubicacion||''}">
+            <input type="text" name="ubicacion" placeholder="Ej: Plaza San Martín, Córdoba" value="${escapeHtmlAttr(v.ubicacion||'')}">
         </div>
         <div class="form-group">
             <label><input type="checkbox" name="activa" ${chkActiva}> Publicada</label>
@@ -916,11 +1027,41 @@ function getFormHTML(type, data) {
         ${v.id ? `<input type="hidden" name="id" value="${v.id}">` : ''}
         <div class="form-group">
             <label>Título *</label>
-            <input type="text" name="titulo" required placeholder="Ej: Trivia de Tecnología" value="${v.titulo||''}">
+            <input type="text" name="titulo" required placeholder="Ej: Trivia de Tecnología" value="${escapeHtmlAttr(v.titulo||'')}">
         </div>
         <div class="form-group">
             <label>Descripción</label>
-            <textarea name="descripcion" placeholder="De qué trata esta trivia...">${v.descripcion||''}</textarea>
+            <textarea name="descripcion" placeholder="De qué trata esta trivia...">${escapeHtml(v.descripcion||'')}</textarea>
+        </div>
+        <div class="form-group">
+            <label>🖼 Imagen SVG ilustrativa (URL)</label>
+            <input type="url" name="svg" placeholder="https://ejemplo.com/imagen.svg" value="${escapeHtmlAttr(v.svg||'')}">
+            <p class="mini-map-hint">URL a una imagen SVG que ilustra la trivia (se muestra en el popup del mapa).</p>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+                <label>Referencia del juego</label>
+                <input type="text" name="referencia" placeholder="Ej: TRV-001" value="${escapeHtmlAttr(v.referencia||'')}">
+            </div>
+            <div class="form-group">
+                <label>Tipo de juego</label>
+                <input type="text" name="tipo" placeholder="Ej: Quiz, Adivinanza, Lógica" value="${escapeHtmlAttr(v.tipo||'')}">
+            </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div class="form-group">
+                <label>Edad recomendada</label>
+                <input type="text" name="edad" placeholder="Ej: +8, Familiar, Adultos" value="${escapeHtmlAttr(v.edad||'')}">
+            </div>
+            <div class="form-group">
+                <label>Emojis decorativos</label>
+                <input type="text" name="emojis" placeholder="Ej: 🎯🧠🎲🕹️🏆" value="${escapeHtmlAttr(v.emojis||'')}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>🔗 App PHP (path relativo en apps/trivias/)</label>
+            <input type="text" name="app_path" placeholder="Ej: mi_trivia.php" value="${escapeHtmlAttr(v.app_path||'')}">
+            <p class="mini-map-hint">Nombre del archivo PHP dentro de la carpeta <code>apps/trivias/</code> del servidor. Se activará como link directo.</p>
         </div>
         <div class="form-group">
             <label>Dificultad</label>
@@ -951,7 +1092,7 @@ function getFormHTML(type, data) {
         </div>
         <div class="form-group" style="margin-top:8px;">
             <label>Lugar (texto)</label>
-            <input type="text" name="ubicacion" placeholder="Ej: Biblioteca Municipal" value="${v.ubicacion||''}">
+            <input type="text" name="ubicacion" placeholder="Ej: Biblioteca Municipal" value="${escapeHtmlAttr(v.ubicacion||'')}">
         </div>
         <div class="form-group">
             <label><input type="checkbox" name="activa" ${chkActivo || 'checked'}> Activa</label>
@@ -1138,6 +1279,8 @@ function getApiEndpoint(type) {
 // ── Submit ──────────────────────────────────────
 async function handleSubmit(e) {
     e.preventDefault();
+    // Sync RTE to hidden input before reading FormData
+    syncRteToHidden('noticia');
     const form = document.getElementById('form');
     const formData = new FormData(form);
     const data = {};

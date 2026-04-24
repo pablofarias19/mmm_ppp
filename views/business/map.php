@@ -523,6 +523,25 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
 
         /* (ver-selector responsive ya definido arriba) */
 
+        /* ── Selector MetaData: hide controls on mobile, show notice ─── */
+        .selector-mobile-notice {
+            display: none; /* hidden on desktop */
+        }
+        @media (max-width: 768px) {
+            #sb-sec-selection .sb-section-body { display: none !important; }
+            .selector-mobile-notice {
+                display: block;
+                padding: 10px 14px;
+                font-size: 12px;
+                color: #1565c0;
+                background: #e3f2fd;
+                border-left: 3px solid #00acc1;
+                margin: 4px 0 6px;
+                border-radius: 0 6px 6px 0;
+                line-height: 1.5;
+            }
+        }
+
         /* ── Popup action buttons ──────────────────── */
         .popup-action {
             display: inline-flex; align-items: center; justify-content: center;
@@ -1221,6 +1240,10 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                  stroke-linejoin="round" aria-hidden="true">
                 <polyline points="6 9 12 15 18 9"/>
             </svg>
+        </div>
+        <!-- Mensaje visible solo en mobile/tablet -->
+        <div class="selector-mobile-notice">
+            📱 Para consultas masivas - General y demás usar tablet, notebook o pc, para selección del mapa.
         </div>
         <div class="sb-section-body">
             <div class="sb-section-body-inner">
@@ -6888,8 +6911,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- ══ MÓDULO CONSULTAS MASIVAS ════════════════════════════════════════════ -->
 <script>
-/* Globals para consultas-panel.js */
-var SESSION_USER_ID = <?php echo (int)($_SESSION['user_id'] ?? 0); ?>;
+/* SESSION_USER_ID is already declared as const above; expose for consultas-panel.js */
+window.SESSION_USER_ID = window.SESSION_USER_ID !== undefined ? window.SESSION_USER_ID : <?php echo (int)($_SESSION['user_id'] ?? 0); ?>;
 var BUSINESS_TYPE_LABELS = {
     'restaurante':'Restaurante','cafeteria':'Cafetería','bar':'Bar / Pub','panaderia':'Panadería',
     'heladeria':'Heladería','pizzeria':'Pizzería','supermercado':'Supermercado','comercio':'Tienda / Local',
