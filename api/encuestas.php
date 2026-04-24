@@ -83,6 +83,15 @@ if ($method === 'GET') {
                 ]
             ], "Agregación (fallback)");
         }
+        if ($action === 'stats_global') {
+            respond_success([
+                'total' => 0,
+                'activas' => 0,
+                'total_respuestas' => 0,
+                'total_participantes' => 0,
+                'top_encuestas' => []
+            ], "Stats globales (fallback)");
+        }
         respond_success($encuestasDefault, "Encuestas (fallback)");
     }
     try {
@@ -164,6 +173,59 @@ if ($method === 'GET') {
                     'total_participantes' => $totalParticipantes
                 ]
             ], "Agregación completada");
+        }
+
+        // Stats globales para el panel admin
+        if ($action === 'stats_global') {
+            $stats = [
+                'total' => 0,
+                'activas' => 0,
+                'total_respuestas' => 0,
+                'total_participantes' => 0,
+                'top_encuestas' => []
+            ];
+
+            try {
+                $r = $db->query("SELECT COUNT(*) AS total,
+                    SUM(CASE WHEN activo=1 AND (fecha_expiracion IS NULL OR fecha_expiracion >= CURDATE()) THEN 1 ELSE 0 END) AS activas
+                    FROM encuestas");
+                $row = $r->fetch(\PDO::FETCH_ASSOC);
+                $stats['total']   = (int)($row['total']   ?? 0);
+                $stats['activas'] = (int)($row['activas'] ?? 0);
+            } catch (\PDOException $e) { /* tabla aún no existe */ }
+
+            $globalCandidates = [
+                [
+                    'counts' => "SELECT COUNT(*) AS total_respuestas, COUNT(DISTINCT user_id) AS total_participantes FROM encuesta_responses",
+                    'top'    => "SELECT e.id, e.titulo, COUNT(r.id) AS participantes FROM encuestas e LEFT JOIN encuesta_responses r ON r.encuesta_id=e.id GROUP BY e.id, e.titulo ORDER BY participantes DESC LIMIT 5"
+                ],
+                [
+                    'counts' => "SELECT COUNT(*) AS total_respuestas, COUNT(DISTINCT user_id) AS total_participantes FROM respuestas_encuesta",
+                    'top'    => "SELECT e.id, e.titulo, COUNT(r.id) AS participantes FROM encuestas e LEFT JOIN respuestas_encuesta r ON r.encuesta_id=e.id GROUP BY e.id, e.titulo ORDER BY participantes DESC LIMIT 5"
+                ],
+                [
+                    'counts' => "SELECT COUNT(*) AS total_respuestas, COUNT(DISTINCT r.id_usuario) AS total_participantes FROM respuestas_encuesta r INNER JOIN preguntas_encuesta p ON p.id = r.id_pregunta",
+                    'top'    => "SELECT e.id, e.titulo, COUNT(DISTINCT r.id_usuario) AS participantes FROM encuestas e LEFT JOIN preguntas_encuesta p ON p.encuesta_id=e.id LEFT JOIN respuestas_encuesta r ON r.id_pregunta=p.id GROUP BY e.id, e.titulo ORDER BY participantes DESC LIMIT 5"
+                ]
+            ];
+            foreach ($globalCandidates as $candidate) {
+                try {
+                    $rc = $db->query($candidate['counts']);
+                    $counts = $rc->fetch(\PDO::FETCH_ASSOC);
+                    $stats['total_respuestas']    = (int)($counts['total_respuestas']    ?? 0);
+                    $stats['total_participantes'] = (int)($counts['total_participantes'] ?? 0);
+                    $rt = $db->query($candidate['top']);
+                    $top = $rt->fetchAll(\PDO::FETCH_ASSOC);
+                    foreach ($top as &$t) { $t['participantes'] = (int)$t['participantes']; }
+                    unset($t);
+                    $stats['top_encuestas'] = $top;
+                    break;
+                } catch (\PDOException $e) {
+                    continue;
+                }
+            }
+
+            respond_success($stats, "Stats globales");
         }
 
         // Por ID
