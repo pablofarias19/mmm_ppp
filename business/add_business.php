@@ -604,6 +604,56 @@ $descriptionPlaceholders = [
             .page-header { flex-direction: column; gap: 8px; text-align: center; }
             .submit-bar { flex-direction: column; }
         }
+        /* ── Web Help Popover ─────────────────────────────── */
+        .web-help-wrap { position: relative; display: flex; align-items: center; gap: 8px; }
+        .web-help-wrap input[type=url] { flex: 1; min-width: 0; }
+        .web-help-btn {
+            flex-shrink: 0; width: 32px; height: 32px;
+            border: none; border-radius: 50%;
+            background: #fef3c7; color: #d97706;
+            font-size: 16px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 1px 4px rgba(0,0,0,.12);
+            transition: background .15s, transform .15s; padding: 0;
+        }
+        .web-help-btn:hover { background: #fde68a; transform: scale(1.1); }
+        .web-help-btn:focus { outline: 2px solid #d97706; outline-offset: 2px; }
+        .web-help-popover {
+            display: none; position: absolute; z-index: 9999;
+            top: calc(100% + 8px); right: 0;
+            width: min(340px, 90vw);
+            background: #fff; border: 1px solid #e5e7eb;
+            border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,.18);
+            padding: 18px 20px 16px; font-size: 13.5px;
+            color: #374151; line-height: 1.55;
+        }
+        .web-help-popover.open { display: block; }
+        .web-help-popover-header {
+            display: flex; align-items: center; justify-content: space-between;
+            margin-bottom: 10px;
+        }
+        .web-help-popover-title { font-weight: 800; font-size: 14px; color: #1B3B6F; }
+        .web-help-close {
+            border: none; background: transparent; cursor: pointer;
+            font-size: 18px; color: #9ca3af; line-height: 1; padding: 2px 6px;
+            border-radius: 4px; transition: color .15s, background .15s;
+        }
+        .web-help-close:hover { color: #ef4444; background: #fef2f2; }
+        .web-help-popover p { margin: 0 0 12px; }
+        .alfo-link {
+            font-weight: 900; color: #1d4ed8;
+            background: #dbeafe; padding: 1px 5px; border-radius: 4px;
+            text-decoration: none;
+        }
+        .alfo-link:hover { background: #bfdbfe; text-decoration: underline; }
+        .web-help-cta {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 9px 16px; border-radius: 8px;
+            background: #1B3B6F; color: #fff !important;
+            text-decoration: none; font-weight: 700; font-size: 13px;
+            transition: background .15s; margin-top: 2px;
+        }
+        .web-help-cta:hover { background: #0d2247; }
     </style>
 </head>
 <body>
@@ -741,10 +791,36 @@ $descriptionPlaceholders = [
                     </div>
 
                     <div class="field full">
-                        <label for="website">Sitio web</label>
-                        <input type="url" id="website" name="website" maxlength="300"
-                               placeholder="https://www.minegocio.com"
-                               value="<?php echo bv($business, 'website'); ?>">
+                        <label for="website">Sitio web 💡</label>
+                        <div class="web-help-wrap">
+                            <input type="url" id="website" name="website" maxlength="300"
+                                   placeholder="https://www.minegocio.com"
+                                   value="<?php echo bv($business, 'website'); ?>">
+                            <button type="button" class="web-help-btn"
+                                    onclick="toggleWebHelp('wh-negocio')"
+                                    title="¿Sin página web? Ver opciones gratuitas"
+                                    aria-label="Ayuda para el campo sitio web"
+                                    aria-expanded="false" aria-controls="wh-negocio">💡</button>
+                            <div id="wh-negocio" class="web-help-popover" role="tooltip">
+                                <div class="web-help-popover-header">
+                                    <span class="web-help-popover-title">💡 ¿Sin página web?</span>
+                                    <button type="button" class="web-help-close"
+                                            onclick="toggleWebHelp('wh-negocio')"
+                                            aria-label="Cerrar ayuda">✕</button>
+                                </div>
+                                <p>
+                                    Si no dispone de página web, utilice el servicio
+                                    <a class="alfo-link" href="https://www.alfoweb.com.ar"
+                                       target="_blank" rel="noopener noreferrer">ALFO</a>
+                                    donde podrá obtener su sitio de forma <strong>libre y gratuita</strong>
+                                    para empezar a trabajar de forma virtual.
+                                </p>
+                                <a class="web-help-cta"
+                                   href="mailto:estudio@fariasortiz.com.ar?subject=Consulta%20Mapita%20-%20Sitio%20web">
+                                    ✉️ Consultar por email
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -2063,6 +2139,27 @@ async function guardarProveedor() {
     }
 }
 <?php endif; ?>
+
+// ── Web Help Popover ─────────────────────────────────────────────────────
+function toggleWebHelp(id) {
+    const pop = document.getElementById(id);
+    if (!pop) return;
+    const isOpen = pop.classList.toggle('open');
+    const btn = pop.previousElementSibling;
+    if (btn) btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+    if (isOpen) {
+        // Close on outside click
+        setTimeout(() => {
+            document.addEventListener('click', function _close(e) {
+                if (!pop.contains(e.target) && e.target !== btn) {
+                    pop.classList.remove('open');
+                    if (btn) btn.setAttribute('aria-expanded', 'false');
+                }
+                document.removeEventListener('click', _close);
+            });
+        }, 50);
+    }
+}
 </script>
 </body>
 </html>

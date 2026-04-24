@@ -470,9 +470,51 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             border: none; background: white;
             box-shadow: 0 1px 3px rgba(0,0,0,0.07);
             cursor: pointer; transition: box-shadow 0.15s;
+            line-height: 1.45;
+            word-break: break-word;
+            overflow-wrap: break-word;
         }
         #lista .negocio:hover, #lista .marca:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.14); }
         #lista .marca { background: #f8f0ff; }
+
+        /* ── Responsive: sidebar item spacing on mobile ──────────── */
+        @media (max-width: 768px) {
+            #lista .negocio, #lista .marca {
+                padding: 9px 10px;
+                line-height: 1.5;
+            }
+            #lista .negocio strong, #lista .marca strong {
+                display: block;
+                font-size: 13px;
+                line-height: 1.3;
+                margin-bottom: 2px;
+                white-space: normal;
+            }
+            #lista .negocio span, #lista .marca span {
+                display: block;
+                font-size: 11.5px;
+                line-height: 1.35;
+                margin-top: 2px;
+            }
+            #lista .negocio small, #lista .marca small {
+                display: block;
+                font-size: 11px;
+                line-height: 1.3;
+                margin-top: 2px;
+            }
+            /* Sidebar auth buttons: prevent emoji+text wrap */
+            .sidebar-card button {
+                line-height: 1.35;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+            /* Accordion labels: better wrapping */
+            .accordion-content label {
+                line-height: 1.4;
+                padding: 5px 4px;
+            }
+        }
 
         /* ── Generic inputs/buttons reset (solo sidebar) ─────────── */
         #sidebar select, #sidebar input[type="text"], #sidebar input[type="range"] {

@@ -20,6 +20,7 @@ siteHeader('Avanzado — Desarrollo Estratégico', 'avanzado');
         <a class="btn btn-secondary" href="/inversion">📈 Inversión</a>
         <a class="btn btn-secondary" href="/compliance">🛡️ Compliance</a>
         <a class="btn btn-secondary" href="/marca-expansion">🚀 Marca y Expansión</a>
+        <a class="btn btn-secondary" href="/tasacion">💎 Tasación</a>
     </div>
 </div>
 
@@ -61,6 +62,14 @@ siteHeader('Avanzado — Desarrollo Estratégico', 'avanzado');
         <p class="muted">Escalabilidad, diversificación, expansión a nuevos mercados y valor de marca.</p>
         <div class="cta-row">
             <a class="btn btn-secondary" href="/marca-expansion">Ver más</a>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>💎 Tasación de Marcas</h2>
+        <p class="muted">Valuación de activos intangibles, incremento de capital social, franquicias y negocios asociativos.</p>
+        <div class="cta-row">
+            <a class="btn btn-secondary" href="/tasacion">Ver más</a>
         </div>
     </div>
 </div>
