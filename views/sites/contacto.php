@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $logDir  = __DIR__ . '/../../storage';
         $logFile = $logDir . '/contacto_requests.log';
         if (!is_dir($logDir)) {
-            @mkdir($logDir, 0770, true);
+            @mkdir($logDir, 0750, true);
         }
         $entry = json_encode([
             'ts'       => date('Y-m-d H:i:s'),
@@ -68,11 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             'telefono' => $formData['telefono'],
             'tema'     => $formData['tema'],
             'mensaje'  => $formData['mensaje'],
-            'ip'       => hash('sha256', $_SERVER['REMOTE_ADDR'] ?? ''),
         ]) . "\n";
-        @file_put_contents($logFile, $entry, FILE_APPEND | LOCK_EX);
+        $written = file_put_contents($logFile, $entry, FILE_APPEND | LOCK_EX);
 
-        $formSuccess = true;
+        if ($written === false) {
+            $formErrors['general'] = 'No se pudo procesar tu consulta en este momento. Por favor intentá de nuevo más tarde.';
+        } else {
+            $formSuccess = true;
+        }
         $formData    = []; // clear after success
     }
 }
@@ -190,6 +193,10 @@ $temaLabels = [
         .form-control:focus { border-color: #1B3B6F; background: white; }
         .form-control.is-error { border-color: #ef4444; background: #fff5f5; }
         .form-error-msg { color: #dc2626; font-size: .82em; margin-top: 5px; display: flex; align-items: center; gap: 4px; }
+        .form-error-general {
+            background: #fff5f5; border: 1.5px solid #ef4444; border-radius: 9px;
+            padding: 12px 16px; margin-bottom: 20px; color: #dc2626; font-size: .92em;
+        }
         textarea.form-control { resize: vertical; min-height: 130px; }
 
         .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -312,6 +319,10 @@ $temaLabels = [
     <div class="contact-card">
         <h2>📋 Envianos tu consulta</h2>
         <p class="subtitle">Completá el formulario y te respondemos con un análisis personalizado.</p>
+
+        <?php if (isset($formErrors['general'])): ?>
+        <div class="form-error-general">⚠️ <?= htmlspecialchars($formErrors['general']) ?></div>
+        <?php endif; ?>
 
         <form method="POST" action="/contacto" novalidate>
             <?= csrfField() ?>
