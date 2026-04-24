@@ -219,7 +219,7 @@ Generar un bloque **válido** JSON con:
 - `preguntas_pendientes`: array
 - `ctas`: array con `{label, url_placeholder, objetivo}`
 
-> Importante: usar `https://TU_WEB_AQUI/...` como placeholder.
+> Importante: usar las rutas internas reales: `/juridico`, `/fiscal`, `/inversion`, `/marca-expansion`, `/compliance`, `/contacto`.
 
 ---
 
@@ -244,13 +244,13 @@ Cada acción debe devolver:
 ## 8) VINCULACIÓN COMERCIAL (embudo hacia tu web)
 Generar CTAs diferenciados según la sección:
 
-- **Estructuración legal avanzada** → `https://TU_WEB_AQUI/juridico`
-- **Planificación fiscal / contable** → `https://TU_WEB_AQUI/fiscal`
-- **Inversión y financiamiento** → `https://TU_WEB_AQUI/inversion`
-- **Marca (licencias/franquicias)** → `https://TU_WEB_AQUI/marcas`
-- **Compliance y riesgos** → `https://TU_WEB_AQUI/compliance`
-- **Contacto / consulta** → `https://TU_WEB_AQUI/contacto`  
-  (y opcional: `https://TU_WEB_AQUI/consulta?origen=mapita&activo=...`)
+- **Estructuración legal avanzada** → `/juridico`
+- **Planificación fiscal / contable** → `/fiscal`
+- **Inversión y financiamiento** → `/inversion`
+- **Marca (licencias/franquicias)** → `/marca-expansion`
+- **Compliance y riesgos** → `/compliance`
+- **Contacto / consulta** → `/contacto`  
+  (y opcional: `/contacto?tema=compliance&origen=mapita`)
 
 ---
 

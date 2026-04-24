@@ -55,6 +55,14 @@ $routes = [
     '/industrias'        => __DIR__ . '/views/industry/dashboard_industries.php',
     '/industry_new'      => __DIR__ . '/views/industry/form.php',
     '/industry_edit'     => __DIR__ . '/views/industry/form.php',
+    // ── Módulo Avanzado ───────────────────────────────────────────────────────
+    '/avanzado'          => __DIR__ . '/views/sites/avanzado.php',
+    '/juridico'          => __DIR__ . '/views/sites/juridico.php',
+    '/fiscal'            => __DIR__ . '/views/sites/fiscal.php',
+    '/inversion'         => __DIR__ . '/views/sites/inversion.php',
+    '/compliance'        => __DIR__ . '/views/sites/compliance.php',
+    '/marca-expansion'   => __DIR__ . '/views/sites/marca_expansion.php',
+    '/contacto'          => __DIR__ . '/views/sites/contacto.php',
 ];
 
 // Route the request
