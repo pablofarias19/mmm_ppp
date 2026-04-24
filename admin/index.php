@@ -634,7 +634,7 @@ function rteCmd(cmd, val) {
 }
 
 function plainTextLen(el) {
-    return (el.innerText || el.textContent || '').replace(/\n$/,'').length;
+    return (el.innerText || el.textContent || '').trim().length;
 }
 
 function syncRteToHidden(name) {
@@ -741,7 +741,7 @@ function renderList(type, items) {
             ? `<span class="geo-badge">📍 ${parseFloat(item.lat).toFixed(4)}, ${parseFloat(item.lng).toFixed(4)}</span>`
             : `<span class="no-geo-badge">Sin ubicación</span>`;
         const ytLabel = hasYT ? `<span class="yt-badge">▶ YouTube</span>` : '';
-        const linkLabel = item.link ? `<a href="${escapeHtml(item.link)}" target="_blank" rel="noopener" class="geo-badge" style="background:#3b82f6;color:white;text-decoration:none;">🔗 Ver noticia</a>` : '';
+        const linkLabel = item.link ? `<a href="${escapeHtml(item.link)}" target="_blank" rel="noopener noreferrer" class="geo-badge" style="background:#3b82f6;color:white;text-decoration:none;">🔗 Ver noticia</a>` : '';
         const appLabel  = item.app_path ? `<span class="geo-badge" style="background:#7c3aed">🎮 App: ${escapeHtml(item.app_path)}</span>` : '';
         const tagsLabel = item.tags ? `<span style="color:#6b7280;font-size:11px;">🏷 ${escapeHtml(item.tags)}</span>` : '';
 

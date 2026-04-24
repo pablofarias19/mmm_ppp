@@ -147,7 +147,7 @@ if ($method === 'POST') {
             // Sanitize app_path: only basename, no directory traversal
             if ($app_path !== null && $app_path !== '') {
                 $app_path = basename(str_replace(['..', '/'], '', $app_path));
-                if (!preg_match('/^[a-zA-Z0-9_\-\.]+\.php$/', $app_path)) {
+                if (!preg_match('/^[a-zA-Z0-9_][a-zA-Z0-9_\-\.]*\.php$/', $app_path)) {
                     $app_path = null;
                 }
             } else {
@@ -217,7 +217,7 @@ if ($method === 'POST') {
             if (array_key_exists('emojis', $input))     { $updates[] = "emojis = ?";     $values[] = $input['emojis'] ?: null; }
             if (array_key_exists('app_path', $input)) {
                 $ap = basename(str_replace(['..', '/'], '', $input['app_path'] ?? ''));
-                if (!preg_match('/^[a-zA-Z0-9_\-\.]+\.php$/', $ap)) $ap = null;
+                if (!preg_match('/^[a-zA-Z0-9_][a-zA-Z0-9_\-\.]*\.php$/', $ap)) $ap = null;
                 $updates[] = "app_path = ?"; $values[] = $ap ?: null;
             }
 
