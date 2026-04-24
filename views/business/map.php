@@ -896,7 +896,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                              text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #f1f5f9;">
                     Idioma de interfaz
                 </div>
-                <?php foreach (['es'=>'Español','en'=>'English','pt'=>'Português','fr'=>'Français','de'=>'Deutsch','no'=>'Norsk','zh'=>'中文','ar'=>'العربية'] as $lc => $lname): ?>
+                <?php foreach (['es'=>'Español','en'=>'English','pt'=>'Português','fr'=>'Français','de'=>'Deutsch','no'=>'Norsk','zh'=>'中文','ar'=>'العربية','it'=>'Italiano','ru'=>'Русский','el'=>'Ελληνικά','tr'=>'Türkçe','ja'=>'日本語','ko'=>'한국어'] as $lc => $lname): ?>
                 <button type="button" id="lang-btn-option" data-lang="<?= $lc ?>"
                         onclick="setMapUILang('<?= $lc ?>')"
                         style="display:block;width:100%;text-align:left;background:none;border:none;
@@ -1558,6 +1558,60 @@ const UI_STRINGS = {
         lbl_country: 'الدولة', lbl_language: 'اللغة', lbl_currency: 'العملة',
         lbl_registry: 'تسجيل', btn_website: 'زيارة الموقع', btn_directions: 'الاتجاهات',
         filter_all_countries: 'جميع الدول', filter_all_languages: 'جميع اللغات',
+    },
+    it: {
+        lbl_hours: 'Orario', lbl_phone: 'Telefono', lbl_address: 'Indirizzo',
+        lbl_type: 'Tipo', lbl_specialty: 'Specialità', lbl_products: 'Prodotti/Servizi',
+        lbl_email: 'Email', lbl_website: 'Sito web', lbl_open_now: 'Aperto ora',
+        lbl_closed: 'Chiuso', lbl_niza_class: 'Classe Nizza', lbl_protection: 'Protezione',
+        lbl_country: 'Paese', lbl_language: 'Lingua', lbl_currency: 'Valuta',
+        lbl_registry: 'Registro', btn_website: 'Visita il sito', btn_directions: 'Come arrivare',
+        filter_all_countries: 'Tutti i paesi', filter_all_languages: 'Tutte le lingue',
+    },
+    ru: {
+        lbl_hours: 'Часы работы', lbl_phone: 'Телефон', lbl_address: 'Адрес',
+        lbl_type: 'Тип', lbl_specialty: 'Специализация', lbl_products: 'Продукты/Услуги',
+        lbl_email: 'Email', lbl_website: 'Веб-сайт', lbl_open_now: 'Открыто сейчас',
+        lbl_closed: 'Закрыто', lbl_niza_class: 'Класс МКТУ', lbl_protection: 'Защита',
+        lbl_country: 'Страна', lbl_language: 'Язык', lbl_currency: 'Валюта',
+        lbl_registry: 'Реестр', btn_website: 'Посетить сайт', btn_directions: 'Как добраться',
+        filter_all_countries: 'Все страны', filter_all_languages: 'Все языки',
+    },
+    el: {
+        lbl_hours: 'Ώρες', lbl_phone: 'Τηλέφωνο', lbl_address: 'Διεύθυνση',
+        lbl_type: 'Τύπος', lbl_specialty: 'Ειδικότητα', lbl_products: 'Προϊόντα/Υπηρεσίες',
+        lbl_email: 'Email', lbl_website: 'Ιστοσελίδα', lbl_open_now: 'Ανοιχτό τώρα',
+        lbl_closed: 'Κλειστό', lbl_niza_class: 'Κλάση Νίτσα', lbl_protection: 'Προστασία',
+        lbl_country: 'Χώρα', lbl_language: 'Γλώσσα', lbl_currency: 'Νόμισμα',
+        lbl_registry: 'Μητρώο', btn_website: 'Επίσκεψη', btn_directions: 'Οδηγίες',
+        filter_all_countries: 'Όλες οι χώρες', filter_all_languages: 'Όλες οι γλώσσες',
+    },
+    tr: {
+        lbl_hours: 'Çalışma saatleri', lbl_phone: 'Telefon', lbl_address: 'Adres',
+        lbl_type: 'Tür', lbl_specialty: 'Uzmanlık', lbl_products: 'Ürünler/Hizmetler',
+        lbl_email: 'E-posta', lbl_website: 'Web sitesi', lbl_open_now: 'Şimdi açık',
+        lbl_closed: 'Kapalı', lbl_niza_class: 'Nice sınıfı', lbl_protection: 'Koruma',
+        lbl_country: 'Ülke', lbl_language: 'Dil', lbl_currency: 'Para birimi',
+        lbl_registry: 'Sicil', btn_website: 'Web sitesini ziyaret et', btn_directions: 'Yol tarifi',
+        filter_all_countries: 'Tüm ülkeler', filter_all_languages: 'Tüm diller',
+    },
+    ja: {
+        lbl_hours: '営業時間', lbl_phone: '電話', lbl_address: '住所',
+        lbl_type: '種類', lbl_specialty: '専門', lbl_products: '製品/サービス',
+        lbl_email: 'メール', lbl_website: 'ウェブサイト', lbl_open_now: '営業中',
+        lbl_closed: '閉店', lbl_niza_class: 'ニース分類', lbl_protection: '保護',
+        lbl_country: '国', lbl_language: '言語', lbl_currency: '通貨',
+        lbl_registry: '登録', btn_website: 'ウェブサイトを見る', btn_directions: '道順',
+        filter_all_countries: 'すべての国', filter_all_languages: 'すべての言語',
+    },
+    ko: {
+        lbl_hours: '영업시간', lbl_phone: '전화', lbl_address: '주소',
+        lbl_type: '유형', lbl_specialty: '전문 분야', lbl_products: '제품/서비스',
+        lbl_email: '이메일', lbl_website: '웹사이트', lbl_open_now: '지금 영업 중',
+        lbl_closed: '영업 종료', lbl_niza_class: '니스 분류', lbl_protection: '보호',
+        lbl_country: '국가', lbl_language: '언어', lbl_currency: '통화',
+        lbl_registry: '등록', btn_website: '웹사이트 방문', btn_directions: '길 찾기',
+        filter_all_countries: '모든 국가', filter_all_languages: '모든 언어',
     },
 };
 
