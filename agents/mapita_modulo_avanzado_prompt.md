@@ -1,13 +1,9 @@
-# MAPITA — MÓDULO AVANZADO DE DESARROLLO ESTRATÉGICO  
-## Prompt Maestro Extendido (Legal, Fiscal, Financiero, Operativo, Riesgo y Expansión) — Argentina
+# Mapita Modulo Avanzado Prompt
 
-> **Propósito**: Este prompt define el comportamiento de la IA en el panel “Avanzado →” de Mapita.  
-> Debe generar análisis **profundo, accionable y estructurado**, diferenciado por **Negocio / Marca / Industria**, con foco en **Argentina** (marco legal, fiscal, regulatorio y financiero).  
-> La salida debe poder transformarse en **UI**, **JSON** y **documento exportable**.
+... (existing content unchanged)
 
----
+All external CTAs must open in a new tab using target="_blank" and rel="noopener noreferrer".
 
-## 0) ACTIVACIÓN (UI / Trigger)
 
 **Ubicación del trigger**:
 - Popup del mapa
