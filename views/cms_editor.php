@@ -8,7 +8,7 @@ require_once __DIR__ . '/../core/helpers.php';
 
 if (!isAdmin()) {
     http_response_code(403);
-    echo '<!DOCTYPE html><html><body><p>Acceso denegado.</p></body></html>';
+    echo '<!DOCTYPE html><html><body><p>Access denied / Acceso denegado.</p></body></html>';
     exit;
 }
 
@@ -16,7 +16,7 @@ $db = null;
 try {
     $db = \Core\Database::getInstance()->getConnection();
 } catch (\Throwable $e) {
-    die('Base de datos no disponible.');
+    die('Database unavailable / Base de datos no disponible.');
 }
 
 $csrfToken = generateCsrfToken();
@@ -77,7 +77,7 @@ if ($selectedPageId > 0) {
 $domains = ['legal', 'tax', 'strategy', 'web', 'branding'];
 
 ?><!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars(getUILanguage(), ENT_QUOTES, 'UTF-8') ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
