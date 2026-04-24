@@ -9,9 +9,9 @@
 --    Asegurar columnas necesarias para el flujo con opciones
 -- ─────────────────────────────────────────────────────────────
 
--- Asegurar que existe la columna 'texto_pregunta'
+-- Asegurar que existe la columna 'texto_pregunta' (ADD IF NOT EXISTS; ya existe en instalaciones previas)
 ALTER TABLE preguntas_encuesta
-    MODIFY COLUMN texto_pregunta TEXT NULL;
+    ADD COLUMN IF NOT EXISTS texto_pregunta TEXT NULL;
 
 -- Asegurar que existe la columna 'tipo'
 ALTER TABLE preguntas_encuesta

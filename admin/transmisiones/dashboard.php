@@ -26,7 +26,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($action === 'create') {
         $titulo = trim($_POST['titulo'] ?? '');
-        if ($titulo) {
+        if (!$titulo) {
+            $message = 'El título es requerido.'; $messageType = 'error';
+        } else {
             // Construir datetimes a partir de los campos del formulario
             $fecha_inicio_raw = trim($_POST['fecha_inicio'] ?? '');
             $hora_inicio_raw  = trim($_POST['hora_inicio']  ?? '00:00');
@@ -37,28 +39,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $datetime_fin    = $fecha_fin_raw    ? ($fecha_fin_raw    . ' ' . $hora_fin_raw    . ':00') : null;
 
             // Validar que inicio < fin si ambos están presentes
-            if ($datetime_inicio && $datetime_fin && strtotime($datetime_inicio) >= strtotime($datetime_fin)) {
-                $message = 'La fecha/hora de inicio debe ser anterior a la de fin.'; $messageType = 'error';
-            } else {
-                if (Transmision::create([
-                    'titulo'       => $titulo,
-                    'descripcion'  => $_POST['descripcion'] ?? null,
-                    'tipo'         => $_POST['tipo']        ?? 'youtube_live',
-                    'stream_url'   => trim($_POST['stream_url'] ?? ''),
-                    'lat'          => $_POST['lat'] ?? '',
-                    'lng'          => $_POST['lng'] ?? '',
-                    'en_vivo'      => isset($_POST['en_vivo'])  ? 1 : 0,
-                    'activo'       => isset($_POST['activo'])   ? 1 : 0,
-                    'fecha_inicio' => $datetime_inicio,
-                    'fecha_fin'    => $datetime_fin,
-                ])) {
-                    $message = 'Transmisión creada correctamente.'; $messageType = 'success';
-                } else {
-                    $message = 'Error al crear la transmisión.'; $messageType = 'error';
+            $fecha_error = null;
+            if ($datetime_inicio && $datetime_fin) {
+                $ts_inicio = strtotime($datetime_inicio);
+                $ts_fin    = strtotime($datetime_fin);
+                if ($ts_inicio === false || $ts_fin === false) {
+                    $fecha_error = 'Formato de fecha/hora inválido.';
+                } elseif ($ts_inicio >= $ts_fin) {
+                    $fecha_error = 'La fecha/hora de inicio debe ser anterior a la de fin.';
                 }
             }
-        } else {
-            $message = 'El título es requerido.'; $messageType = 'error';
+
+            if ($fecha_error) {
+                $message = $fecha_error; $messageType = 'error';
+            } elseif (Transmision::create([
+                'titulo'       => $titulo,
+                'descripcion'  => $_POST['descripcion'] ?? null,
+                'tipo'         => $_POST['tipo']        ?? 'youtube_live',
+                'stream_url'   => trim($_POST['stream_url'] ?? ''),
+                'lat'          => $_POST['lat'] ?? '',
+                'lng'          => $_POST['lng'] ?? '',
+                'en_vivo'      => isset($_POST['en_vivo'])  ? 1 : 0,
+                'activo'       => isset($_POST['activo'])   ? 1 : 0,
+                'fecha_inicio' => $datetime_inicio,
+                'fecha_fin'    => $datetime_fin,
+            ])) {
+                $message = 'Transmisión creada correctamente.'; $messageType = 'success';
+            } else {
+                $message = 'Error al crear la transmisión.'; $messageType = 'error';
+            }
         }
     }
 
@@ -431,7 +440,7 @@ document.getElementById('form-create-trans').addEventListener('submit', function
         var fin    = new Date(ff + 'T' + (hf || '23:59'));
         if (inicio >= fin) {
             e.preventDefault();
-            alert('La fecha/hora de inicio debe ser anterior a la de fin.');
+            alert('La fecha/hora de inicio debe ser estrictamente anterior a la de fin.');
             return;
         }
     }
