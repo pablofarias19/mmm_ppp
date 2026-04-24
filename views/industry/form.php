@@ -128,11 +128,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $contact_email     = trim($_POST['contact_email']     ?? '');
         $contact_phone     = trim($_POST['contact_phone']     ?? '');
         $country           = trim($_POST['country']           ?? '');
+        $country_code      = strtoupper(trim($_POST['country_code'] ?? ''));
+        $language_code     = strtolower(trim($_POST['language_code'] ?? ''));
+        $currency_code     = strtoupper(trim($_POST['currency_code'] ?? ''));
         $region            = trim($_POST['region']            ?? '');
         $city              = trim($_POST['city']              ?? '');
         $certifications    = trim($_POST['certifications']    ?? '');
         $naics_code        = trim($_POST['naics_code']        ?? '');
         $isic_code         = trim($_POST['isic_code']         ?? '');
+        $nace_code         = trim($_POST['nace_code']         ?? '');
+        $ciiu_code         = trim($_POST['ciiu_code']         ?? '');
         $employees_range   = $_POST['employees_range']        ?? '';
         $annual_revenue    = $_POST['annual_revenue']         ?? '';
         $status            = $_POST['status']                 ?? 'borrador';
@@ -164,6 +169,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'contact_email'        => $contact_email ?: null,
                     'contact_phone'        => $contact_phone ?: null,
                     'country'              => $country ?: null,
+                    'country_code'         => (preg_match('/^[A-Z]{2}$/', $country_code)) ? $country_code : null,
+                    'language_code'        => $language_code ?: null,
+                    'currency_code'        => (preg_match('/^[A-Z]{3}$/', $currency_code)) ? $currency_code : null,
                     'region'               => $region ?: null,
                     'city'                 => $city ?: null,
                     'employees_range'      => $employees_range ?: null,
@@ -171,6 +179,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'certifications'       => $certifications ?: null,
                     'naics_code'           => $naics_code ?: null,
                     'isic_code'            => $isic_code ?: null,
+                    'nace_code'            => $nace_code ?: null,
+                    'ciiu_code'            => $ciiu_code ?: null,
                     'status'               => $status,
                 ];
 
@@ -531,7 +541,26 @@ function fieldVal(string $key, ?array $row, $default = ''): string {
                 <div class="section-title">📍 Ubicación</div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="country">País</label>
+                        <label for="country_code">País <small style="font-weight:400;color:#9ca3af;">(normalizado)</small></label>
+                        <select id="country_code" name="country_code">
+                            <option value="">— Sin especificar —</option>
+                            <?php
+                            $curCC = fieldVal('country_code', $industry);
+                            foreach (getCountryOptions() as $regionLabel => $countries):
+                            ?>
+                            <optgroup label="<?php echo htmlspecialchars($regionLabel); ?>">
+                                <?php foreach ($countries as $cc => $cname): ?>
+                                <option value="<?php echo htmlspecialchars($cc); ?>"
+                                    <?php echo ($curCC === $cc) ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($cname); ?>
+                                </option>
+                                <?php endforeach; ?>
+                            </optgroup>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="country">País (texto libre) <small style="font-weight:400;color:#9ca3af;">(legado)</small></label>
                         <input type="text" id="country" name="country" maxlength="100"
                                value="<?php echo fieldVal('country', $industry); ?>"
                                placeholder="Ej: Argentina">
@@ -639,6 +668,39 @@ function fieldVal(string $key, ?array $row, $default = ''): string {
                         <input type="text" id="isic_code" name="isic_code" maxlength="20"
                                value="<?php echo fieldVal('isic_code', $industry); ?>"
                                placeholder="Ej: C1011">
+                    </div>
+                    <div class="form-group">
+                        <label for="nace_code">Código NACE Rev.2 <small style="font-weight:400;color:#9ca3af;">(Europa)</small></label>
+                        <input type="text" id="nace_code" name="nace_code" maxlength="20"
+                               value="<?php echo fieldVal('nace_code', $industry); ?>"
+                               placeholder="Ej: C10.11">
+                    </div>
+                    <div class="form-group">
+                        <label for="ciiu_code">Código CIIU <small style="font-weight:400;color:#9ca3af;">(OIT/LATAM)</small></label>
+                        <input type="text" id="ciiu_code" name="ciiu_code" maxlength="20"
+                               value="<?php echo fieldVal('ciiu_code', $industry); ?>"
+                               placeholder="Ej: 1011">
+                    </div>
+                    <div class="form-group">
+                        <label for="language_code">Idioma principal</label>
+                        <select id="language_code" name="language_code">
+                            <option value="">— Sin especificar —</option>
+                            <?php
+                            $curLang = fieldVal('language_code', $industry);
+                            foreach (getLanguageOptions() as $lc => $lname):
+                            ?>
+                            <option value="<?php echo htmlspecialchars($lc); ?>"
+                                <?php echo ($curLang === $lc) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($lname); ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="currency_code">Moneda (ISO 4217)</label>
+                        <input type="text" id="currency_code" name="currency_code" maxlength="3"
+                               value="<?php echo fieldVal('currency_code', $industry); ?>"
+                               placeholder="Ej: ARS, USD, EUR">
                     </div>
                     <div class="form-group span2">
                         <label for="certifications">Certificaciones <small style="font-weight:400;color:#9ca3af;">(separadas por coma)</small></label>

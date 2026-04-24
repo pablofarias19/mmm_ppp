@@ -104,6 +104,252 @@ function formatHorarioLocal(string $apertura, string $cierre, string $tz = 'Amer
     return $abbr ? "{$label} ({$abbr})" : $label;
 }
 
+// ─── i18n / l10n helpers ─────────────────────────────────────────────────────
+
+/**
+ * Lista de países agrupados por región para el selector de formulario.
+ * Cada entrada: 'CC' => 'Nombre del país'
+ */
+function getCountryOptions(): array {
+    return [
+        'América del Sur' => [
+            'AR' => 'Argentina',
+            'BO' => 'Bolivia',
+            'BR' => 'Brasil',
+            'CL' => 'Chile',
+            'CO' => 'Colombia',
+            'EC' => 'Ecuador',
+            'GY' => 'Guyana',
+            'PY' => 'Paraguay',
+            'PE' => 'Perú',
+            'SR' => 'Surinam',
+            'UY' => 'Uruguay',
+            'VE' => 'Venezuela',
+        ],
+        'América Central y Caribe' => [
+            'CU' => 'Cuba',
+            'DO' => 'República Dominicana',
+            'GT' => 'Guatemala',
+            'HN' => 'Honduras',
+            'MX' => 'México',
+            'NI' => 'Nicaragua',
+            'PA' => 'Panamá',
+            'SV' => 'El Salvador',
+            'CR' => 'Costa Rica',
+        ],
+        'América del Norte' => [
+            'CA' => 'Canadá',
+            'US' => 'Estados Unidos',
+        ],
+        'Europa' => [
+            'AT' => 'Austria',
+            'BE' => 'Bélgica',
+            'CH' => 'Suiza',
+            'DE' => 'Alemania',
+            'ES' => 'España',
+            'FR' => 'Francia',
+            'GB' => 'Reino Unido',
+            'IT' => 'Italia',
+            'NL' => 'Países Bajos',
+            'NO' => 'Noruega',
+            'PL' => 'Polonia',
+            'PT' => 'Portugal',
+            'RU' => 'Rusia',
+            'SE' => 'Suecia',
+        ],
+        'Asia' => [
+            'AE' => 'Emiratos Árabes Unidos',
+            'CN' => 'China',
+            'HK' => 'Hong Kong',
+            'IL' => 'Israel',
+            'IN' => 'India',
+            'JP' => 'Japón',
+            'KR' => 'Corea del Sur',
+            'SA' => 'Arabia Saudita',
+            'SG' => 'Singapur',
+            'TH' => 'Tailandia',
+            'TR' => 'Turquía',
+        ],
+        'África' => [
+            'EG' => 'Egipto',
+            'MA' => 'Marruecos',
+            'NG' => 'Nigeria',
+            'ZA' => 'Sudáfrica',
+        ],
+        'Oceanía' => [
+            'AU' => 'Australia',
+            'NZ' => 'Nueva Zelanda',
+        ],
+    ];
+}
+
+/**
+ * Lista de idiomas soportados (BCP 47) para el selector de formulario.
+ */
+function getLanguageOptions(): array {
+    return [
+        'es'    => 'Español',
+        'es-AR' => 'Español (Argentina)',
+        'es-MX' => 'Español (México)',
+        'es-ES' => 'Español (España)',
+        'es-CL' => 'Español (Chile)',
+        'es-CO' => 'Español (Colombia)',
+        'es-PE' => 'Español (Perú)',
+        'en'    => 'English',
+        'en-US' => 'English (US)',
+        'en-GB' => 'English (UK)',
+        'en-AU' => 'English (Australia)',
+        'pt'    => 'Português',
+        'pt-BR' => 'Português (Brasil)',
+        'pt-PT' => 'Português (Portugal)',
+        'fr'    => 'Français',
+        'fr-FR' => 'Français (France)',
+        'de'    => 'Deutsch',
+        'de-DE' => 'Deutsch (Deutschland)',
+        'no'    => 'Norsk',
+        'no-NO' => 'Norsk (Bokmål)',
+        'zh'    => '中文',
+        'zh-CN' => '中文（简体）',
+        'zh-TW' => '中文（繁體）',
+        'ar'    => 'العربية',
+        'ar-SA' => 'العربية (المملكة العربية السعودية)',
+        'ja'    => '日本語',
+        'ja-JP' => '日本語（日本）',
+        'ko'    => '한국어',
+        'it'    => 'Italiano',
+        'ru'    => 'Русский',
+        'nl'    => 'Nederlands',
+    ];
+}
+
+/**
+ * Devuelve el código ISO 4217 de moneda para un country_code dado.
+ */
+function getCurrencyByCountry(string $cc): string {
+    $map = [
+        'AR' => 'ARS', 'BO' => 'BOB', 'BR' => 'BRL', 'CL' => 'CLP',
+        'CO' => 'COP', 'EC' => 'USD', 'PY' => 'PYG', 'PE' => 'PEN',
+        'UY' => 'UYU', 'VE' => 'VES', 'MX' => 'MXN', 'GT' => 'GTQ',
+        'CR' => 'CRC', 'PA' => 'PAB', 'DO' => 'DOP', 'CU' => 'CUP',
+        'US' => 'USD', 'CA' => 'CAD',
+        'GB' => 'GBP', 'DE' => 'EUR', 'FR' => 'EUR', 'ES' => 'EUR',
+        'IT' => 'EUR', 'PT' => 'EUR', 'NL' => 'EUR', 'BE' => 'EUR',
+        'AT' => 'EUR', 'CH' => 'CHF', 'SE' => 'SEK', 'NO' => 'NOK',
+        'PL' => 'PLN', 'RU' => 'RUB',
+        'JP' => 'JPY', 'CN' => 'CNY', 'KR' => 'KRW', 'IN' => 'INR',
+        'SG' => 'SGD', 'HK' => 'HKD', 'TH' => 'THB', 'AE' => 'AED',
+        'SA' => 'SAR', 'IL' => 'ILS', 'TR' => 'TRY',
+        'ZA' => 'ZAR', 'EG' => 'EGP', 'NG' => 'NGN', 'MA' => 'MAD',
+        'AU' => 'AUD', 'NZ' => 'NZD',
+    ];
+    return $map[strtoupper($cc)] ?? 'USD';
+}
+
+/**
+ * Devuelve el prefijo telefónico internacional para un country_code dado.
+ */
+function getPhoneCodeByCountry(string $cc): string {
+    $map = [
+        'AR' => '+54',  'BO' => '+591', 'BR' => '+55',  'CL' => '+56',
+        'CO' => '+57',  'EC' => '+593', 'PY' => '+595', 'PE' => '+51',
+        'UY' => '+598', 'VE' => '+58',  'MX' => '+52',  'GT' => '+502',
+        'CR' => '+506', 'PA' => '+507', 'DO' => '+1',   'CU' => '+53',
+        'US' => '+1',   'CA' => '+1',
+        'GB' => '+44',  'DE' => '+49',  'FR' => '+33',  'ES' => '+34',
+        'IT' => '+39',  'PT' => '+351', 'NL' => '+31',  'BE' => '+32',
+        'AT' => '+43',  'CH' => '+41',  'SE' => '+46',  'NO' => '+47',
+        'PL' => '+48',  'RU' => '+7',
+        'JP' => '+81',  'CN' => '+86',  'KR' => '+82',  'IN' => '+91',
+        'SG' => '+65',  'HK' => '+852', 'TH' => '+66',  'AE' => '+971',
+        'SA' => '+966', 'IL' => '+972', 'TR' => '+90',
+        'ZA' => '+27',  'EG' => '+20',  'NG' => '+234', 'MA' => '+212',
+        'AU' => '+61',  'NZ' => '+64',
+    ];
+    return $map[strtoupper($cc)] ?? '';
+}
+
+/**
+ * Devuelve el organismo registrador de marcas para un country_code dado.
+ */
+function getRegistryByCountry(string $cc): string {
+    $map = [
+        'AR' => 'INPI',    'BR' => 'INPI Brasil', 'MX' => 'IMPI',
+        'CL' => 'INAPI',   'CO' => 'SIC',         'PE' => 'INDECOPI',
+        'UY' => 'DNPI',    'PY' => 'DINAPI',
+        'US' => 'USPTO',   'CA' => 'CIPO',
+        'GB' => 'IPO',     'DE' => 'DPMA',        'FR' => 'INPI France',
+        'ES' => 'OEPM',    'IT' => 'UIBM',        'PT' => 'INPI Portugal',
+        'NL' => 'BBIE',    'BE' => 'BOIP',        'AT' => 'PPA',
+        'CH' => 'IGE-IPI', 'SE' => 'PRV',         'NO' => 'Patentstyret',
+        'PL' => 'UPRP',    'RU' => 'Rospatent',
+        'JP' => 'JPO',     'CN' => 'CNIPA',       'KR' => 'KIPO',
+        'IN' => 'Trade Marks Registry',
+        'AU' => 'IP Australia',                    'NZ' => 'IPONZ',
+        'ZA' => 'CIPC',    'EG' => 'ITDA',
+    ];
+    return $map[strtoupper($cc)] ?? '';
+}
+
+// ─── UI translation helpers ───────────────────────────────────────────────────
+
+/** Idiomas soportados y sus archivos de traducción. */
+const MAPITA_SUPPORTED_LANGS = ['es', 'en', 'pt', 'fr', 'de', 'no', 'zh', 'ar'];
+
+/** Caché en memoria para los arrays de strings cargados. */
+$_mapitaLangCache = [];
+
+/**
+ * Guarda el idioma de interfaz elegido por el usuario en la sesión.
+ */
+function setUILanguage(string $langCode): void {
+    $base = strtolower(explode('-', $langCode)[0]);
+    if (in_array($base, MAPITA_SUPPORTED_LANGS, true)) {
+        $_SESSION['ui_lang'] = $base;
+    }
+}
+
+/**
+ * Devuelve el idioma de interfaz activo.
+ * Orden de prioridad: sesión → parámetro GET → 'es'.
+ */
+function getUILanguage(): string {
+    $lang = $_SESSION['ui_lang'] ?? ($_GET['lang'] ?? 'es');
+    $base = strtolower(explode('-', (string)$lang)[0]);
+    return in_array($base, MAPITA_SUPPORTED_LANGS, true) ? $base : 'es';
+}
+
+/**
+ * Traduce una clave al idioma activo de la interfaz.
+ * Si no existe la clave, hace fallback a español.
+ * Admite sustitución de variables: t('lbl_foo', ['name' => 'Bar']) → reemplaza {name}.
+ */
+function t(string $key, array $vars = []): string {
+    global $_mapitaLangCache;
+
+    $lang = getUILanguage();
+
+    if (!isset($_mapitaLangCache[$lang])) {
+        $file = __DIR__ . '/../lang/' . $lang . '.php';
+        $_mapitaLangCache[$lang] = file_exists($file) ? (require $file) : [];
+    }
+
+    // Fallback a español si la clave no existe en el idioma activo
+    $str = $_mapitaLangCache[$lang][$key] ?? null;
+    if ($str === null) {
+        if (!isset($_mapitaLangCache['es'])) {
+            $esFile = __DIR__ . '/../lang/es.php';
+            $_mapitaLangCache['es'] = file_exists($esFile) ? (require $esFile) : [];
+        }
+        $str = $_mapitaLangCache['es'][$key] ?? $key;
+    }
+
+    foreach ($vars as $k => $v) {
+        $str = str_replace('{' . $k . '}', htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8'), $str);
+    }
+
+    return $str;
+}
+
 // ─── Admin helper ────────────────────────────────────────────────────────────
 
 /**

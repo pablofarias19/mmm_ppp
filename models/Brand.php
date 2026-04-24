@@ -89,6 +89,14 @@ class Brand {
                     " . self::columnExpr($db, 'brands', 'b', 'franchise_details') . ",
                     " . self::columnExpr($db, 'brands', 'b', 'whatsapp') . ",
                     " . self::columnExpr($db, 'brands', 'b', 'founded_year') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'country_code') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'language_code') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'currency_code') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'registry_authority') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'registry_number') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'registry_date') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'registry_expiry') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'registry_type') . ",
                     'brands' AS fuente
                 FROM brands b
                 WHERE " . ($hasBrandsVisible ? 'b.visible = 1' : '1=1') . "
@@ -151,6 +159,14 @@ class Brand {
                     NULL AS franchise_details,
                     " . self::columnExpr($db, 'marcas', 'm', 'whatsapp') . ",
                     NULL AS founded_year,
+                    NULL AS country_code,
+                    NULL AS language_code,
+                    NULL AS currency_code,
+                    NULL AS registry_authority,
+                    NULL AS registry_number,
+                    NULL AS registry_date,
+                    NULL AS registry_expiry,
+                    NULL AS registry_type,
                     'marcas' AS fuente
                 FROM marcas m
                 {$joinClasificacionNiza}

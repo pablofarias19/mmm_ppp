@@ -93,6 +93,11 @@ $selectedType    = $business['business_type'] ?? '';
 $currentTags     = array_filter(array_map('trim', explode(',', ($comercioData['categorias_productos'] ?? ''))));
 $currentDias     = array_filter(array_map('trim', explode(',', ($comercioData['dias_cierre']          ?? ''))));
 $currentTimezone = $comercioData['timezone'] ?? 'America/Argentina/Buenos_Aires';
+$currentCountry  = $business['country_code']       ?? '';
+$currentLang     = $business['language_code']      ?? '';
+$currentCurrency = $business['currency_code']      ?? '';
+$currentPhoneCC  = $business['phone_country_code'] ?? '';
+$currentAddrFmt  = $business['address_format']     ?? '';
 $certifVal       = $business['certifications'] ?? '';
 $dispActivo      = !empty($business['disponibles_activo']);
 $jobOfferActivo  = !empty($business['job_offer_active']);
@@ -877,6 +882,55 @@ $descriptionPlaceholders = [
                         <?php endforeach; ?>
                     </select>
                 </div>
+                <div class="divider"></div>
+                <!-- ── LOCALIZACIÓN ────────────────────────────────────────── -->
+                <div class="field">
+                    <label for="country_code">🌍 País del negocio
+                        <span class="hint">— determina la moneda, el prefijo telefónico y el organismo registrador de marcas</span>
+                    </label>
+                    <select id="country_code" name="country_code" class="field-input" onchange="onCountryChange(this.value)">
+                        <option value="">— Sin especificar —</option>
+                        <?php foreach (getCountryOptions() as $regionLabel => $countries): ?>
+                        <optgroup label="<?= htmlspecialchars($regionLabel) ?>">
+                            <?php foreach ($countries as $cc => $cname): ?>
+                            <option value="<?= htmlspecialchars($cc) ?>"<?= $currentCountry === $cc ? ' selected' : '' ?>>
+                                <?= htmlspecialchars($cname) ?>
+                            </option>
+                            <?php endforeach; ?>
+                        </optgroup>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="language_code">🗣️ Idioma principal del negocio</label>
+                    <select id="language_code" name="language_code" class="field-input">
+                        <option value="">— Sin especificar —</option>
+                        <?php foreach (getLanguageOptions() as $lc => $lname): ?>
+                        <option value="<?= htmlspecialchars($lc) ?>"<?= $currentLang === $lc ? ' selected' : '' ?>>
+                            <?= htmlspecialchars($lname) ?>
+                        </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+                <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    <div class="field">
+                        <label for="currency_code">💱 Moneda (ISO 4217)</label>
+                        <input type="text" id="currency_code" name="currency_code" class="field-input"
+                               maxlength="3" placeholder="Ej: ARS, USD, EUR"
+                               value="<?= htmlspecialchars($currentCurrency) ?>">
+                    </div>
+                    <div class="field">
+                        <label for="phone_country_code">📞 Prefijo internacional</label>
+                        <input type="text" id="phone_country_code" name="phone_country_code" class="field-input"
+                               maxlength="6" placeholder="Ej: +54, +1, +49"
+                               value="<?= htmlspecialchars($currentPhoneCC) ?>">
+                    </div>
+                </div>
+                <div class="field" id="addr-hint-wrap" style="display:none;">
+                    <label>📬 Formato de dirección sugerido para este país</label>
+                    <div id="addr-hint" style="font-size:.82em;color:#6b7280;background:#f3f4f6;padding:8px 12px;border-radius:8px;border:1px solid #e5e7eb;"></div>
+                </div>
+                <input type="hidden" id="address_format" name="address_format" value="<?= htmlspecialchars($currentAddrFmt) ?>">
             </div>
         </div>
         <!-- ══ SERVICIOS Y CARACTERÍSTICAS ═════════════════════════════════ -->
@@ -2215,6 +2269,50 @@ function toggleWebHelp(id) {
         }
     }
 }
+
+// ── País → autocomplete de moneda, prefijo y hint de dirección ────────────
+const COUNTRY_PROFILES = <?= json_encode(
+    json_decode(file_get_contents(__DIR__ . '/../config/country_profiles.json'), true) ?? []
+) ?>;
+
+function onCountryChange(cc) {
+    const profile = COUNTRY_PROFILES[cc] || null;
+    const currInput  = document.getElementById('currency_code');
+    const phoneInput = document.getElementById('phone_country_code');
+    const fmtInput   = document.getElementById('address_format');
+    const hintWrap   = document.getElementById('addr-hint-wrap');
+    const hintDiv    = document.getElementById('addr-hint');
+
+    if (!profile) {
+        hintWrap.style.display = 'none';
+        return;
+    }
+
+    // Auto-completar solo si el campo está vacío o tenía un valor anterior de país
+    if (currInput && (!currInput.value || currInput.dataset.autofilled === '1')) {
+        currInput.value = profile.currency_code || '';
+        currInput.dataset.autofilled = '1';
+    }
+    if (phoneInput && (!phoneInput.value || phoneInput.dataset.autofilled === '1')) {
+        phoneInput.value = profile.phone_code || '';
+        phoneInput.dataset.autofilled = '1';
+    }
+    if (fmtInput) fmtInput.value = profile.address_format || '';
+
+    // Mostrar hint de dirección
+    if (profile.address_hint) {
+        hintDiv.textContent = profile.address_hint;
+        hintWrap.style.display = '';
+    } else {
+        hintWrap.style.display = 'none';
+    }
+}
+
+// Disparar al cargar si ya hay un país seleccionado
+(function() {
+    const sel = document.getElementById('country_code');
+    if (sel && sel.value) onCountryChange(sel.value);
+})();
 </script>
 </body>
 </html>

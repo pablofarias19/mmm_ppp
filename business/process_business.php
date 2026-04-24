@@ -184,6 +184,30 @@ function validateBusinessData(array $data): array {
         ? $rawTz
         : 'America/Argentina/Buenos_Aires';
 
+    // Campos i18n / l10n ──────────────────────────────────────────────────────
+    $rawCountry = strtoupper(trim($data['country_code'] ?? ''));
+    $allCountryCodes = array_merge(...array_values(getCountryOptions()));
+    $clean['country_code'] = (strlen($rawCountry) === 2 && isset($allCountryCodes[$rawCountry]))
+        ? $rawCountry
+        : null;
+
+    $rawLang = strtolower(trim($data['language_code'] ?? ''));
+    $clean['language_code'] = isset(getLanguageOptions()[$rawLang]) ? $rawLang : null;
+
+    $rawCurrency = strtoupper(trim($data['currency_code'] ?? ''));
+    $clean['currency_code'] = (preg_match('/^[A-Z]{3}$/', $rawCurrency))
+        ? $rawCurrency
+        : ($clean['country_code'] ? getCurrencyByCountry($clean['country_code']) : null);
+
+    $rawPhone = trim($data['phone_country_code'] ?? '');
+    $clean['phone_country_code'] = (preg_match('/^\+\d{1,5}$/', $rawPhone))
+        ? $rawPhone
+        : ($clean['country_code'] ? getPhoneCodeByCountry($clean['country_code']) : null);
+
+    $allowedFormats = ['ar', 'us', 'jp', 'eu', 'br', 'mx', 'cn', 'kr', 'ar_rtl'];
+    $rawFormat      = trim($data['address_format'] ?? '');
+    $clean['address_format'] = in_array($rawFormat, $allowedFormats, true) ? $rawFormat : null;
+
     return [
         'valid'  => empty($errors),
         'errors' => $errors,
@@ -219,12 +243,16 @@ function addBusiness($data, $userId) {
                 name, address, lat, lng, business_type, phone,
                 email, website, description, price_range, user_id, visible,
                 instagram, facebook, tiktok, certifications, has_delivery,
-                has_card_payment, is_franchise, verified, created_at
+                has_card_payment, is_franchise, verified,
+                country_code, language_code, currency_code, phone_country_code, address_format,
+                created_at
             ) VALUES (
                 :name, :address, :lat, :lng, :business_type, :phone,
                 :email, :website, :description, :price_range, :user_id, :visible,
                 :instagram, :facebook, :tiktok, :certifications, :has_delivery,
-                :has_card_payment, :is_franchise, :verified, NOW()
+                :has_card_payment, :is_franchise, :verified,
+                :country_code, :language_code, :currency_code, :phone_country_code, :address_format,
+                NOW()
             )
         ");
         $stmt->execute([
@@ -248,6 +276,11 @@ function addBusiness($data, $userId) {
             ':has_card_payment'  => $data['has_card_payment'],
             ':is_franchise'      => $data['is_franchise'],
             ':verified'          => $data['verified'],
+            ':country_code'      => $data['country_code']       ?? null,
+            ':language_code'     => $data['language_code']      ?? null,
+            ':currency_code'     => $data['currency_code']      ?? null,
+            ':phone_country_code'=> $data['phone_country_code'] ?? null,
+            ':address_format'    => $data['address_format']     ?? null,
         ]);
 
         $businessId = $db->lastInsertId();
@@ -361,7 +394,11 @@ function updateBusiness($businessId, $data, $userId) {
                 facebook = :facebook, tiktok = :tiktok,
                 certifications = :certifications, has_delivery = :has_delivery,
                 has_card_payment = :has_card_payment, is_franchise = :is_franchise,
-                verified = :verified, visible = :visible, updated_at = NOW()
+                verified = :verified, visible = :visible,
+                country_code = :country_code, language_code = :language_code,
+                currency_code = :currency_code, phone_country_code = :phone_country_code,
+                address_format = :address_format,
+                updated_at = NOW()
             WHERE id = :id
         ");
         $stmt->execute([
@@ -384,6 +421,11 @@ function updateBusiness($businessId, $data, $userId) {
             ':is_franchise'      => $data['is_franchise'],
             ':verified'          => $data['verified'],
             ':visible'           => $forcePendingByTypeChange ? 0 : (int)($business['visible'] ?? 1),
+            ':country_code'      => $data['country_code']       ?? null,
+            ':language_code'     => $data['language_code']      ?? null,
+            ':currency_code'     => $data['currency_code']      ?? null,
+            ':phone_country_code'=> $data['phone_country_code'] ?? null,
+            ':address_format'    => $data['address_format']     ?? null,
             ':id'                => $businessId,
         ]);
 

@@ -215,6 +215,14 @@ function ind_sanitize(array $d): array {
     if (isset($d['certifications']))   $d['certifications']   = $trim($d['certifications'], 1000);
     if (isset($d['naics_code']))       $d['naics_code']       = $trim($d['naics_code'], 20);
     if (isset($d['isic_code']))        $d['isic_code']        = $trim($d['isic_code'], 20);
+    if (isset($d['nace_code']))        $d['nace_code']        = $trim($d['nace_code'], 20);
+    if (isset($d['ciiu_code']))        $d['ciiu_code']        = $trim($d['ciiu_code'], 20);
+    if (isset($d['language_code']))    $d['language_code']    = $trim($d['language_code'], 5);
+    if (isset($d['currency_code']))    $d['currency_code']    = $trim($d['currency_code'], 3);
+    if (isset($d['country_code'])) {
+        $cc = strtoupper(trim($d['country_code'] ?? ''));
+        $d['country_code'] = (preg_match('/^[A-Z]{2}$/', $cc)) ? $cc : null;
+    }
     if (isset($d['industrial_sector_id'])) $d['industrial_sector_id'] = ($d['industrial_sector_id'] !== '' && $d['industrial_sector_id'] !== null) ? (int)$d['industrial_sector_id'] : null;
     if (isset($d['business_id']))      $d['business_id']      = ($d['business_id'] !== '' && $d['business_id'] !== null) ? (int)$d['business_id'] : null;
     if (isset($d['brand_id']))         $d['brand_id']         = ($d['brand_id'] !== '' && $d['brand_id'] !== null) ? (int)$d['brand_id'] : null;
