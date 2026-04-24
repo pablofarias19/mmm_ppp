@@ -379,6 +379,24 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
             <h2>📋 Encuestas Georreferenciadas</h2>
             <button class="btn btn-primary" onclick="openModal('encuesta')">+ Nueva Encuesta</button>
         </div>
+
+        <!-- Gateway al panel profesional -->
+        <div style="background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);border-radius:12px;padding:18px 22px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+            <div style="color:white;">
+                <div style="font-size:1rem;font-weight:700;margin-bottom:3px;">🎓 Panel Profesional de Encuestas</div>
+                <div style="font-size:0.82rem;opacity:.9;">Gestión avanzada: crear preguntas, ver estadísticas detalladas por respuesta, analizar participación y más.</div>
+            </div>
+            <a href="/admin/encuestas/dashboard.php" target="_blank"
+               style="background:white;color:#764ba2;font-weight:700;padding:9px 18px;border-radius:8px;text-decoration:none;font-size:0.85rem;white-space:nowrap;flex-shrink:0;">
+                Abrir panel pro →
+            </a>
+        </div>
+
+        <!-- Métricas y gráfico inline -->
+        <div id="encuestas-stats" style="margin-bottom:20px;">
+            <p style="color:var(--text-tertiary);padding:8px 0;">⏳ Cargando métricas…</p>
+        </div>
+
         <div id="encuestas-list"></div>
     </div>
 
@@ -396,9 +414,6 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         <div class="section-header">
             <h2>📡 Transmisiones en Vivo</h2>
             <button class="btn btn-primary" onclick="openModal('transmision')">+ Nueva Transmisión</button>
-        </div>
-        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:12px;margin-bottom:16px;font-size:13px;">
-            ⚠️ <strong>Requiere migración:</strong> Ejecutar <code>migration/001_transmisiones.sql</code> en la base de datos antes de usar este módulo.
         </div>
         <div id="transmisiones-list"></div>
     </div>
@@ -582,7 +597,10 @@ function switchTab(tab) {
     else if (tab === 'negocios')  loadNegocios();
     else if (tab === 'moderacion') { loadReports(); loadAuditLog(); }
     else if (tab === 'sectores')  loadSectores();
-    else                          loadData(tab);
+    else {
+        loadData(tab);
+        if (tab === 'encuestas') loadEncuestasStats();
+    }
     window.history.pushState({tab}, '', '?tab=' + tab);
 }
 
@@ -1955,6 +1973,63 @@ async function handleSectorSubmit(e) {
     }
 }
 
+// ── Encuestas stats ─────────────────────────────
+async function loadEncuestasStats() {
+    const el = document.getElementById('encuestas-stats');
+    if (!el) return;
+    try {
+        const res = await fetch('/api/encuestas.php?action=stats_global');
+        const result = await res.json();
+        if (!result.success) { el.innerHTML = ''; return; }
+        const s = result.data;
+        const top = s.top_encuestas || [];
+        const maxPart = top.reduce((m, e) => Math.max(m, e.participantes || 0), 0);
+
+        const metricsHTML = `
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;margin-bottom:16px;">
+                <div style="background:white;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;">
+                    <div style="font-size:1.7rem;font-weight:700;color:var(--primary)">${s.activas}</div>
+                    <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Activas</div>
+                </div>
+                <div style="background:white;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;">
+                    <div style="font-size:1.7rem;font-weight:700;color:#6366f1">${s.total}</div>
+                    <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Total encuestas</div>
+                </div>
+                <div style="background:white;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;">
+                    <div style="font-size:1.7rem;font-weight:700;color:#10b981">${s.total_respuestas}</div>
+                    <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Respuestas</div>
+                </div>
+                <div style="background:white;border-radius:10px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center;">
+                    <div style="font-size:1.7rem;font-weight:700;color:#f59e0b">${s.total_participantes}</div>
+                    <div style="font-size:.75rem;color:var(--text-secondary);margin-top:2px;">Participantes únicos</div>
+                </div>
+            </div>`;
+
+        let chartHTML = '';
+        if (top.length) {
+            chartHTML = `
+                <div style="background:white;border-radius:10px;padding:16px 18px;box-shadow:0 1px 4px rgba(0,0,0,.08);">
+                    <div style="font-size:.8rem;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.05em;margin-bottom:12px;">🏆 Top encuestas por participación</div>
+                    ${top.map(e => `
+                        <div style="margin-bottom:10px;">
+                            <div style="display:flex;justify-content:space-between;font-size:.8rem;margin-bottom:3px;">
+                                <span style="color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:75%;">${e.titulo || ('Encuesta #' + e.id)}</span>
+                                <span style="color:var(--text-secondary);flex-shrink:0;margin-left:8px;font-weight:600;">${e.participantes}</span>
+                            </div>
+                            <div style="background:#f3f4f6;border-radius:4px;height:8px;">
+                                <div style="background:linear-gradient(90deg,#667eea,#764ba2);height:8px;border-radius:4px;width:${maxPart > 0 ? (e.participantes / maxPart * 100).toFixed(1) : 0}%;transition:width .4s ease;"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>`;
+        }
+
+        el.innerHTML = metricsHTML + chartHTML;
+    } catch(err) {
+        el.innerHTML = '';
+    }
+}
+
 // ── Init ─────────────────────────────────────────
 document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeSectorModal(); } });
 window.addEventListener('load', () => {
@@ -1963,7 +2038,10 @@ window.addEventListener('load', () => {
     else if (tab === 'negocios')   loadNegocios();
     else if (tab === 'moderacion') { loadReports(); loadAuditLog(); }
     else if (tab === 'sectores')   loadSectores();
-    else                           loadData(tab);
+    else {
+        loadData(tab);
+        if (tab === 'encuestas') loadEncuestasStats();
+    }
 });
 </script>
 </body>
