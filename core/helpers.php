@@ -88,9 +88,11 @@ function isValidTimezone(string $tz): bool {
  * @return string          Cadena formateada lista para mostrar
  */
 function formatHorarioLocal(string $apertura, string $cierre, string $tz = 'America/Argentina/Buenos_Aires'): string {
-    $apertura = htmlspecialchars(substr($apertura, 0, 5), ENT_QUOTES, 'UTF-8');
-    $cierre   = htmlspecialchars(substr($cierre, 0, 5), ENT_QUOTES, 'UTF-8');
+    $apertura = substr($apertura, 0, 5);
+    $cierre   = substr($cierre,   0, 5);
     if (!$apertura && !$cierre) return '';
+    $apertura = htmlspecialchars($apertura, ENT_QUOTES, 'UTF-8');
+    $cierre   = htmlspecialchars($cierre,   ENT_QUOTES, 'UTF-8');
     try {
         $dttz = new DateTimeZone($tz);
         $dt   = new DateTime('now', $dttz);

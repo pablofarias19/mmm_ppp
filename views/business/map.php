@@ -1958,6 +1958,16 @@ async function cargarIconosDesdeAPI() {
 
 // ─── A2: Open/Closed logic ───────────────────────────────────────────────────────
 /**
+ * Quita tildes del español y convierte a minúsculas para normalizar nombres de días.
+ * Ej: 'Miércoles' → 'miercoles', 'sábado' → 'sabado'
+ */
+function normalizeSpanishDay(str) {
+    return str.toLowerCase()
+        .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i')
+        .replace(/ó/g,'o').replace(/ú/g,'u');
+}
+
+/**
  * Obtiene la fecha/hora actual en la timezone del negocio usando Intl.DateTimeFormat.
  * Retorna { day: 'lunes', mins: 540 } (minutos desde medianoche en esa TZ).
  */
@@ -1973,10 +1983,7 @@ function getNowInTimezone(tz) {
         });
         const parts = fmt.formatToParts(now);
         const get   = type => (parts.find(p => p.type === type) || {}).value || '';
-        // Normalizar día: quitar tildes y minúsculas para comparar con dias_cierre
-        const weekday = get('weekday').toLowerCase()
-            .replace(/á/g,'a').replace(/é/g,'e').replace(/í/g,'i')
-            .replace(/ó/g,'o').replace(/ú/g,'u');
+        const weekday = normalizeSpanishDay(get('weekday'));
         const hour   = parseInt(get('hour'),   10) || 0;
         const minute = parseInt(get('minute'), 10) || 0;
         return { day: weekday, mins: hour * 60 + minute };

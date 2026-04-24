@@ -15,7 +15,7 @@ require_once __DIR__ . '/../../core/helpers.php';
 setSecurityHeaders();
 
 // ── Pre-fill tema from query string (e.g. /contacto?tema=fiscal) ──────────────
-$allowedTemas = ['juridico', 'fiscal', 'inversion', 'compliance', 'marca'];
+$allowedTemas = ['juridico', 'fiscal', 'inversion', 'compliance', 'marca', 'tasacion'];
 $temaPreselect = '';
 if (isset($_GET['tema']) && in_array($_GET['tema'], $allowedTemas, true)) {
     $temaPreselect = $_GET['tema'];
@@ -91,6 +91,7 @@ $temaLabels = [
     'inversion'  => 'Inversión / Financiamiento',
     'compliance' => 'Compliance / Regulación',
     'marca'      => 'Expansión de Marca',
+    'tasacion'   => 'Tasación de Marcas',
 ];
 ?>
 <!DOCTYPE html>
