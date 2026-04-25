@@ -43,6 +43,268 @@
     padding: 0 2px;
 }
 
+/* ─── Acordeón de subsecciones del sidebar (Consultas / Inmobiliarias / Arte) ── */
+/* UX mejora: cada grupo puede expandirse o contraerse individualmente           */
+.cq-acc-hdr {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 6px 4px 4px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    color: #546e7a;
+    text-transform: uppercase;
+    margin: 10px 0 0;
+    text-align: left;
+    line-height: 1.2;
+    transition: color 0.15s;
+    border-radius: 4px;
+}
+.cq-acc-hdr:hover { color: #1565c0; }
+.cq-acc-hdr:focus-visible { outline: 2px solid #667eea; outline-offset: 2px; }
+
+/* Chevron icon inside accordion header */
+.cq-acc-chevron {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    color: #90a4ae;
+    transition: transform 0.25s cubic-bezier(.4,0,.2,1), color 0.15s;
+    display: block;
+}
+.cq-acc-hdr[aria-expanded="true"] .cq-acc-chevron {
+    transform: rotate(180deg);
+    color: #1565c0;
+}
+.cq-acc-hdr:hover .cq-acc-chevron { color: #1565c0; }
+
+/* Collapsible body for each accordion group */
+.cq-acc-body {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 0.30s cubic-bezier(.4,0,.2,1), opacity 0.22s ease;
+}
+.cq-acc-body.open {
+    max-height: 500px;
+    opacity: 1;
+}
+.cq-acc-body-inner {
+    padding: 6px 0 2px;
+}
+
+/* ─── Modal Convocar — estilos mejorados (arte/teatro) ────────────────────── */
+/* Mejora: paleta arte/teatro, íconos SVG, mejor contraste de botones         */
+.conv-modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(18, 8, 35, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(2px);
+}
+.conv-modal {
+    background: #fff8f2;
+    border-radius: 16px;
+    max-width: 500px;
+    width: 94%;
+    max-height: 92vh;
+    overflow-y: auto;
+    box-shadow: 0 12px 48px rgba(45, 27, 78, 0.38);
+    font-family: inherit;
+}
+/* Header with theater/art gradient */
+.conv-modal-header {
+    background: linear-gradient(135deg, #2d1b4e 0%, #5b2d8e 60%, #8b4ec0 100%);
+    color: #fff;
+    padding: 20px 22px 16px;
+    border-radius: 16px 16px 0 0;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    position: relative;
+}
+.conv-modal-header-icon {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding-top: 2px;
+}
+.conv-modal-header-text { flex: 1; min-width: 0; }
+.conv-modal-header h3 {
+    margin: 0 0 5px;
+    font-size: 1.05em;
+    font-weight: 800;
+    letter-spacing: .03em;
+    color: #fff;
+    line-height: 1.2;
+}
+.conv-modal-subtitle {
+    font-size: .80em;
+    color: rgba(255,255,255,.82);
+    margin: 0;
+    line-height: 1.45;
+}
+.conv-modal-close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    background: rgba(255,255,255,.15);
+    border: 1.5px solid rgba(255,255,255,.28);
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1em;
+    cursor: pointer;
+    color: #fff;
+    transition: background 0.15s;
+    line-height: 1;
+}
+.conv-modal-close:hover { background: rgba(255,255,255,.30); }
+/* Gold accent bar */
+.conv-modal-accent-bar {
+    height: 3px;
+    background: linear-gradient(90deg, #d4af37 0%, #f0d060 50%, #d4af37 100%);
+}
+/* Modal body */
+.conv-modal-body {
+    padding: 20px 22px;
+}
+.conv-field {
+    margin-bottom: 16px;
+}
+.conv-field label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: .82em;
+    font-weight: 700;
+    color: #3b1f5e;
+    margin-bottom: 6px;
+}
+.conv-field select,
+.conv-field input[type="date"] {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1.5px solid #c8b4e8;
+    border-radius: 8px;
+    font-size: .88em;
+    font-family: inherit;
+    background: #fff;
+    color: #1f2937;
+    box-sizing: border-box;
+    transition: border-color .15s, box-shadow .15s;
+}
+.conv-field select:focus,
+.conv-field input[type="date"]:focus {
+    outline: none;
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 3px rgba(124,58,237,.14);
+}
+.conv-dates-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
+.conv-notice {
+    font-size: .78em;
+    color: #7c3aed;
+    background: #f0ebff;
+    border-radius: 7px;
+    padding: 8px 12px;
+    margin-bottom: 16px;
+    border-left: 3px solid #7c3aed;
+    line-height: 1.4;
+}
+.conv-notice strong { color: #5b1fa2; }
+/* Message feedback area */
+#conv-msg {
+    font-size: .82em;
+    margin-bottom: 12px;
+    padding: 9px 13px;
+    border-radius: 7px;
+    display: none;
+}
+#conv-msg.conv-msg--ok  { background: #ecfdf5; color: #065f46; border-left: 3px solid #10b981; }
+#conv-msg.conv-msg--err { background: #fef2f2; color: #991b1b; border-left: 3px solid #ef4444; }
+/* Footer actions */
+.conv-modal-footer {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 0 22px 22px;
+}
+.conv-btn-cancel {
+    padding: 10px 18px;
+    border: 1.5px solid #c4b5d6;
+    border-radius: 8px;
+    background: #fff;
+    color: #5b2d8e;
+    font-size: .88em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+}
+.conv-btn-cancel:hover { background: #f5f0fc; border-color: #7c3aed; }
+.conv-btn-send {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
+    color: #fff;
+    font-size: .88em;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    box-shadow: 0 2px 8px rgba(91,33,182,.30);
+    transition: background 0.15s, box-shadow 0.15s, transform 0.10s;
+}
+.conv-btn-send:hover:not(:disabled) {
+    background: linear-gradient(135deg, #6d28d9 0%, #4c1d95 100%);
+    box-shadow: 0 4px 14px rgba(91,33,182,.40);
+    transform: translateY(-1px);
+}
+.conv-btn-send:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+/* ─── Stats bar — resultado de búsqueda mejorado ──────────────────────────── */
+/* Mejora: espaciado y separación visual de datos en la barra de resultados   */
+.stats-total {
+    font-weight: 700;
+    color: #667eea;
+}
+.stats-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: #e8eaf6;
+    color: #3949ab;
+    border-radius: 999px;
+    padding: 1px 8px;
+    font-size: .9em;
+    font-weight: 700;
+    margin-left: 4px;
+    white-space: nowrap;
+}
+.stats-sep {
+    color: #c8ccd8;
+    margin: 0 4px;
+    font-weight: 400;
+}
+
 /* ─── Geo-selection overlay ───────────────────────────────────── */
 #cq-geo-overlay {
     display: none;

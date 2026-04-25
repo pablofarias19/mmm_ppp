@@ -1282,42 +1282,86 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                     Modo normal. Para salir del modo selección: botón "Salir del modo selección" o tecla S.
                 </div>
 
-                <!-- ── CONSULTAS MASIVAS ─────────────────────────────────── -->
-                <div class="cq-section-label">── Consultas ───</div>
-                <button type="button" class="cq-btn"
-                        onclick="startGeoSelect('masiva')"
-                        title="Dibujá un área y enviá una consulta a todos los negocios dentro">
-                    📣 Consulta Masiva
+                <!-- ── CONSULTAS MASIVAS — acordeón por sección ─────────────── -->
+                <!-- Mejora UX: cada sección puede expandirse/contraerse individualmente -->
+
+                <!-- Sección: Consultas -->
+                <button type="button" class="cq-acc-hdr" id="cq-hdr-consultas"
+                        aria-expanded="true" aria-controls="cq-grp-consultas"
+                        onclick="toggleCqSection('consultas')">
+                    <span>── Consultas ───</span>
+                    <svg class="cq-acc-chevron" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
                 </button>
-                <button type="button" class="cq-btn cq-btn--general"
-                        onclick="openConsultaModal('general')"
-                        title="Enviá una consulta a servicios específicos habilitados">
-                    🏛️ Consulta General
+                <div class="cq-acc-body open" id="cq-grp-consultas">
+                    <div class="cq-acc-body-inner">
+                        <button type="button" class="cq-btn"
+                                onclick="startGeoSelect('masiva')"
+                                title="Dibujá un área y enviá una consulta a todos los negocios dentro">
+                            📣 Consulta Masiva
+                        </button>
+                        <button type="button" class="cq-btn cq-btn--general"
+                                onclick="openConsultaModal('general')"
+                                title="Enviá una consulta a servicios específicos habilitados">
+                            🏛️ Consulta General
+                        </button>
+                        <button type="button" class="cq-btn cq-btn--proveedor"
+                                onclick="openConsultaModal('global_proveedor')"
+                                title="Consultá negocios designados como Proveedor (P) por rubro">
+                            📦 Consulta Proveedores (P)
+                        </button>
+                        <button type="button" class="cq-btn cq-btn--envio"
+                                onclick="startGeoSelect('envio')"
+                                title="Consultá transportistas en un área geográfica">
+                            🚚 Consulta Envío
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sección: Inmobiliarias -->
+                <button type="button" class="cq-acc-hdr" id="cq-hdr-inmobiliarias"
+                        aria-expanded="true" aria-controls="cq-grp-inmobiliarias"
+                        onclick="toggleCqSection('inmobiliarias')">
+                    <span>── Inmobiliarias ───</span>
+                    <svg class="cq-acc-chevron" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
                 </button>
-                <button type="button" class="cq-btn cq-btn--proveedor"
-                        onclick="openConsultaModal('global_proveedor')"
-                        title="Consultá negocios designados como Proveedor (P) por rubro">
-                    📦 Consulta Proveedores (P)
+                <div class="cq-acc-body open" id="cq-grp-inmobiliarias">
+                    <div class="cq-acc-body-inner">
+                        <button type="button" class="cq-btn" id="btn-cerca"
+                                onclick="toggleCerca()"
+                                title="Muestra inmuebles publicados por inmobiliarias. Solo inmobiliarias pueden publicar inmuebles.">
+                            🏘️ CERCA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sección: Arte & Cultura -->
+                <button type="button" class="cq-acc-hdr" id="cq-hdr-arte"
+                        aria-expanded="true" aria-controls="cq-grp-arte"
+                        onclick="toggleCqSection('arte')">
+                    <span>── Arte &amp; Cultura ───</span>
+                    <svg class="cq-acc-chevron" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                         stroke-linejoin="round" aria-hidden="true">
+                        <polyline points="6 9 12 15 18 9"/>
+                    </svg>
                 </button>
-                <button type="button" class="cq-btn cq-btn--envio"
-                        onclick="startGeoSelect('envio')"
-                        title="Consultá transportistas en un área geográfica">
-                    🚚 Consulta Envío
-                </button>
-                <!-- ── CERCA (Inmuebles de inmobiliarias) ──────────────────────── -->
-                <div class="cq-section-label" style="margin-top:10px;">── Inmobiliarias ───</div>
-                <button type="button" class="cq-btn" id="btn-cerca"
-                        onclick="toggleCerca()"
-                        title="Muestra inmuebles publicados por inmobiliarias. Solo inmobiliarias pueden publicar inmuebles.">
-                    🏘️ CERCA
-                </button>
-                <!-- ── CONVOCAR (Obra de Arte) ─────────────────────────────── -->
-                <div class="cq-section-label" style="margin-top:10px;">── Arte & Cultura ───</div>
-                <button type="button" class="cq-btn" id="btn-convocar"
-                        onclick="abrirConvocar()"
-                        title="Convoca artistas/servicios para tu OBRA DE ARTE. Solo titulares de OBRA DE ARTE pueden usarlo.">
-                    🎭 CONVOCAR
-                </button>
+                <div class="cq-acc-body open" id="cq-grp-arte">
+                    <div class="cq-acc-body-inner">
+                        <button type="button" class="cq-btn" id="btn-convocar"
+                                onclick="abrirConvocar()"
+                                title="Convoca artistas/servicios para tu OBRA DE ARTE. Solo titulares de OBRA DE ARTE pueden usarlo.">
+                            🎭 CONVOCAR
+                        </button>
+                    </div>
+                </div>
                 <!-- ── FIN CONSULTAS MASIVAS ─────────────────────────────── -->
             </div>
             <div id="selection-panel" class="selection-panel" aria-live="polite" style="display:none;">
@@ -1532,34 +1576,99 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
     </div>
 </div>
 
-<!-- ── Modal CONVOCAR ───────────────────────────────────────────────────── -->
-<div id="modal-convocar" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
-    <div style="background:white;border-radius:14px;padding:24px;max-width:480px;width:94%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.3);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-            <h3 style="margin:0;font-size:1.1em;color:#1f2937;">🎭 Lanzar Convocatoria</h3>
-            <button onclick="cerrarConvocar()" style="background:none;border:none;font-size:1.4em;cursor:pointer;color:#6b7280;">✕</button>
-        </div>
-        <p style="margin:0 0 14px;font-size:.84em;color:#6b7280;">Convoca artistas y servicios para tu proyecto. Se enviará notificación a todos los servicios que coincidan con los roles definidos en tu Obra de Arte.</p>
-        <div style="margin-bottom:12px;">
-            <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:4px;">Obra de Arte *</label>
-            <select id="conv-obra-select" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:.9em;">
-                <option value="">Seleccioná una obra...</option>
-            </select>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
-            <div>
-                <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:4px;">Fecha inicio *</label>
-                <input type="date" id="conv-fecha-inicio" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:.88em;">
+<!-- ── Modal CONVOCAR — rediseñado con estética arte/teatro ─────────────── -->
+<!-- Mejora UX/UI: paleta teatro, íconos SVG, contraste accesible, form claro -->
+<!--
+     TODO (backend): Verificar que los siguientes tipos de negocio estén registrados
+     en la tabla de tipos de negocios para que la convocatoria pueda notificarlos:
+       - musico, cantante, bailarin, actor, actriz, director_artistico, guionista,
+         escenografo, fotografo_artistico, productor_artistico, maquillador, pintor,
+         poeta, musicalizador, editor_grafico, asistente_artistico
+     Si alguno falta, agregar en la lista de tipos (BUSINESS_TYPE_LABELS en map.php
+     y en el select de tipo en add_business.php / categorías de admin).
+-->
+<div id="modal-convocar" class="conv-modal-overlay" style="display:none;">
+    <div class="conv-modal" role="dialog" aria-modal="true" aria-labelledby="conv-modal-title">
+
+        <!-- Encabezado temático teatro/arte -->
+        <div class="conv-modal-header">
+            <!-- SVG: máscaras de teatro (comedia y tragedia) -->
+            <div class="conv-modal-header-icon" aria-hidden="true">
+                <svg width="38" height="22" viewBox="0 0 76 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Máscara comedia (izquierda) -->
+                    <ellipse cx="20" cy="20" rx="16" ry="18" fill="rgba(255,255,255,.22)" stroke="#f0d060" stroke-width="1.5"/>
+                    <circle cx="14" cy="17" r="2.5" fill="#f0d060"/>
+                    <circle cx="26" cy="17" r="2.5" fill="#f0d060"/>
+                    <path d="M13 25 Q20 31 27 25" stroke="#f0d060" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                    <!-- Máscara tragedia (derecha) -->
+                    <ellipse cx="56" cy="24" rx="16" ry="18" fill="rgba(255,255,255,.15)" stroke="rgba(240,208,96,.6)" stroke-width="1.5"/>
+                    <circle cx="50" cy="21" r="2.5" fill="rgba(240,208,96,.7)"/>
+                    <circle cx="62" cy="21" r="2.5" fill="rgba(240,208,96,.7)"/>
+                    <path d="M49 32 Q56 26 63 32" stroke="rgba(240,208,96,.7)" stroke-width="1.8" stroke-linecap="round" fill="none"/>
+                </svg>
             </div>
-            <div>
-                <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:4px;">Fecha fin *</label>
-                <input type="date" id="conv-fecha-fin" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:.88em;">
+            <div class="conv-modal-header-text">
+                <h3 id="conv-modal-title">🎭 Lanzar Convocatoria</h3>
+                <p class="conv-modal-subtitle">Convoca artistas y servicios para tu proyecto. Se enviará notificación a todos los servicios que coincidan con los roles definidos en tu Obra de Arte.</p>
             </div>
+            <button onclick="cerrarConvocar()" class="conv-modal-close" aria-label="Cerrar">✕</button>
         </div>
-        <div id="conv-msg" style="display:none;font-size:.82em;margin-bottom:10px;padding:8px 12px;border-radius:6px;"></div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;">
-            <button onclick="cerrarConvocar()" style="padding:10px 16px;border:1px solid #d1d5db;border-radius:8px;background:white;cursor:pointer;font-size:.88em;">Cancelar</button>
-            <button id="conv-btn-enviar" onclick="enviarConvocatoria()" style="padding:10px 20px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.88em;font-weight:700;">🎭 Enviar convocatoria</button>
+        <!-- Barra dorada decorativa -->
+        <div class="conv-modal-accent-bar"></div>
+
+        <!-- Cuerpo del formulario -->
+        <div class="conv-modal-body">
+            <!-- Obra de Arte -->
+            <div class="conv-field">
+                <label for="conv-obra-select">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 20h20M4 20V10l8-7 8 7v10"/></svg>
+                    Obra de Arte <span style="color:#c0392b;">*</span>
+                </label>
+                <select id="conv-obra-select">
+                    <option value="">Seleccioná una obra…</option>
+                </select>
+            </div>
+
+            <!-- Fechas en fila -->
+            <div class="conv-dates-row">
+                <div class="conv-field" style="margin-bottom:0;">
+                    <label for="conv-fecha-inicio">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Fecha inicio <span style="color:#c0392b;">*</span>
+                    </label>
+                    <input type="date" id="conv-fecha-inicio">
+                </div>
+                <div class="conv-field" style="margin-bottom:0;">
+                    <label for="conv-fecha-fin">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                        Fecha fin <span style="color:#c0392b;">*</span>
+                    </label>
+                    <input type="date" id="conv-fecha-fin">
+                </div>
+            </div>
+
+            <!-- Aviso si no hay obra de arte publicada -->
+            <div id="conv-no-obra-notice" class="conv-notice" style="display:none;">
+                <strong>⚠️ Sin obras publicadas.</strong> No tenés negocios del tipo <em>OBRA DE ARTE</em> publicados.<br>
+                Publicá una obra para poder lanzar convocatorias.
+            </div>
+
+            <!-- Feedback de operación -->
+            <div id="conv-msg"></div>
+        </div>
+
+        <!-- Acciones -->
+        <div class="conv-modal-footer">
+            <button onclick="cerrarConvocar()" class="conv-btn-cancel">Cancelar</button>
+            <button id="conv-btn-enviar" onclick="enviarConvocatoria()" class="conv-btn-send">
+                <!-- SVG: máscara de teatro pequeña -->
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96-.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"/>
+                    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96-.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"/>
+                </svg>
+                Enviar convocatoria
+            </button>
         </div>
     </div>
 </div>
@@ -3311,7 +3420,8 @@ function filtrar() {
     clearRelationLines();
 
     if (currentVer === 'ninguno') {
-        document.getElementById('stats').textContent = '🏪 0  |  🏷️ 0';
+    document.getElementById('stats').innerHTML =
+        '<span class="stats-total">🏪&nbsp;0</span><span class="stats-sep">|</span><span class="stats-badge">🏷️&nbsp;0</span>';
         mostrarLista([], { geoRequired: false });
         mostrarMarcadores([]);
         return;
@@ -3438,8 +3548,11 @@ function filtrar() {
         );
     }
 
-    document.getElementById('stats').textContent =
-        `Total: ${cntN + cntM}  |  Cerca (${sbRadius} km): ${sidebarItems.length}`;
+    /* Mejora UX: usar innerHTML con badges para mejor separación visual de datos */
+    document.getElementById('stats').innerHTML =
+        `<span class="stats-total">Total:&nbsp;${cntN + cntM}</span>`
+        + `<span class="stats-sep">|</span>`
+        + `<span class="stats-badge">📍&nbsp;${sidebarItems.length}&nbsp;cerca&nbsp;(${sbRadius}&nbsp;km)</span>`;
 
     mostrarLista(sidebarItems, { geoRequired: true, sbRadius });
     mostrarMarcadores(items);
@@ -4609,6 +4722,35 @@ function toggleAccordion(btn) {
     btn.classList.toggle('active');
     content.classList.toggle('active');
 }
+
+// ─── CQ subsection accordion (Consultas / Inmobiliarias / Arte & Cultura) ────────
+// Mejora UX: permite colapsar/expandir cada grupo individualmente.
+// Guarda preferencia del usuario en localStorage bajo la clave 'cq-section-{id}'.
+function toggleCqSection(id) {
+    const hdr  = document.getElementById('cq-hdr-' + id);
+    const body = document.getElementById('cq-grp-' + id);
+    if (!hdr || !body) return;
+    const willOpen = hdr.getAttribute('aria-expanded') !== 'true';
+    hdr.setAttribute('aria-expanded', String(willOpen));
+    body.classList.toggle('open', willOpen);
+    try { localStorage.setItem('cq-section-' + id, willOpen ? '1' : '0'); } catch (_) {}
+}
+
+// Restaurar preferencias guardadas de los acordeones CQ al cargar la página
+(function restoreCqSections() {
+    ['consultas', 'inmobiliarias', 'arte'].forEach(function(id) {
+        var saved = null;
+        try { saved = localStorage.getItem('cq-section-' + id); } catch (_) {}
+        if (saved === '0') {
+            var hdr  = document.getElementById('cq-hdr-' + id);
+            var body = document.getElementById('cq-grp-' + id);
+            if (hdr && body) {
+                hdr.setAttribute('aria-expanded', 'false');
+                body.classList.remove('open');
+            }
+        }
+    });
+})();
 
 // ─── Collapsible sidebar sections (sb-section system) ────────────────────────────
 function toggleSbSection(hdr) {
@@ -6554,6 +6696,7 @@ function abrirConvocar() {
     <?php endif; ?>
     const modal = document.getElementById('modal-convocar');
     if (!modal) return;
+    /* Usar flex para centrar el diálogo dentro del overlay */
     modal.style.display = 'flex';
     cargarMisObras();
 }
@@ -6561,11 +6704,15 @@ function abrirConvocar() {
 function cerrarConvocar() {
     const modal = document.getElementById('modal-convocar');
     if (modal) modal.style.display = 'none';
+    /* Limpiar mensaje y select al cerrar */
+    const msg = document.getElementById('conv-msg');
+    if (msg) { msg.className = ''; msg.style.display = 'none'; msg.textContent = ''; }
 }
 
 async function cargarMisObras() {
-    const sel = document.getElementById('conv-obra-select');
-    const msg = document.getElementById('conv-msg');
+    const sel    = document.getElementById('conv-obra-select');
+    const notice = document.getElementById('conv-no-obra-notice');
+    const msg    = document.getElementById('conv-msg');
     if (!sel) return;
     sel.innerHTML = '<option value="">Cargando...</option>';
     try {
@@ -6573,10 +6720,12 @@ async function cargarMisObras() {
         const d = await r.json();
         if (!d.success || !d.data || !d.data.length) {
             sel.innerHTML = '<option value="">Sin obras de arte publicadas</option>';
-            if (msg) { msg.textContent = 'No tenés negocios del tipo OBRA DE ARTE publicados.'; msg.style.display = 'block'; msg.style.color = '#991b1b'; }
+            if (notice) notice.style.display = 'block';
+            if (msg) { msg.className = 'conv-msg--err'; msg.textContent = 'No tenés negocios del tipo OBRA DE ARTE publicados.'; msg.style.display = 'block'; }
             return;
         }
-        sel.innerHTML = '<option value="">Seleccioná una obra...</option>' +
+        if (notice) notice.style.display = 'none';
+        sel.innerHTML = '<option value="">Seleccioná una obra…</option>' +
             d.data.map(o => '<option value="' + o.id + '">' + escapeHtml(o.name) + '</option>').join('');
         if (msg) msg.style.display = 'none';
     } catch (e) {
@@ -6591,11 +6740,18 @@ async function enviarConvocatoria() {
     const msg        = document.getElementById('conv-msg');
     const btn        = document.getElementById('conv-btn-enviar');
 
-    if (!bizId)      { if (msg) { msg.textContent='Seleccioná una obra.';msg.style.color='#991b1b';msg.style.display='block';} return; }
-    if (!fechaInicio){ if (msg) { msg.textContent='Ingresá fecha de inicio.';msg.style.color='#991b1b';msg.style.display='block';} return; }
-    if (!fechaFin)   { if (msg) { msg.textContent='Ingresá fecha de fin.';msg.style.color='#991b1b';msg.style.display='block';} return; }
+    function showMsg(text, isErr) {
+        if (!msg) return;
+        msg.textContent = text;
+        msg.className   = isErr ? 'conv-msg--err' : 'conv-msg--ok';
+        msg.style.display = 'block';
+    }
 
-    if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando…'; }
+    if (!bizId)      { showMsg('Seleccioná una obra.', true); return; }
+    if (!fechaInicio){ showMsg('Ingresá fecha de inicio.', true); return; }
+    if (!fechaFin)   { showMsg('Ingresá fecha de fin.', true); return; }
+
+    if (btn) { btn.disabled = true; btn.querySelector('svg') && (btn.querySelector('svg').style.display = 'none'); btn.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = '⏳ Enviando…'; }); }
     try {
         const r = await fetch('/api/convocatorias.php?action=convocar', {
             method: 'POST',
@@ -6603,21 +6759,12 @@ async function enviarConvocatoria() {
             body: JSON.stringify({ business_id: parseInt(bizId, 10), fecha_inicio: fechaInicio, fecha_fin: fechaFin })
         });
         const d = await r.json();
-        if (msg) {
-            msg.textContent = d.success ? ('✅ ' + (d.message || 'Convocatoria enviada')) : ('❌ ' + (d.message || 'Error'));
-            msg.style.color = d.success ? '#065f46' : '#991b1b';
-            msg.style.background = d.success ? '#d1fae5' : '#fee2e2';
-            msg.style.padding = '8px 12px';
-            msg.style.borderRadius = '6px';
-            msg.style.display = 'block';
-        }
-        if (d.success) {
-            setTimeout(cerrarConvocar, 3000);
-        }
+        showMsg(d.success ? ('✅ ' + (d.message || 'Convocatoria enviada')) : ('❌ ' + (d.message || 'Error')), !d.success);
+        if (d.success) { setTimeout(cerrarConvocar, 3000); }
     } catch (e) {
-        if (msg) { msg.textContent = 'Error de conexión.'; msg.style.display = 'block'; msg.style.color = '#991b1b'; }
+        showMsg('Error de conexión.', true);
     } finally {
-        if (btn) { btn.disabled = false; btn.textContent = '🎭 Enviar convocatoria'; }
+        if (btn) { btn.disabled = false; if (btn.querySelector('svg')) btn.querySelector('svg').style.display = ''; btn.childNodes.forEach(n => { if (n.nodeType === 3) n.textContent = ' Enviar convocatoria'; }); }
     }
 }
 </script>
