@@ -144,6 +144,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $industrial_sector_id = !empty($_POST['industrial_sector_id']) ? (int)$_POST['industrial_sector_id'] : null;
         $business_id       = !empty($_POST['business_id'])   ? (int)$_POST['business_id']   : null;
         $brand_id          = !empty($_POST['brand_id'])       ? (int)$_POST['brand_id']       : null;
+        // Permiso de encuestas (solo admin puede cambiar esto)
+        $encuestas_permitidas = ($isAdmin && isset($_POST['encuestas_permitidas'])) ? 1 : 0;
 
         $errors = [];
         if ($name === '') $errors[] = 'El nombre es obligatorio.';
@@ -182,6 +184,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'nace_code'            => $nace_code ?: null,
                     'ciiu_code'            => $ciiu_code ?: null,
                     'status'               => $status,
+                    'encuestas_permitidas' => $encuestas_permitidas,
                 ];
 
                 if ($editing) {
@@ -193,7 +196,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             throw new Exception('No tenés permiso para editar esta industria.');
                         }
                     }
-                    // Build UPDATE
+                    // Build UPDATE with fallback for missing columns (migración 023)
                     $fields = [];
                     $params = [];
                     foreach ($data as $col => $val) {
@@ -201,8 +204,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $params[] = $val;
                     }
                     $params[] = $industryId;
-                    $db->prepare('UPDATE industries SET ' . implode(', ', $fields) . ' WHERE id = ?')
-                       ->execute($params);
+                    try {
+                        $db->prepare('UPDATE industries SET ' . implode(', ', $fields) . ' WHERE id = ?')
+                           ->execute($params);
+                    } catch (PDOException $e) {
+                        if ($e->getCode() !== '42S22' && (int)($e->errorInfo[1] ?? 0) !== 1054) throw $e;
+                        // Column not yet migrated — retry without it
+                        $fieldsFb = []; $paramsFb = [];
+                        foreach ($data as $col => $val) {
+                            if ($col === 'encuestas_permitidas') continue;
+                            $fieldsFb[] = "$col = ?"; $paramsFb[] = $val;
+                        }
+                        $paramsFb[] = $industryId;
+                        $db->prepare('UPDATE industries SET ' . implode(', ', $fieldsFb) . ' WHERE id = ?')
+                           ->execute($paramsFb);
+                    }
                     $message = '✅ Industria actualizada correctamente.';
                     $msgType = 'success';
 
@@ -218,10 +234,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $data['user_id'] = $userId;
                     $fields  = array_keys($data);
                     $placeholders = array_fill(0, count($fields), '?');
-                    $stmt = $db->prepare(
-                        'INSERT INTO industries (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')'
-                    );
-                    $stmt->execute(array_values($data));
+                    try {
+                        $stmt = $db->prepare(
+                            'INSERT INTO industries (' . implode(',', $fields) . ') VALUES (' . implode(',', $placeholders) . ')'
+                        );
+                        $stmt->execute(array_values($data));
+                    } catch (PDOException $e) {
+                        if ($e->getCode() !== '42S22' && (int)($e->errorInfo[1] ?? 0) !== 1054) throw $e;
+                        // Column not yet migrated — retry without encuestas_permitidas
+                        $dataFb = array_filter($data, fn($k) => $k !== 'encuestas_permitidas', ARRAY_FILTER_USE_KEY);
+                        $fieldsFb = array_keys($dataFb);
+                        $phFb = array_fill(0, count($fieldsFb), '?');
+                        $db->prepare('INSERT INTO industries (' . implode(',', $fieldsFb) . ') VALUES (' . implode(',', $phFb) . ')')
+                           ->execute(array_values($dataFb));
+                    }
                     $newId = (int)$db->lastInsertId();
                     header('Location: /industrias?saved=1');
                     exit;
@@ -742,6 +768,24 @@ function fieldVal(string $key, ?array $row, $default = ''): string {
                         </select>
                     </div>
                 </div>
+
+                <!-- ── SECCIÓN: Permisos (solo Admin) ──────────── -->
+                <?php if ($isAdmin): ?>
+                <div class="section-title">🔐 Permisos (Admin)</div>
+                <div class="form-grid">
+                    <div class="form-group span2">
+                        <label style="display:flex;align-items:center;gap:10px;cursor:pointer;font-weight:500;">
+                            <input type="checkbox" name="encuestas_permitidas" value="1"
+                                   style="width:18px;height:18px;"
+                                   <?php echo (!empty($industry['encuestas_permitidas'])) ? 'checked' : ''; ?>>
+                            📋 Habilitar creación de encuestas para esta industria
+                        </label>
+                        <small style="color:#6b7280;margin-top:4px;display:block;">
+                            Si está activado, todos los negocios de esta industria podrán crear encuestas (salvo override individual).
+                        </small>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- ── ACTIONS ───────────────────────────────── -->
                 <div class="form-actions">

@@ -198,19 +198,39 @@ class Encuesta {
         try {
             $db = Database::getInstance()->getConnection();
 
-            $sql = "INSERT INTO encuestas
-                    (titulo, descripcion, lat, lng, fecha_creacion, fecha_expiracion, link, activo)
-                    VALUES (?, ?, ?, ?, NOW(), ?, ?, 1)";
-
-            $stmt = $db->prepare($sql);
-            $result = $stmt->execute([
-                $data['titulo'] ?? null,
-                $data['descripcion'] ?? null,
-                $data['lat'] ?? null,
-                $data['lng'] ?? null,
-                $data['fecha_expiracion'] ?? null,
-                $data['link'] ?? null
-            ]);
+            // Intentar con columnas de panel detalle (migración 023)
+            try {
+                $sql = "INSERT INTO encuestas
+                        (titulo, descripcion, lat, lng, fecha_creacion, fecha_expiracion, link, activo,
+                         detalle_activo, graficos_config)
+                        VALUES (?, ?, ?, ?, NOW(), ?, ?, 1, ?, ?)";
+                $stmt = $db->prepare($sql);
+                $result = $stmt->execute([
+                    $data['titulo'] ?? null,
+                    $data['descripcion'] ?? null,
+                    $data['lat'] ?? null,
+                    $data['lng'] ?? null,
+                    $data['fecha_expiracion'] ?? null,
+                    $data['link'] ?? null,
+                    isset($data['detalle_activo']) ? (int)$data['detalle_activo'] : 1,
+                    $data['graficos_config'] ?? 'barras,torta,tendencia',
+                ]);
+            } catch (\PDOException $e) {
+                // Columnas de migración 023 aún no aplicadas — fallback
+                if ($e->getCode() !== '42S22' && (int)($e->errorInfo[1] ?? 0) !== 1054) throw $e;
+                $sql = "INSERT INTO encuestas
+                        (titulo, descripcion, lat, lng, fecha_creacion, fecha_expiracion, link, activo)
+                        VALUES (?, ?, ?, ?, NOW(), ?, ?, 1)";
+                $stmt = $db->prepare($sql);
+                $result = $stmt->execute([
+                    $data['titulo'] ?? null,
+                    $data['descripcion'] ?? null,
+                    $data['lat'] ?? null,
+                    $data['lng'] ?? null,
+                    $data['fecha_expiracion'] ?? null,
+                    $data['link'] ?? null,
+                ]);
+            }
 
             return $result ? $db->lastInsertId() : false;
         } catch (Exception $e) {
@@ -260,6 +280,15 @@ class Encuesta {
                 $update[] = "link = ?";
                 $params[] = $data['link'];
             }
+            // Panel detalle (migración 023)
+            if (array_key_exists('detalle_activo', $data)) {
+                $update[] = "detalle_activo = ?";
+                $params[] = (int)$data['detalle_activo'];
+            }
+            if (array_key_exists('graficos_config', $data)) {
+                $update[] = "graficos_config = ?";
+                $params[] = $data['graficos_config'];
+            }
 
             if (empty($update)) return false;
 
@@ -269,7 +298,27 @@ class Encuesta {
             $sql = "UPDATE encuestas SET " . implode(", ", $update) . " WHERE id = ?";
 
             $stmt = $db->prepare($sql);
-            return $stmt->execute($params);
+            try {
+                return $stmt->execute($params);
+            } catch (\PDOException $e) {
+                // Columnas de migración 023 aún no aplicadas — reconstruir sin ellas
+                if ($e->getCode() !== '42S22' && (int)($e->errorInfo[1] ?? 0) !== 1054) throw $e;
+                // Quitar detalle_activo y graficos_config del update
+                $updateFallback = [];
+                $paramsFallback = [];
+                $skip = ['detalle_activo', 'graficos_config'];
+                $skipIdx = [];
+                foreach ($update as $i => $clause) {
+                    $colName = trim(explode('=', $clause)[0]);
+                    if (in_array($colName, $skip)) { $skipIdx[] = $i; continue; }
+                    $updateFallback[] = $clause;
+                    $paramsFallback[] = $params[$i];
+                }
+                if (empty($updateFallback)) return false;
+                $sqlFb = "UPDATE encuestas SET " . implode(", ", $updateFallback) . " WHERE id = ?";
+                $stmtFb = $db->prepare($sqlFb);
+                return $stmtFb->execute($paramsFallback);
+            }
         } catch (Exception $e) {
             error_log("Error en Encuesta::update - " . $e->getMessage());
             return false;
@@ -430,15 +479,66 @@ class Encuesta {
         try {
             $db = Database::getInstance()->getConnection();
 
-            $sql = "INSERT INTO respuestas_encuesta
-                    (pregunta_id, user_id, respuesta)
-                    VALUES (?, ?, ?)";
-
-            $stmt = $db->prepare($sql);
-            return $stmt->execute([$pregunta_id, $user_id, $respuesta]);
+            // Intentar con fecha_respuesta (migración 023)
+            try {
+                $sql = "INSERT INTO respuestas_encuesta
+                        (pregunta_id, user_id, respuesta, fecha_respuesta)
+                        VALUES (?, ?, ?, NOW())";
+                $stmt = $db->prepare($sql);
+                return $stmt->execute([$pregunta_id, $user_id, $respuesta]);
+            } catch (\PDOException $e) {
+                if ($e->getCode() !== '42S22' && (int)($e->errorInfo[1] ?? 0) !== 1054) throw $e;
+                $sql = "INSERT INTO respuestas_encuesta
+                        (pregunta_id, user_id, respuesta)
+                        VALUES (?, ?, ?)";
+                $stmt = $db->prepare($sql);
+                return $stmt->execute([$pregunta_id, $user_id, $respuesta]);
+            }
         } catch (Exception $e) {
             error_log("Error en Encuesta::addResponse - " . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Obtiene datos de tendencia temporal para una encuesta (respuestas por día)
+     * @param int $id
+     * @param string $agrupacion 'dia' | 'semana' | 'mes'
+     * @return array
+     */
+    public static function getTrend($id, $agrupacion = 'dia') {
+        try {
+            $db = Database::getInstance()->getConnection();
+
+            switch ($agrupacion) {
+                case 'mes':
+                    $dateExpr = "DATE_FORMAT(r.fecha_respuesta, '%Y-%m')";
+                    $dateLabel = "DATE_FORMAT(r.fecha_respuesta, '%m/%Y')";
+                    break;
+                case 'semana':
+                    $dateExpr = "DATE_FORMAT(r.fecha_respuesta, '%Y-%u')";
+                    $dateLabel = "CONCAT('S', WEEK(r.fecha_respuesta), '/', YEAR(r.fecha_respuesta))";
+                    break;
+                default: // dia
+                    $dateExpr = "DATE(r.fecha_respuesta)";
+                    $dateLabel = "DATE_FORMAT(r.fecha_respuesta, '%d/%m/%Y')";
+                    break;
+            }
+
+            $sql = "SELECT $dateLabel AS periodo, COUNT(*) AS cantidad
+                    FROM respuestas_encuesta r
+                    JOIN preguntas_encuesta p ON p.id = r.pregunta_id
+                    WHERE p.encuesta_id = ? AND r.fecha_respuesta IS NOT NULL
+                    GROUP BY $dateExpr
+                    ORDER BY $dateExpr ASC
+                    LIMIT 90";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute([$id]);
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Exception $e) {
+            error_log("Error en Encuesta::getTrend - " . $e->getMessage());
+            return [];
         }
     }
 }
