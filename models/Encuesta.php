@@ -326,6 +326,32 @@ class Encuesta {
     }
 
     /**
+     * Elimina físicamente una encuesta y sus preguntas/respuestas/participaciones
+     * @param int $id
+     * @return bool
+     */
+    public static function delete($id) {
+        try {
+            $db = Database::getInstance()->getConnection();
+            // Borrar respuestas de las preguntas de esta encuesta
+            $db->prepare(
+                "DELETE r FROM respuestas_encuesta r
+                 INNER JOIN preguntas_encuesta p ON p.id = r.pregunta_id
+                 WHERE p.encuesta_id = ?"
+            )->execute([$id]);
+            // Borrar participaciones
+            $db->prepare("DELETE FROM encuesta_participaciones WHERE encuesta_id = ?")->execute([$id]);
+            // Borrar preguntas
+            $db->prepare("DELETE FROM preguntas_encuesta WHERE encuesta_id = ?")->execute([$id]);
+            // Borrar encuesta
+            return $db->prepare("DELETE FROM encuestas WHERE id = ?")->execute([$id]);
+        } catch (Exception $e) {
+            error_log("Error en Encuesta::delete - " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
      * Desactiva una encuesta
      * @param int $id
      * @return bool

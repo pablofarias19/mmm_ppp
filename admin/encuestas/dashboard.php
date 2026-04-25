@@ -45,6 +45,20 @@ if ($action === 'delete' && $id > 0) {
     exit;
 }
 
+// ── Borrar encuesta físicamente (POST) ───────────────────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'destroy') {
+    $del_id = (int)($_POST['id'] ?? 0);
+    if ($del_id > 0) {
+        if (Encuesta::delete($del_id)) {
+            $_SESSION['mensaje'] = "Encuesta eliminada permanentemente";
+        } else {
+            $_SESSION['mensaje'] = "Error al eliminar la encuesta";
+        }
+    }
+    header("Location: /admin/encuestas/dashboard.php");
+    exit;
+}
+
 // ── Procesar formulario POST ──────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $titulo           = trim($_POST['titulo'] ?? '');
@@ -210,6 +224,8 @@ unset($_SESSION['mensaje']);
         .btn-secondary:hover { background: #5a6268; }
         .btn-danger { background: #e74c3c; color: white; }
         .btn-danger:hover { background: #c0392b; }
+        .btn-warning { background: #e67e22; color: white; }
+        .btn-warning:hover { background: #ca6f1e; }
         .btn-small { padding: 6px 12px; font-size: 12px; }
         .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 
@@ -391,8 +407,14 @@ unset($_SESSION['mensaje']);
                                     <div class="actions">
                                         <a href="?action=edit&id=<?= $enc['id'] ?>"  class="btn btn-primary btn-small">✏️ Editar</a>
                                         <a href="?action=stats&id=<?= $enc['id'] ?>" class="btn btn-secondary btn-small">📊 Stats</a>
-                                        <a href="?action=delete&id=<?= $enc['id'] ?>" class="btn btn-danger btn-small"
-                                           onclick="return confirm('¿Desactivar esta encuesta?')">Desactivar</a>
+                                        <a href="?action=delete&id=<?= $enc['id'] ?>" class="btn btn-warning btn-small"
+                                           onclick="return confirm('¿Desactivar esta encuesta?')">⏸ Desactivar</a>
+                                        <form method="POST" style="display:inline;"
+                                              onsubmit="return confirm('¿Eliminar PERMANENTEMENTE esta encuesta y todos sus datos? Esta acción no se puede deshacer.')">
+                                            <input type="hidden" name="action" value="destroy">
+                                            <input type="hidden" name="id"     value="<?= $enc['id'] ?>">
+                                            <button type="submit" class="btn btn-danger btn-small">🗑 Borrar</button>
+                                        </form>
                                     </div>
                                 </td>
                             </tr>

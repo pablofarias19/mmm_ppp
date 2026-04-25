@@ -96,7 +96,14 @@ if ($method === 'POST') {
     $input = strpos($ct, 'application/json') !== false
            ? json_decode(file_get_contents('php://input'), true)
            : $_POST;
-    if (!$input) respond_error('Datos inválidos');
+    // Para 'delete' el id puede venir sólo en la query string (POST sin body)
+    if (!$input) {
+        if ($action === 'delete' && isset($_GET['id'])) {
+            $input = [];
+        } else {
+            respond_error('Datos inválidos');
+        }
+    }
 
     try {
         if ($action === 'create') {
