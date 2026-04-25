@@ -474,6 +474,19 @@ function updateBusiness($businessId, $data, $userId) {
 
         $db->commit();
 
+        // Optional: update encuestas_override if admin submits the field
+        if (isAdmin() && array_key_exists('encuestas_override', $data)) {
+            $validOverrides = ['heredar', 'habilitada', 'deshabilitada'];
+            $ov = in_array($data['encuestas_override'], $validOverrides, true) ? $data['encuestas_override'] : 'heredar';
+            try {
+                $db->prepare("UPDATE businesses SET encuestas_override = ? WHERE id = ?")
+                   ->execute([$ov, $businessId]);
+            } catch (PDOException $e) {
+                // Column not yet migrated — silently ignore
+                if ($e->getCode() !== '42S22' && (int)($e->errorInfo[1] ?? 0) !== 1054) throw $e;
+            }
+        }
+
         $owner = mapitaGetUserContactById($db, (int)$business['user_id']);
         mapitaSendUserNotificationEmail(
             $owner['email'] ?? null,
@@ -622,6 +635,126 @@ function getComercioData($businessId) {
     } catch (Exception $e) {
         error_log("Error al obtener datos de comercio: " . $e->getMessage());
         return null;
+    }
+}
+
+/**
+ * Verifica si un negocio puede crear encuestas.
+ * Regla: si tiene override 'habilitada' o 'deshabilitada', usa ese valor.
+ * Si es 'heredar' (default), hereda del permiso de la industria relacionada.
+ *
+ * @param int $businessId
+ * @return bool
+ */
+function canCreateSurvey(int $businessId): bool {
+    try {
+        $db = getDbConnection();
+
+        // Obtener override del negocio
+        $stmt = $db->prepare("SELECT encuestas_override FROM businesses WHERE id = ? LIMIT 1");
+        $stmt->execute([$businessId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$row) return false;
+
+        $override = $row['encuestas_override'] ?? 'heredar';
+        if ($override === 'habilitada')    return true;
+        if ($override === 'deshabilitada') return false;
+
+        // Heredar de industria
+        $stmt2 = $db->prepare(
+            "SELECT i.encuestas_permitidas
+             FROM industries i
+             WHERE i.business_id = ?
+             LIMIT 1"
+        );
+        $stmt2->execute([$businessId]);
+        $ind = $stmt2->fetch(PDO::FETCH_ASSOC);
+        return !empty($ind['encuestas_permitidas']);
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+/**
+ * Duplica un negocio: clona todos sus datos excepto la ubicación geoespacial.
+ * Retorna el ID del nuevo negocio.
+ *
+ * @param int $businessId ID del negocio original
+ * @param int $userId     ID del usuario que realiza la acción
+ * @return array ['success' => bool, 'business_id' => int|null, 'message' => string]
+ */
+function duplicateBusiness(int $businessId, int $userId): array {
+    try {
+        $db = getDbConnection();
+
+        if (!canManageBusiness($userId, $businessId)) {
+            return ['success' => false, 'business_id' => null, 'message' => 'Sin permisos para duplicar este negocio.'];
+        }
+
+        // Cargar negocio original
+        $stmt = $db->prepare("SELECT * FROM businesses WHERE id = ? LIMIT 1");
+        $stmt->execute([$businessId]);
+        $orig = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$orig) {
+            return ['success' => false, 'business_id' => null, 'message' => 'Negocio no encontrado.'];
+        }
+
+        $db->beginTransaction();
+
+        // Columnas a excluir (geolocalización + id)
+        $excludeCols = ['id', 'lat', 'lng', 'created_at', 'updated_at'];
+
+        $cols   = [];
+        $vals   = [];
+        $params = [];
+        foreach ($orig as $col => $val) {
+            if (in_array($col, $excludeCols, true)) continue;
+            $cols[]   = $col;
+            $vals[]   = '?';
+            $params[] = $val;
+        }
+        // Ajustar campos para el duplicado
+        $nameIdx = array_search('name', $cols);
+        if ($nameIdx !== false) {
+            $params[$nameIdx] = ($orig['name'] ?? 'Negocio') . ' (copia)';
+        }
+        // lat/lng: NULL para forzar al usuario a setear ubicación
+        $cols[]   = 'lat';   $vals[]   = '?'; $params[] = null;
+        $cols[]   = 'lng';   $vals[]   = '?'; $params[] = null;
+        $cols[]   = 'created_at'; $vals[] = 'NOW()';
+        // No pasar created_at como param — se usa NOW() literal
+        array_pop($params); // Sacar el null que se añadió para created_at
+
+        $sql = 'INSERT INTO businesses (' . implode(',', $cols) . ') VALUES (' . implode(',', $vals) . ')';
+        // Reemplazar el '?' de created_at (último) por NOW()
+        $sql = preg_replace('/\?$/', 'NOW()', $sql);
+
+        $stmt2 = $db->prepare($sql);
+        $stmt2->execute($params);
+        $newId = (int)$db->lastInsertId();
+
+        // Duplicar datos de comercio (horarios, etc.) si existen
+        $comercio = $db->prepare("SELECT * FROM comercios WHERE business_id = ? LIMIT 1");
+        $comercio->execute([$businessId]);
+        $com = $comercio->fetch(PDO::FETCH_ASSOC);
+        if ($com) {
+            unset($com['id']);
+            $com['business_id'] = $newId;
+            $comCols = array_keys($com);
+            $comVals = array_fill(0, count($comCols), '?');
+            $db->prepare(
+                'INSERT INTO comercios (' . implode(',', $comCols) . ') VALUES (' . implode(',', $comVals) . ')'
+            )->execute(array_values($com));
+        }
+
+        $db->commit();
+
+        return ['success' => true, 'business_id' => $newId, 'message' => 'Negocio duplicado correctamente. Por favor, asigná la nueva ubicación en el mapa.'];
+
+    } catch (Exception $e) {
+        if (isset($db) && $db->inTransaction()) $db->rollBack();
+        error_log("Error en duplicateBusiness: " . $e->getMessage());
+        return ['success' => false, 'business_id' => null, 'message' => 'Error al duplicar el negocio.'];
     }
 }
 

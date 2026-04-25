@@ -52,6 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $lat              = $_POST['lat'] ?? null;
     $lng              = $_POST['lng'] ?? null;
     $fecha_expiracion = $_POST['fecha_expiracion'] ?? null;
+    $detalle_activo   = isset($_POST['detalle_activo']) ? 1 : 0;
+    // Construir CSV de gráficos seleccionados
+    $graficos_raw    = $_POST['graficos_config'] ?? '';
+    $graficos_sel    = array_filter(array_map('trim', explode(',', $graficos_raw)));
+    $graficos_config = implode(',', array_intersect($graficos_sel, ['barras','torta','tendencia']));
+    if ($graficos_config === '') $graficos_config = 'barras,torta,tendencia';
 
     if (!$titulo) {
         $error = "El título es requerido";
@@ -88,6 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'lat'              => $lat,
                     'lng'              => $lng,
                     'fecha_expiracion' => $fecha_expiracion,
+                    'detalle_activo'   => $detalle_activo,
+                    'graficos_config'  => $graficos_config,
                 ]);
 
                 if ($result) {
@@ -108,6 +116,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'lat'              => $lat,
                     'lng'              => $lng,
                     'fecha_expiracion' => $fecha_expiracion,
+                    'detalle_activo'   => $detalle_activo,
+                    'graficos_config'  => $graficos_config,
                 ]);
 
                 if ($result) {
@@ -144,6 +154,8 @@ unset($_SESSION['mensaje']);
     <link rel="stylesheet" href="/css/map-styles.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Chart.js para gráficos estadísticos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -289,6 +301,24 @@ unset($_SESSION['mensaje']);
         .respuesta-stat-count { font-weight: 700; color: #667eea; white-space: nowrap; }
         .respuesta-stat-bar-wrap { flex: 2; background: #e9ecef; border-radius: 3px; height: 14px; overflow: hidden; }
         .respuesta-stat-bar { background: linear-gradient(90deg, #667eea 0%, #764ba2 100%); height: 14px; border-radius: 3px; transition: width .5s; }
+        /* Charts */
+        .chart-tabs { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+        .chart-tab-btn {
+            padding: 7px 16px; border: none; border-radius: 20px; cursor: pointer;
+            font-size: 13px; font-weight: 500; background: #e9ecef; color: #555; transition: 0.2s;
+        }
+        .chart-tab-btn.active { background: #667eea; color: white; }
+        .chart-panel { display: none; }
+        .chart-panel.active { display: block; }
+        .chart-wrap { position: relative; height: 260px; margin-bottom: 20px; }
+        .graficos-config-box {
+            background: #f0f4ff; border: 1px solid #d0d8ff; border-radius: 8px;
+            padding: 16px 20px; margin-bottom: 20px;
+        }
+        .graficos-config-box h4 { font-size: 14px; font-weight: 600; color: #2c3e50; margin-bottom: 10px; }
+        .graficos-config-box label { display: inline-flex; align-items: center; gap: 6px; margin-right: 16px; font-size: 14px; cursor: pointer; }
+        .toggle-detalle { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; font-weight: 600; font-size: 14px; }
+        .toggle-detalle input[type=checkbox] { width: 18px; height: 18px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -420,6 +450,39 @@ unset($_SESSION['mensaje']);
                         <small>Dejar vacío si no deseas que expire</small>
                     </div>
 
+                    <!-- ── Panel Detalle y Gráficos ───────────────────────── -->
+                    <div class="graficos-config-box">
+                        <h4>📊 Panel "Detalle" con Gráficos</h4>
+                        <div class="toggle-detalle">
+                            <input type="checkbox" id="detalle_activo" name="detalle_activo" value="1"
+                                   <?= (!$encuesta || !empty($encuesta['detalle_activo'])) ? 'checked' : '' ?>>
+                            <label for="detalle_activo">Habilitar panel Detalle con gráficos para esta encuesta</label>
+                        </div>
+                        <?php
+                            $grafCfgActual = $encuesta['graficos_config'] ?? 'barras,torta,tendencia';
+                            $grafActivos = array_map('trim', explode(',', $grafCfgActual));
+                        ?>
+                        <p style="font-size:12px;color:#555;margin-bottom:8px;">Tipos de gráficos habilitados:</p>
+                        <!-- Hidden CSV field actualizado por los checkboxes vía JS -->
+                        <input type="hidden" id="graficos_config" name="graficos_config"
+                               value="<?= htmlspecialchars(implode(',', $grafActivos)) ?>">
+                        <label>
+                            <input type="checkbox" class="grafico-chk" value="barras"
+                                   <?= in_array('barras', $grafActivos) ? 'checked' : '' ?>>
+                            📊 Barras (opciones)
+                        </label>
+                        <label>
+                            <input type="checkbox" class="grafico-chk" value="torta"
+                                   <?= in_array('torta', $grafActivos) ? 'checked' : '' ?>>
+                            🥧 Torta/Pie (distribución)
+                        </label>
+                        <label>
+                            <input type="checkbox" class="grafico-chk" value="tendencia"
+                                   <?= in_array('tendencia', $grafActivos) ? 'checked' : '' ?>>
+                            📈 Tendencia temporal
+                        </label>
+                    </div>
+
                     <!-- ── Preguntas con opciones ─────────────────────────── -->
                     <div class="preguntas-section">
                         <h3>❓ Preguntas de la Encuesta</h3>
@@ -482,43 +545,204 @@ unset($_SESSION['mensaje']);
 
         <!-- ── VISTA: ESTADÍSTICAS ────────────────────────────────────────── -->
         <?php if ($action === 'stats' && $id > 0 && $encuesta): ?>
-            <?php $stats = Encuesta::getStats($id); ?>
+            <?php
+                $stats    = Encuesta::getStats($id);
+                $trend    = Encuesta::getTrend($id, 'dia');
+                $grafCfg  = array_map('trim', explode(',', $encuesta['graficos_config'] ?? 'barras,torta,tendencia'));
+                $hayBarras    = in_array('barras',    $grafCfg);
+                $hayTorta     = in_array('torta',     $grafCfg);
+                $hayTendencia = in_array('tendencia', $grafCfg);
+                $detalleActivo = (int)($encuesta['detalle_activo'] ?? 1);
+            ?>
             <div class="stats-container">
-                <h2>📊 Estadísticas — <?= htmlspecialchars($encuesta['titulo']) ?></h2>
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:20px;">
+                    <div>
+                        <h2 style="margin-bottom:4px;">📊 Estadísticas — <?= htmlspecialchars($encuesta['titulo']) ?></h2>
+                        <?php if (!$detalleActivo): ?>
+                            <p style="color:#e67e22;font-size:13px;">⚠️ El panel Detalle está deshabilitado para esta encuesta (solo popup). <a href="?action=edit&id=<?= $id ?>">Editar configuración →</a></p>
+                        <?php endif; ?>
+                    </div>
+                    <div style="display:flex;gap:8px;">
+                        <a href="?action=edit&id=<?= $id ?>" class="btn btn-primary">✏️ Editar</a>
+                        <a href="?action=list" class="btn btn-secondary">← Volver</a>
+                    </div>
+                </div>
 
                 <div class="stat-box">
                     <h3><?= (int)($stats['total_participantes'] ?? 0) ?></h3>
                     <p>Participantes Totales</p>
                 </div>
 
-                <?php foreach (($stats['preguntas'] ?? []) as $pregunta): ?>
-                    <div class="pregunta-stats">
-                        <h4><?= htmlspecialchars($pregunta['pregunta'] ?? 'Pregunta ' . $pregunta['id']) ?></h4>
-                        <p style="font-size:12px;color:#6c757d;margin-bottom:12px;">
-                            <?= (int)($pregunta['respuestas_totales'] ?? 0) ?> respuestas
-                        </p>
-                        <?php
-                            $max_r = max(array_column($pregunta['respuestas'] ?? [], 'cantidad') ?: [1]);
-                            $max_r = max((int)$max_r, 1);
-                        ?>
-                        <?php foreach (($pregunta['respuestas'] ?? []) as $resp): ?>
-                            <div class="respuesta-stat">
-                                <span class="respuesta-stat-label"><?= htmlspecialchars($resp['respuesta']) ?></span>
-                                <div class="respuesta-stat-bar-wrap">
-                                    <div class="respuesta-stat-bar"
-                                         style="width:<?= round($resp['cantidad'] / $max_r * 100) ?>%"></div>
-                                </div>
-                                <span class="respuesta-stat-count"><?= (int)$resp['cantidad'] ?></span>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                <?php endforeach; ?>
-
-                <div style="margin-top:30px;display:flex;gap:10px;">
-                    <a href="?action=edit&id=<?= $id ?>"  class="btn btn-primary">✏️ Editar</a>
-                    <a href="?action=list" class="btn btn-secondary">← Volver</a>
+                <?php if ($detalleActivo): ?>
+                <!-- ── TABS de visualización ──────────────────────────── -->
+                <div class="chart-tabs">
+                    <button class="chart-tab-btn active" onclick="switchTab(this,'tab-barras')" <?= $hayBarras ? '' : 'disabled style="opacity:.4;"' ?>>📊 Barras</button>
+                    <button class="chart-tab-btn" onclick="switchTab(this,'tab-torta')"   <?= $hayTorta   ? '' : 'disabled style="opacity:.4;"' ?>>🥧 Torta</button>
+                    <button class="chart-tab-btn" onclick="switchTab(this,'tab-tendencia')" <?= $hayTendencia ? '' : 'disabled style="opacity:.4;"' ?>>📈 Tendencia</button>
+                    <button class="chart-tab-btn" onclick="switchTab(this,'tab-tabla')">📋 Tabla</button>
                 </div>
+                <?php endif; ?>
+
+                <!-- ── TAB: BARRAS ──────────────────────────────────── -->
+                <div id="tab-barras" class="chart-panel <?= $detalleActivo && $hayBarras ? 'active' : '' ?>">
+                    <?php foreach (($stats['preguntas'] ?? []) as $pi => $pregunta): ?>
+                        <div class="pregunta-stats">
+                            <h4><?= htmlspecialchars($pregunta['pregunta'] ?? 'Pregunta ' . $pregunta['id']) ?></h4>
+                            <div class="chart-wrap">
+                                <canvas id="chart-bar-<?= $pi ?>"></canvas>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- ── TAB: TORTA ───────────────────────────────────── -->
+                <div id="tab-torta" class="chart-panel">
+                    <?php foreach (($stats['preguntas'] ?? []) as $pi => $pregunta): ?>
+                        <div class="pregunta-stats">
+                            <h4><?= htmlspecialchars($pregunta['pregunta'] ?? 'Pregunta ' . $pregunta['id']) ?></h4>
+                            <div class="chart-wrap" style="height:300px;">
+                                <canvas id="chart-pie-<?= $pi ?>"></canvas>
+                            </div>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
+                <!-- ── TAB: TENDENCIA ───────────────────────────────── -->
+                <div id="tab-tendencia" class="chart-panel">
+                    <?php if (empty($trend)): ?>
+                        <p style="color:#888;padding:20px 0;">No hay datos temporales disponibles aún (las respuestas necesitan fecha de registro).</p>
+                    <?php else: ?>
+                        <div class="pregunta-stats">
+                            <h4>📈 Respuestas por día</h4>
+                            <div class="chart-wrap" style="height:300px;">
+                                <canvas id="chart-trend"></canvas>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+                <!-- ── TAB: TABLA ────────────────────────────────────── -->
+                <div id="tab-tabla" class="chart-panel <?= !$detalleActivo ? 'active' : '' ?>">
+                    <?php foreach (($stats['preguntas'] ?? []) as $pregunta): ?>
+                        <div class="pregunta-stats">
+                            <h4><?= htmlspecialchars($pregunta['pregunta'] ?? 'Pregunta ' . $pregunta['id']) ?></h4>
+                            <p style="font-size:12px;color:#6c757d;margin-bottom:12px;">
+                                <?= (int)($pregunta['respuestas_totales'] ?? 0) ?> respuestas
+                            </p>
+                            <?php
+                                $max_r = max(array_column($pregunta['respuestas'] ?? [], 'cantidad') ?: [1]);
+                                $max_r = max((int)$max_r, 1);
+                            ?>
+                            <?php foreach (($pregunta['respuestas'] ?? []) as $resp): ?>
+                                <div class="respuesta-stat">
+                                    <span class="respuesta-stat-label"><?= htmlspecialchars($resp['respuesta']) ?></span>
+                                    <div class="respuesta-stat-bar-wrap">
+                                        <div class="respuesta-stat-bar"
+                                             style="width:<?= round($resp['cantidad'] / $max_r * 100) ?>%"></div>
+                                    </div>
+                                    <span class="respuesta-stat-count"><?= (int)$resp['cantidad'] ?></span>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+
             </div>
+
+            <script>
+            // ── Datos de estadísticas ───────────────────────────────────
+            var statsData = <?= json_encode($stats['preguntas'] ?? []) ?>;
+            var trendData = <?= json_encode($trend) ?>;
+            var paleta = [
+                '#667eea','#f39c12','#2ecc71','#e74c3c','#9b59b6',
+                '#1abc9c','#e67e22','#3498db','#e91e63','#00bcd4'
+            ];
+
+            function switchTab(btn, panelId) {
+                document.querySelectorAll('.chart-tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.chart-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                var panel = document.getElementById(panelId);
+                if (panel) panel.classList.add('active');
+            }
+
+            // ── Gráficos de Barras ──────────────────────────────────────
+            statsData.forEach(function(preg, pi) {
+                var labels = (preg.respuestas || []).map(function(r) { return r.respuesta; });
+                var values = (preg.respuestas || []).map(function(r) { return parseInt(r.cantidad) || 0; });
+                var ctx = document.getElementById('chart-bar-' + pi);
+                if (!ctx) return;
+                new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Respuestas',
+                            data: values,
+                            backgroundColor: paleta.slice(0, labels.length),
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    }
+                });
+            });
+
+            // ── Gráficos de Torta ───────────────────────────────────────
+            statsData.forEach(function(preg, pi) {
+                var labels = (preg.respuestas || []).map(function(r) { return r.respuesta; });
+                var values = (preg.respuestas || []).map(function(r) { return parseInt(r.cantidad) || 0; });
+                var ctx = document.getElementById('chart-pie-' + pi);
+                if (!ctx) return;
+                new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: values,
+                            backgroundColor: paleta.slice(0, labels.length),
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { position: 'bottom' } }
+                    }
+                });
+            });
+
+            // ── Gráfico de Tendencia ────────────────────────────────────
+            (function() {
+                var ctx = document.getElementById('chart-trend');
+                if (!ctx || !trendData.length) return;
+                var labels = trendData.map(function(d) { return d.periodo; });
+                var values = trendData.map(function(d) { return parseInt(d.cantidad) || 0; });
+                new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Respuestas',
+                            data: values,
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102,126,234,0.12)',
+                            fill: true,
+                            tension: 0.3,
+                            pointRadius: 4,
+                            pointBackgroundColor: '#667eea'
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+                    }
+                });
+            })();
+            </script>
         <?php endif; ?>
 
     </div><!-- /.admin-container -->
@@ -656,6 +880,17 @@ unset($_SESSION['mensaje']);
     document.querySelectorAll('#preguntas-container .pregunta-block').forEach(function(b) {
         var id = b.id.replace('pregunta-', '');
         actualizarContador(parseInt(id));
+    });
+
+    // ── Sincronizar checkboxes de gráficos con campo hidden ────────────────
+    function syncGraficosConfig() {
+        var chks = document.querySelectorAll('.grafico-chk:checked');
+        var vals = Array.from(chks).map(function(c) { return c.value; });
+        var hidden = document.getElementById('graficos_config');
+        if (hidden) hidden.value = vals.join(',');
+    }
+    document.querySelectorAll('.grafico-chk').forEach(function(c) {
+        c.addEventListener('change', syncGraficosConfig);
     });
     </script>
 </body>

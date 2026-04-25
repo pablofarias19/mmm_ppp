@@ -63,25 +63,37 @@ if ($editing) {
 // ── Procesar POST ─────────────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrfToken();
-    if ($editing) {
-        $result = updateBusiness($businessId, $_POST, $userId);
+
+    // ── Acción: Duplicar ──────────────────────────────────────────────────────
+    if (isset($_POST['action']) && $_POST['action'] === 'duplicar' && $editing) {
+        $result = duplicateBusiness($businessId, $userId);
         if ($result['success']) {
-            $db   = getDbConnection();
-            $stmt = $db->prepare("SELECT * FROM businesses WHERE id = ?");
-            $stmt->execute([$businessId]);
-            $business     = $stmt->fetch();
-            $comercioData = getComercioData($businessId);
-        }
-    } else {
-        $result = addBusiness($_POST, $userId);
-        if ($result['success']) {
-            // Redirigir a modo edición para que el usuario agregue fotos
-            header("Location: /edit?id=" . $result['business_id'] . "&nuevo=1");
+            header("Location: /edit?id=" . $result['business_id'] . "&duplicado=1");
             exit();
         }
+        $message     = $result['message'];
+        $messageType = 'error';
+    } else {
+        if ($editing) {
+            $result = updateBusiness($businessId, $_POST, $userId);
+            if ($result['success']) {
+                $db   = getDbConnection();
+                $stmt = $db->prepare("SELECT * FROM businesses WHERE id = ?");
+                $stmt->execute([$businessId]);
+                $business     = $stmt->fetch();
+                $comercioData = getComercioData($businessId);
+            }
+        } else {
+            $result = addBusiness($_POST, $userId);
+            if ($result['success']) {
+                // Redirigir a modo edición para que el usuario agregue fotos
+                header("Location: /edit?id=" . $result['business_id'] . "&nuevo=1");
+                exit();
+            }
+        }
+        $message     = $result['message'];
+        $messageType = $result['success'] ? 'success' : 'error';
     }
-    $message     = $result['message'];
-    $messageType = $result['success'] ? 'success' : 'error';
 }
 
 // ── Datos para pre-llenar ─────────────────────────────────────────────────────
@@ -717,6 +729,8 @@ $descriptionPlaceholders = [
 
     <?php if (isset($_GET['nuevo']) && $_GET['nuevo'] == 1): ?>
         <div class="message msg-info">🎉 ¡Negocio publicado! Ahora podés agregar fotos y completar los detalles.</div>
+    <?php elseif (isset($_GET['duplicado']) && $_GET['duplicado'] == 1): ?>
+        <div class="message msg-info">📋 ¡Negocio duplicado! Por favor, asigná la <strong>nueva ubicación</strong> en el mapa antes de guardar.</div>
     <?php endif; ?>
 
     <?php if ($message): ?>
@@ -1390,6 +1404,10 @@ $descriptionPlaceholders = [
         <div class="submit-bar">
             <?php if ($editing): ?>
                 <a href="/mis-negocios" class="btn-cancel">← Mis negocios</a>
+                <button type="button" class="btn-cancel" onclick="confirmarDuplicar()"
+                        title="Clonar este negocio con los mismos datos (sin ubicación)">
+                    📋 Duplicar
+                </button>
             <?php else: ?>
                 <a href="/" class="btn-cancel">← Cancelar</a>
                 <button type="reset" class="btn-cancel" onclick="return confirm('¿Limpiar todos los datos?')">🗑️ Limpiar</button>
@@ -1588,6 +1606,43 @@ $descriptionPlaceholders = [
             <div id="biz-deleg-list" class="deleg-list"></div>
         </div>
     </div>
+
+    <?php if ($isAdmin): ?>
+    <!-- ══ PANEL ADMIN: Permisos especiales ═════════════════════════════════ -->
+    <div class="form-section">
+        <div class="section-head">
+            <span class="section-icon">🔐</span>
+            <div>
+                <div class="section-title">Permisos Admin</div>
+                <div class="section-desc">Configuración especial (solo visible para administradores)</div>
+            </div>
+        </div>
+        <div class="section-body">
+            <form method="post" id="admin-perms-form">
+                <?php echo csrfField(); ?>
+                <!-- Incluir todos los campos requeridos del formulario principal -->
+                <input type="hidden" name="name"          value="<?php echo bv($business, 'name'); ?>">
+                <input type="hidden" name="address"       value="<?php echo bv($business, 'address'); ?>">
+                <input type="hidden" name="business_type" value="<?php echo bv($business, 'business_type'); ?>">
+                <div class="field">
+                    <label style="font-weight:600;">📋 Permiso de Encuestas</label>
+                    <select name="encuestas_override"
+                            style="padding:10px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;width:100%;max-width:360px;">
+                        <option value="heredar"       <?php echo ($business['encuestas_override'] ?? 'heredar') === 'heredar'        ? 'selected' : ''; ?>>🔄 Heredar de la industria</option>
+                        <option value="habilitada"    <?php echo ($business['encuestas_override'] ?? '') === 'habilitada'    ? 'selected' : ''; ?>>✅ Habilitada (override)</option>
+                        <option value="deshabilitada" <?php echo ($business['encuestas_override'] ?? '') === 'deshabilitada' ? 'selected' : ''; ?>>❌ Deshabilitada (override)</option>
+                    </select>
+                    <small style="color:#6b7280;display:block;margin-top:4px;">
+                        Si se hereda: el permiso viene de la industria. Override fuerza el valor sin importar la industria.
+                    </small>
+                </div>
+                <div style="margin-top:12px;">
+                    <button type="submit" class="btn-save" style="width:auto;padding:10px 18px;">Guardar permiso</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <?php endif; ?>
     <?php endif; ?>
 
 </div><!-- /main -->
@@ -1600,6 +1655,23 @@ const INITIAL_LAT    = <?php echo $editing ? (float)($business['lat'] ?? -34.603
 const INITIAL_LNG    = <?php echo $editing ? (float)($business['lng'] ?? -58.3816) : -58.3816; ?>;
 const GALLERY_COUNT  = <?php echo count($galleryPhotos); ?>;
 const MAX_GALLERY    = 3;
+
+// ── Duplicar negocio ─────────────────────────────────────────────────────────
+function confirmarDuplicar() {
+    if (!confirm('¿Duplicar este negocio?\n\nSe creará una copia con los mismos datos, pero SIN ubicación.\nDeberás asignar la nueva ubicación en el mapa antes de guardar.')) return;
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = window.location.href;
+    var csrfEl = document.querySelector('#main-form [name="csrf_token"]');
+    if (csrfEl) {
+        var h = document.createElement('input'); h.type = 'hidden'; h.name = 'csrf_token'; h.value = csrfEl.value;
+        form.appendChild(h);
+    }
+    var a = document.createElement('input'); a.type = 'hidden'; a.name = 'action'; a.value = 'duplicar';
+    form.appendChild(a);
+    document.body.appendChild(form);
+    form.submit();
+}
 
 // Tags iniciales (pre-cargados en edición)
 let currentTags = <?php echo json_encode(array_values($currentTags)); ?>;
