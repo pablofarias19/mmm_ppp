@@ -3,7 +3,7 @@
  * API Galería de Industrias
  *
  * GET  ?industry_id=X           → lista fotos de galería de la industria
- * POST action=upload             → sube hasta 1 foto (multipart), máx 2 en total
+ * POST action=upload             → sube 1 foto a la vez (multipart), máx 2 en total
  * POST action=delete             → elimina una foto por nombre
  *
  * Límites: máx 2 fotos de galería · máx 120 KB por foto · JPG / PNG / WebP
