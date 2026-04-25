@@ -20,6 +20,16 @@ $db          = getDbConnection();
 $message     = '';
 $messageType = '';
 
+// ── Helpers de permisos (con fallback si columnas aún no existen) ────────────
+function column_exists_local(PDO $db, string $table, string $col): bool {
+    try {
+        $s = $db->prepare("SELECT 1 FROM information_schema.columns WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ? LIMIT 1");
+        $s->execute([$table, $col]);
+        return (bool)$s->fetchColumn();
+    } catch (\Throwable $e) { return false; }
+}
+$hasPermisos = column_exists_local($db, 'businesses', 'ofertas_permitidas');
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     verifyCsrfToken();
     $action = $_POST['action'] ?? '';
@@ -27,6 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($action === 'create') {
         $nombre = trim($_POST['nombre'] ?? '');
         if ($nombre) {
+            $bizId = $_POST['business_id'] !== '' ? (int)$_POST['business_id'] : null;
             if (Oferta::create([
                 'nombre'           => $nombre,
                 'descripcion'      => $_POST['descripcion']      ?? null,
@@ -37,6 +48,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'lat'              => $_POST['lat']              ?? '',
                 'lng'              => $_POST['lng']              ?? '',
                 'activo'           => isset($_POST['activo']) ? 1 : 0,
+                'business_id'      => $bizId,
             ])) {
                 $message = 'Oferta creada correctamente.'; $messageType = 'success';
             } else {
@@ -61,10 +73,52 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $messageType = 'success';
         }
     }
+
+    // ── Gestión de permisos por negocio ───────────────────────────────────
+    if ($action === 'set_permiso' && $hasPermisos && !empty($_POST['business_id'])) {
+        $bizId   = (int)$_POST['business_id'];
+        $permit  = isset($_POST['ofertas_permitidas']) ? 1 : 0;
+        $maxOff  = max(0, (int)($_POST['ofertas_max'] ?? 0));
+        try {
+            $db->prepare("UPDATE businesses SET ofertas_permitidas = ?, ofertas_max = ? WHERE id = ?")
+               ->execute([$permit, $maxOff, $bizId]);
+            $message = 'Permisos actualizados.'; $messageType = 'success';
+        } catch (\Exception $e) {
+            $message = 'Error al actualizar permisos.'; $messageType = 'error';
+        }
+    }
 }
 
 $ofertas = Oferta::getAll();
 $stats   = Oferta::getStats();
+
+// Negocios con permisos (para la sección de administración)
+$negocios_con_permiso = [];
+$todos_negocios = [];
+if ($hasPermisos) {
+    try {
+        $negocios_con_permiso = $db->query(
+            "SELECT id, name, ofertas_permitidas, ofertas_max FROM businesses WHERE ofertas_permitidas = 1 ORDER BY name"
+        )->fetchAll(\PDO::FETCH_ASSOC);
+        $todos_negocios = $db->query(
+            "SELECT id, name FROM businesses ORDER BY name LIMIT 200"
+        )->fetchAll(\PDO::FETCH_ASSOC);
+    } catch (\Exception $e) {}
+}
+
+// Cupo actual por negocio (para mostrar X/Y)
+$cupo_usado = [];
+if (!empty($negocios_con_permiso)) {
+    $ids = array_column($negocios_con_permiso, 'id');
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+    try {
+        $stCupo = $db->prepare("SELECT business_id, COUNT(*) AS total FROM ofertas WHERE activo = 1 AND business_id IN ($placeholders) GROUP BY business_id");
+        $stCupo->execute($ids);
+        foreach ($stCupo->fetchAll(\PDO::FETCH_ASSOC) as $row) {
+            $cupo_usado[$row['business_id']] = (int)$row['total'];
+        }
+    } catch (\Exception $e) {}
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -113,6 +167,11 @@ $stats   = Oferta::getStats();
         .badge-active   { background: #d4edda; color: #155724; }
         .badge-inactive { background: #fff3cd; color: #856404; }
         .badge-expired  { background: #f8d7da; color: #721c24; }
+        .badge-biz      { background: #cfe2ff; color: #0a58ca; }
+        .quota-badge    { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:20px; font-size:.82em; font-weight:600; background:#e2e3e5; color:#41464b; }
+        .quota-badge.quota-ok   { background:#d1ecf1; color:#0c5460; }
+        .quota-badge.quota-warn { background:#fff3cd; color:#856404; }
+        .quota-badge.quota-full { background:#f8d7da; color:#721c24; }
 
         .btn { padding: 9px 14px; border: none; border-radius: 6px; cursor: pointer; font-size: .88em; font-weight: 600; transition: all .3s; }
         .btn-primary  { background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); color: white; }
@@ -121,6 +180,8 @@ $stats   = Oferta::getStats();
         .btn-danger:hover { background: #c0392b; }
         .btn-secondary { background: #6c757d; color: white; }
         .btn-secondary:hover { background: #5a6268; }
+        .btn-success  { background: #28a745; color: white; }
+        .btn-success:hover { background: #218838; }
         .inline-form { display: inline; }
 
         .message { padding: 14px 20px; margin-bottom: 20px; border-radius: 6px; }
@@ -129,6 +190,13 @@ $stats   = Oferta::getStats();
 
         .price-tag { font-weight: 700; color: #e74c3c; }
         .price-old { text-decoration: line-through; color: #999; font-size: .85em; margin-right: 6px; }
+
+        .perm-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(320px,1fr)); gap:16px; padding:20px; }
+        .perm-card { border:1px solid #e0e0e0; border-radius:8px; padding:16px; background:#fafafa; }
+        .perm-card h4 { margin:0 0 10px; font-size:.95em; color:#333; }
+        .perm-card .quota-info { font-size:.82em; color:#666; margin-bottom:10px; }
+        .perm-form-inline { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+        .perm-form-inline input[type=number] { width:80px; padding:6px; border:1px solid #ddd; border-radius:4px; }
 
         @media (max-width: 768px) {
             .form-grid { grid-template-columns: 1fr; }
@@ -169,6 +237,12 @@ $stats   = Oferta::getStats();
             <div class="number"><?php echo $stats['vencidas']; ?></div>
             <div class="label">Vencidas/Inactivas</div>
         </div>
+        <?php if ($hasPermisos): ?>
+        <div class="stat-card">
+            <div class="number"><?php echo count($negocios_con_permiso); ?></div>
+            <div class="label">Negocios con permiso</div>
+        </div>
+        <?php endif; ?>
     </div>
 
     <!-- Crear Oferta -->
@@ -182,6 +256,19 @@ $stats   = Oferta::getStats();
                 <div class="form-group">
                     <label>Nombre de la oferta *</label>
                     <input type="text" name="nombre" required placeholder="Ej: 50% en pizzas los martes">
+                </div>
+                <div class="form-group">
+                    <label>Negocio (ID)</label>
+                    <?php if (!empty($todos_negocios)): ?>
+                    <select name="business_id">
+                        <option value="">— Sin negocio asociado —</option>
+                        <?php foreach ($todos_negocios as $biz): ?>
+                            <option value="<?= $biz['id'] ?>">#<?= $biz['id'] ?> – <?= htmlspecialchars($biz['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php else: ?>
+                    <input type="number" name="business_id" min="1" placeholder="ID del negocio (opcional)">
+                    <?php endif; ?>
                 </div>
                 <div class="form-group">
                     <label>Precio normal</label>
@@ -244,9 +331,9 @@ $stats   = Oferta::getStats();
                     <tr>
                         <th>#</th>
                         <th>Nombre</th>
+                        <th>Negocio</th>
                         <th>Precio</th>
                         <th>Vence</th>
-                        <th>Geo</th>
                         <th>Estado</th>
                         <th>Acciones</th>
                     </tr>
@@ -266,6 +353,13 @@ $stats   = Oferta::getStats();
                             <?php endif; ?>
                         </td>
                         <td>
+                            <?php if ($o['business_id']): ?>
+                                <span class="badge badge-biz">#<?php echo $o['business_id']; ?></span>
+                            <?php else: ?>
+                                <span style="color:#ccc;">—</span>
+                            <?php endif; ?>
+                        </td>
+                        <td>
                             <?php if ($o['precio_normal']): ?>
                                 <span class="price-old">$<?php echo number_format($o['precio_normal'], 0); ?></span>
                             <?php endif; ?>
@@ -275,9 +369,13 @@ $stats   = Oferta::getStats();
                                 <span style="color:#999;">—</span>
                             <?php endif; ?>
                         </td>
-                        <td><?php echo $o['fecha_expiracion'] ? date('d/m/Y', strtotime($o['fecha_expiracion'])) : '<span style="color:#999;">Sin vencimiento</span>'; ?></td>
-                        <td><?php echo ($o['lat'] && $o['lng']) ? '<span style="color:#27ae60;">📍</span>' : '<span style="color:#ccc;">—</span>'; ?></td>
-                        <td><span class="badge <?php echo $badgeClass; ?>"><?php echo $badgeLabel; ?></span></td>
+                        <td><?php echo $o['fecha_expiracion'] ? date('d/m/Y', strtotime($o['fecha_expiracion'])) : '<span style="color:#999;">Sin venc.</span>'; ?></td>
+                        <td>
+                            <span class="badge <?php echo $badgeClass; ?>"><?php echo $badgeLabel; ?></span>
+                            <?php if ($o['lat'] && $o['lng']): ?>
+                                <span title="Con geolocalización" style="color:#27ae60;">📍</span>
+                            <?php endif; ?>
+                        </td>
                         <td style="white-space:nowrap;">
                             <form method="post" class="inline-form">
                                 <?php echo csrfField(); ?>
@@ -287,7 +385,7 @@ $stats   = Oferta::getStats();
                                     <?php echo $o['activo'] ? '⏸ Pausar' : '▶ Activar'; ?>
                                 </button>
                             </form>
-                            <form method="post" class="inline-form" onsubmit="return confirm('¿Eliminar esta oferta?')">
+                            <form method="post" class="inline-form" onsubmit="return confirm('¿Eliminar esta oferta permanentemente?')">
                                 <?php echo csrfField(); ?>
                                 <input type="hidden" name="action" value="delete">
                                 <input type="hidden" name="id" value="<?php echo $o['id']; ?>">
@@ -300,6 +398,84 @@ $stats   = Oferta::getStats();
             </table>
         <?php endif; ?>
     </div>
+
+    <?php if ($hasPermisos): ?>
+    <!-- Permisos de negocios para ofertas -->
+    <div class="section">
+        <div class="section-header">🔑 Permisos de Publicación por Negocio</div>
+
+        <?php if (!empty($negocios_con_permiso)): ?>
+        <div style="padding:16px 20px 4px;font-weight:600;color:#333;">Negocios con permiso activo:</div>
+        <div class="perm-grid">
+            <?php foreach ($negocios_con_permiso as $biz):
+                $used = $cupo_usado[$biz['id']] ?? 0;
+                $max  = (int)$biz['ofertas_max'];
+                if ($max > 0) {
+                    $pct = min(100, round($used / $max * 100));
+                    $quotaCls = $pct >= 100 ? 'quota-full' : ($pct >= 80 ? 'quota-warn' : 'quota-ok');
+                    $quotaTxt = "$used / $max";
+                } else {
+                    $quotaCls = 'quota-ok';
+                    $quotaTxt = "$used / ∞";
+                }
+            ?>
+            <div class="perm-card">
+                <h4>#<?= $biz['id'] ?> — <?= htmlspecialchars($biz['name']) ?></h4>
+                <div class="quota-info">Ofertas activas: <span class="quota-badge <?= $quotaCls ?>"><?= $quotaTxt ?></span></div>
+                <form method="post" class="perm-form-inline">
+                    <?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="set_permiso">
+                    <input type="hidden" name="business_id" value="<?= $biz['id'] ?>">
+                    <input type="hidden" name="ofertas_permitidas" value="1">
+                    <label style="font-size:.85em;">Máx:</label>
+                    <input type="number" name="ofertas_max" value="<?= $max ?>" min="0" title="0 = sin límite">
+                    <button type="submit" class="btn btn-success" style="padding:6px 12px;font-size:.82em;">💾 Guardar</button>
+                    <button type="submit" form="revoke-<?= $biz['id'] ?>" class="btn btn-danger" style="padding:6px 12px;font-size:.82em;">🚫 Revocar</button>
+                </form>
+                <form id="revoke-<?= $biz['id'] ?>" method="post" onsubmit="return confirm('¿Revocar permiso a este negocio?')">
+                    <?php echo csrfField(); ?>
+                    <input type="hidden" name="action" value="set_permiso">
+                    <input type="hidden" name="business_id" value="<?= $biz['id'] ?>">
+                    <input type="hidden" name="ofertas_max" value="0">
+                    <!-- no incluir ofertas_permitidas → queda 0 -->
+                </form>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        <?php else: ?>
+            <div style="padding:16px 20px;color:#888;">Ningún negocio tiene permiso activo aún.</div>
+        <?php endif; ?>
+
+        <!-- Habilitar nuevo negocio -->
+        <div style="padding:16px 20px;border-top:1px solid #f0f0f0;">
+            <strong style="display:block;margin-bottom:10px;">➕ Habilitar nuevo negocio:</strong>
+            <form method="post" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;">
+                <?php echo csrfField(); ?>
+                <input type="hidden" name="action" value="set_permiso">
+                <input type="hidden" name="ofertas_permitidas" value="1">
+                <div class="form-group" style="margin:0;min-width:220px;">
+                    <label style="font-size:.85em;">Negocio</label>
+                    <?php if (!empty($todos_negocios)): ?>
+                    <select name="business_id" required>
+                        <option value="">— Seleccionar negocio —</option>
+                        <?php foreach ($todos_negocios as $biz): ?>
+                            <option value="<?= $biz['id'] ?>">#<?= $biz['id'] ?> – <?= htmlspecialchars($biz['name']) ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                    <?php else: ?>
+                    <input type="number" name="business_id" min="1" placeholder="ID del negocio" required style="width:160px;">
+                    <?php endif; ?>
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label style="font-size:.85em;">Máx. ofertas (0 = sin límite)</label>
+                    <input type="number" name="ofertas_max" value="5" min="0" style="width:90px;padding:10px;border:1px solid #e0e0e0;border-radius:6px;">
+                </div>
+                <button type="submit" class="btn btn-success" style="white-space:nowrap;">✅ Habilitar</button>
+            </form>
+        </div>
+    </div>
+    <?php endif; ?>
+
 </div>
 
 <script>

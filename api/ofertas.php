@@ -132,19 +132,77 @@ if ($method === 'GET') {
 
 // ── POST ─────────────────────────────────────────────────────────────────────
 if ($method === 'POST') {
-    if (!isAdmin()) respond_error('Solo admin', 403);
+    $isAdmin = isAdmin();
+    $userId  = (int)($_SESSION['user_id'] ?? 0);
+
     if (!$db) respond_error('BD no disponible', 500);
 
     $ct    = $_SERVER['CONTENT_TYPE'] ?? '';
     $input = strpos($ct, 'application/json') !== false
            ? json_decode(file_get_contents('php://input'), true)
            : $_POST;
-    if (!$input) respond_error('Datos inválidos');
+    // Para 'delete' el id puede venir sólo en la query string
+    if (!$input) {
+        if ($action === 'delete' && isset($_GET['id'])) {
+            $input = [];
+        } else {
+            respond_error('Datos inválidos');
+        }
+    }
 
     try {
         $hasOfertaActiva = table_exists($db, 'businesses') && column_exists($db, 'businesses', 'oferta_activa_id');
         $hasDestacada = column_exists($db, 'ofertas', 'es_destacada');
+        $hasOfertasPermisos = column_exists($db, 'businesses', 'ofertas_permitidas');
         $requestDestacada = ($action === 'upsert_destacada') || ((int)($input['es_destacada'] ?? 0) === 1);
+
+        // ── Validación de permisos para no-admin ─────────────────────────────
+        if (!$isAdmin) {
+            if ($userId <= 0) respond_error('Se requiere autenticación', 401);
+
+            if (in_array($action, ['create', 'update', 'delete', 'upsert_destacada'])) {
+                $reqBusinessId = (int)($input['business_id'] ?? $_GET['business_id'] ?? 0);
+                if ($action === 'delete') {
+                    // Obtener business_id de la oferta
+                    $stOff = $db->prepare("SELECT business_id FROM ofertas WHERE id = ? LIMIT 1");
+                    $stOff->execute([(int)($input['id'] ?? $_GET['id'] ?? 0)]);
+                    $reqBusinessId = (int)($stOff->fetchColumn() ?: 0);
+                }
+
+                if ($reqBusinessId <= 0) respond_error('Solo admin puede crear ofertas sin negocio', 403);
+
+                // Verificar propiedad del negocio
+                $stOwn = $db->prepare("SELECT id FROM businesses WHERE id = ? AND user_id = ? LIMIT 1");
+                $stOwn->execute([$reqBusinessId, $userId]);
+                if (!$stOwn->fetchColumn()) respond_error('Sin permiso para gestionar este negocio', 403);
+
+                // Verificar permiso de ofertas
+                if ($hasOfertasPermisos) {
+                    $stPerm = $db->prepare("SELECT ofertas_permitidas, ofertas_max FROM businesses WHERE id = ? LIMIT 1");
+                    $stPerm->execute([$reqBusinessId]);
+                    $perm = $stPerm->fetch(\PDO::FETCH_ASSOC);
+                    if (!$perm || !$perm['ofertas_permitidas']) {
+                        respond_error('Este negocio no tiene permiso para publicar ofertas', 403);
+                    }
+                    // Verificar cupo (solo en create)
+                    if ($action === 'create' || $action === 'upsert_destacada') {
+                        $maxOfertas = (int)$perm['ofertas_max'];
+                        if ($maxOfertas > 0) {
+                            $stCount = $db->prepare("SELECT COUNT(*) FROM ofertas WHERE business_id = ? AND activo = 1");
+                            $stCount->execute([$reqBusinessId]);
+                            $currentCount = (int)$stCount->fetchColumn();
+                            if ($currentCount >= $maxOfertas) {
+                                respond_error("Límite de ofertas alcanzado ($currentCount/$maxOfertas)", 403);
+                            }
+                        }
+                    }
+                } else {
+                    respond_error('Solo admin', 403);
+                }
+            } else {
+                respond_error('Solo admin', 403);
+            }
+        }
 
         if ($action === 'upsert_destacada') {
             $businessId = (int)($input['business_id'] ?? 0);
