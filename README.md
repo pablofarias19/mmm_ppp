@@ -247,6 +247,24 @@ source migrations/015_industries.sql           -- tabla de industrias de usuario
 - **Usuario registrado**: ve y gestiona solo sus propias industrias.
 - **Admin**: puede ver/editar todas las industrias y gestionar el catálogo de sectores.
 
+### Relaciones entre Negocios, Marcas e Industrias
+
+Una `industry` puede vincularse opcionalmente a:
+- Un **negocio** (`business_id` → `businesses.id`, ON DELETE SET NULL)
+- Una **marca** (`brand_id` → `brands.id`, ON DELETE SET NULL)
+
+Ambas relaciones son opcionales (nullable). La integridad referencial se aplica mediante
+foreign keys en la base de datos (migración `023_relations_fk_image_limits.sql`).
+
+```sql
+-- Ejecutar para activar FK constraints y crear tabla industry_images:
+source migrations/023_relations_fk_image_limits.sql
+```
+
+Las relaciones genéricas entre cualquier par de entidades (negocios ↔ marcas, etc.)
+se gestionan también a través de la tabla `entidad_relaciones` y el endpoint
+`GET/POST /api/relaciones.php`.
+
 
 
 - Contraseñas hasheadas con `password_hash(PASSWORD_DEFAULT)`
@@ -263,7 +281,43 @@ source migrations/015_industries.sql           -- tabla de industrias de usuario
 ./vendor/bin/phpunit
 ```
 
-Los tests cubren validación de negocios, validación de contraseñas y helpers CSRF.
+Los tests cubren validación de negocios, validación de contraseñas, helpers CSRF,
+límites de carga de imágenes y relaciones entre Industrias, Negocios y Marcas.
+
+---
+
+## Límites de imágenes
+
+| Entidad | Archivo | Máx. archivos | Tamaño máximo | API |
+|---------|---------|:-------------:|:-------------:|-----|
+| **Negocio** | Foto de galería | 2 | 120 KB | `POST /api/upload_business_gallery.php?action=upload` |
+| **Industria** | Foto de galería | 2 | 120 KB | `POST /api/upload_industry_gallery.php?action=upload` |
+| **Marca** | Logo (ícono de mapa) | 1 | 120 KB | `POST /api/upload_brand_logo.php?action=upload` |
+| **Marca** | Imagen de galería | 1 | 120 KB | `POST /api/brand-gallery.php?action=upload` |
+
+> **Nota:** si tu imagen supera el límite podés comprimirla gratuitamente en [squoosh.app](https://squoosh.app) o [tinypng.com](https://tinypng.com).
+
+### Probar la carga de imágenes
+
+```bash
+# Subir foto a un negocio (requiere sesión activa / cookie de sesión)
+curl -b "PHPSESSID=<sesión>" \
+     -F "action=upload" -F "business_id=1" \
+     -F "photo=@/ruta/foto.jpg" \
+     https://tu-dominio/api/upload_business_gallery.php
+
+# Subir foto a una industria
+curl -b "PHPSESSID=<sesión>" \
+     -F "action=upload" -F "industry_id=1" \
+     -F "photo=@/ruta/foto.jpg" \
+     https://tu-dominio/api/upload_industry_gallery.php
+
+# Subir logo de marca
+curl -b "PHPSESSID=<sesión>" \
+     -F "action=upload" -F "brand_id=1" \
+     -F "logo=@/ruta/logo.png" \
+     https://tu-dominio/api/upload_brand_logo.php
+```
 
 ---
 

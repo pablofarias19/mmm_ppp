@@ -1,14 +1,13 @@
 <?php
 /**
- * API Galería de Negocios
+ * API Galería de Industrias
  *
- * GET  ?business_id=X           → lista fotos de galería del negocio
- * POST action=upload             → sube hasta 1 foto (multipart)
+ * GET  ?industry_id=X           → lista fotos de galería de la industria
+ * POST action=upload             → sube 1 foto a la vez (multipart), máx 2 en total
  * POST action=delete             → elimina una foto por nombre
  *
  * Límites: máx 2 fotos de galería · máx 120 KB por foto · JPG / PNG / WebP
- * Las fotos se guardan en uploads/businesses/{id}/gallery_{timestamp}.{ext}
- * La og_cover NO se lista aquí.
+ * Las fotos se guardan en uploads/industries/{id}/gallery_{timestamp}.{ext}
  */
 
 ini_set('display_errors', 0);
@@ -25,67 +24,56 @@ if (!isset($_SESSION['user_id'])) {
 require_once __DIR__ . '/../includes/db_helper.php';
 require_once __DIR__ . '/../core/helpers.php';
 
-$userId     = (int)$_SESSION['user_id'];
-$method     = $_SERVER['REQUEST_METHOD'];
+$userId = (int)$_SESSION['user_id'];
+$method = $_SERVER['REQUEST_METHOD'];
 
 // ── Helper: listar fotos de galería ──────────────────────────────────────────
-function listGalleryPhotos(int $businessId): array {
-    $dir    = __DIR__ . '/../uploads/businesses/' . $businessId . '/';
+function listIndustryGalleryPhotos(int $industryId): array {
+    $dir    = __DIR__ . '/../uploads/industries/' . $industryId . '/';
     $photos = [];
     if (!is_dir($dir)) return $photos;
     foreach (glob($dir . 'gallery_*.{jpg,jpeg,png,webp}', GLOB_BRACE) as $file) {
         $fname    = basename($file);
         $photos[] = [
             'filename' => $fname,
-            'url'      => '/uploads/businesses/' . $businessId . '/' . $fname . '?t=' . filemtime($file),
+            'url'      => '/uploads/industries/' . $industryId . '/' . $fname . '?t=' . filemtime($file),
             'size'     => filesize($file),
         ];
     }
-    // Orden cronológico (más antigua primero)
     usort($photos, fn($a, $b) => strcmp($a['filename'], $b['filename']));
     return $photos;
 }
 
 // ── Verificar propiedad (o admin) ────────────────────────────────────────────
-function verifyOwnership(int $businessId, int $userId): bool {
+function verifyIndustryOwnership(int $industryId, int $userId): bool {
     if (!empty($_SESSION['is_admin'])) return true;
     try {
         $db = getDbConnection();
-        if (!$db) {
-            error_log("upload_business_gallery: DB connection failed for user $userId, business $businessId");
-            return false;
-        }
-        $stmt = $db->prepare("SELECT id, user_id FROM businesses WHERE id = ?");
-        $stmt->execute([$businessId]);
+        if (!$db) return false;
+        $stmt = $db->prepare('SELECT id, user_id FROM industries WHERE id = ?');
+        $stmt->execute([$industryId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
-        if (!$row) {
-            error_log("upload_business_gallery: business $businessId not found");
-            return false;
-        }
-        if ((int)$row['user_id'] !== $userId) {
-            error_log("upload_business_gallery: user $userId is not owner of business $businessId (owner={$row['user_id']})");
-            return false;
-        }
-        return true;
+        if (!$row) return false;
+        return (int)$row['user_id'] === $userId;
     } catch (Exception $e) {
-        error_log("upload_business_gallery verifyOwnership: " . $e->getMessage());
+        error_log('upload_industry_gallery verifyOwnership: ' . $e->getMessage());
         return false;
     }
 }
 
 // ── GET: listar fotos ─────────────────────────────────────────────────────────
 if ($method === 'GET') {
-    $businessId = (int)($_GET['business_id'] ?? 0);
-    if ($businessId <= 0) {
+    $industryId = (int)($_GET['industry_id'] ?? 0);
+    if ($industryId <= 0) {
         echo json_encode(['success' => false, 'message' => 'ID inválido.']);
         exit;
     }
-    if (!verifyOwnership($businessId, $userId)) {
+    if (!verifyIndustryOwnership($industryId, $userId)) {
         http_response_code(403);
         echo json_encode(['success' => false, 'message' => 'Sin permiso.']);
         exit;
     }
-    $photos = listGalleryPhotos($businessId);
+    $photos = listIndustryGalleryPhotos($industryId);
     echo json_encode(['success' => true, 'photos' => $photos, 'count' => count($photos)]);
     exit;
 }
@@ -93,25 +81,24 @@ if ($method === 'GET') {
 // ── POST ──────────────────────────────────────────────────────────────────────
 if ($method === 'POST') {
     $action     = $_POST['action'] ?? 'upload';
-    $businessId = (int)($_POST['business_id'] ?? 0);
+    $industryId = (int)($_POST['industry_id'] ?? 0);
 
-    if ($businessId <= 0) {
+    if ($industryId <= 0) {
         echo json_encode(['success' => false, 'message' => 'ID inválido.']);
         exit;
     }
-    if (!verifyOwnership($businessId, $userId)) {
+    if (!verifyIndustryOwnership($industryId, $userId)) {
         http_response_code(403);
         echo json_encode(['success' => false, 'message' => 'Sin permiso.']);
         exit;
     }
 
-    $uploadDir = __DIR__ . '/../uploads/businesses/' . $businessId . '/';
+    $uploadDir = __DIR__ . '/../uploads/industries/' . $industryId . '/';
     if (!is_dir($uploadDir)) mkdir($uploadDir, 0755, true);
 
     // ── Eliminar foto ─────────────────────────────────────────────────────────
     if ($action === 'delete') {
         $filename = basename($_POST['filename'] ?? '');
-        // Solo permitir eliminar fotos de galería (gallery_*)
         if (!preg_match('/^gallery_[\w\-]+\.(jpg|jpeg|png|webp)$/i', $filename)) {
             echo json_encode(['success' => false, 'message' => 'Nombre de archivo inválido.']);
             exit;
@@ -131,8 +118,7 @@ if ($method === 'POST') {
         $maxPhotos = 2;
         $maxSize   = 120 * 1024; // 120 KB
 
-        // Verificar cuántas fotos ya hay
-        $existing = listGalleryPhotos($businessId);
+        $existing = listIndustryGalleryPhotos($industryId);
         if (count($existing) >= $maxPhotos) {
             echo json_encode([
                 'success' => false,
@@ -178,7 +164,7 @@ if ($method === 'POST') {
             exit;
         }
 
-        $publicUrl = '/uploads/businesses/' . $businessId . '/' . $filename . '?t=' . time();
+        $publicUrl = '/uploads/industries/' . $industryId . '/' . $filename . '?t=' . time();
         echo json_encode([
             'success'   => true,
             'message'   => 'Foto subida correctamente.',

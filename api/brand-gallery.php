@@ -77,7 +77,7 @@ try {
             }
 
             if (($file['size'] ?? 0) > BrandGallery::MAX_FILE_BYTES) {
-                respond_error("La imagen no puede superar 200 KB. Comprimila antes de subir.", 400);
+                respond_error("La imagen no puede superar 120 KB. Comprimila antes de subir.", 400);
             }
 
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
