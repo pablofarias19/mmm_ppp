@@ -135,6 +135,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $zona_exclusiva           = isset($_POST['zona_exclusiva']) ? 1 : 0;
     $zona_excl_radius         = (int)($_POST['zona_exclusiva_radius_km'] ?? 2);
     $visible                  = isset($_POST['visible']) ? 1 : 0;
+    // Franquicia panel (migración 023)
+    $crear_franquicia           = isset($_POST['crear_franquicia']) ? 1 : 0;
+    $franquicia_descripcion     = trim($_POST['franquicia_descripcion']  ?? '');
+    $franquicia_condiciones     = trim($_POST['franquicia_condiciones']  ?? '');
+    $franquicia_exclusividad    = isset($_POST['franquicia_exclusividad']) ? 1 : 0;
+    $franquicia_territorio      = trim($_POST['franquicia_territorio']   ?? '');
+    $franquicia_productos       = trim($_POST['franquicia_productos']    ?? '');
+    $franquicia_garantias       = trim($_POST['franquicia_garantias']    ?? '');
+    $franquicia_url             = trim($_POST['franquicia_url']          ?? '');
+    // Validación: si crear_franquicia activo, requerir descripcion o url
+    if ($crear_franquicia && !$franquicia_descripcion && !$franquicia_url) {
+        $message = 'Para activar CREAR FRANQUICIA, completá al menos la descripción o el enlace de información.';
+        $msgType = 'error';
+        goto render_form;
+    }
     // INPI
     $inpi_registrada          = isset($_POST['inpi_registrada']) ? 1 : 0;
     $inpi_numero              = trim($_POST['inpi_numero']              ?? '');
@@ -183,6 +198,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         propuesta_valor = ?,
                         instagram = ?, facebook = ?, tiktok = ?,
                         twitter = ?, linkedin = ?, youtube = ?, whatsapp = ?,
+                        crear_franquicia = ?,
+                        franquicia_descripcion = ?, franquicia_condiciones = ?,
+                        franquicia_exclusividad = ?, franquicia_territorio = ?,
+                        franquicia_productos = ?, franquicia_garantias = ?,
+                        franquicia_url = ?,
                         updated_at = NOW()
                     WHERE id = ?
                 ");
@@ -204,10 +224,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $propuesta_valor ?: null,
                         $instagram ?: null, $facebook ?: null, $tiktok ?: null,
                         $twitter ?: null, $linkedin ?: null, $youtube ?: null, $whatsapp ?: null,
+                        $crear_franquicia,
+                        $franquicia_descripcion ?: null, $franquicia_condiciones ?: null,
+                        $franquicia_exclusividad, $franquicia_territorio ?: null,
+                        $franquicia_productos ?: null, $franquicia_garantias ?: null,
+                        $franquicia_url ?: null,
                         $brandId
                     ]);
                 } catch (PDOException $e) {
                     if (!isMissingMapitaColumnErrorBrand($e)) throw $e;
+                    // Fallback: sin columnas de franquicia (migración 023 no aplicada)
                     $stmt = $db->prepare("
                         UPDATE brands SET
                             nombre = ?, rubro = ?, website = ?, ubicacion = ?,
@@ -287,10 +313,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         inpi_clases_registradas, inpi_tipo,
                         historia_marca, target_audience, propuesta_valor,
                         instagram, facebook, tiktok, twitter, linkedin, youtube, whatsapp,
+                        crear_franquicia, franquicia_descripcion, franquicia_condiciones,
+                        franquicia_exclusividad, franquicia_territorio, franquicia_productos,
+                        franquicia_garantias, franquicia_url,
                         created_at
                     ) VALUES (
                         ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
-                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,NOW()
+                        ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,
+                        ?,?,?,?,?,?,?,?,NOW()
                     )
                 ");
                 try {
@@ -310,10 +340,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $inpi_clases_registradas ?: null, $inpi_tipo ?: null,
                         $historia_marca ?: null, $target_audience ?: null, $propuesta_valor ?: null,
                         $instagram ?: null, $facebook ?: null, $tiktok ?: null,
-                        $twitter ?: null, $linkedin ?: null, $youtube ?: null, $whatsapp ?: null
+                        $twitter ?: null, $linkedin ?: null, $youtube ?: null, $whatsapp ?: null,
+                        $crear_franquicia,
+                        $franquicia_descripcion ?: null, $franquicia_condiciones ?: null,
+                        $franquicia_exclusividad, $franquicia_territorio ?: null,
+                        $franquicia_productos ?: null, $franquicia_garantias ?: null,
+                        $franquicia_url ?: null
                     ]);
                 } catch (PDOException $e) {
                     if (!isMissingMapitaColumnErrorBrand($e)) throw $e;
+                    // Fallback: sin columnas de franquicia (migración 023 no aplicada)
                     $stmt = $db->prepare("
                         INSERT INTO brands (
                             nombre, rubro, website, ubicacion,
@@ -381,6 +417,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+render_form:
 // ── Helper ────────────────────────────────────────────────────────────────────
 function val($brand, $key, $default = '') {
     return htmlspecialchars($brand[$key] ?? $default);
@@ -777,6 +814,7 @@ function chanChk($brand, $val) {
         <a href="#sec-historia">📖 Historia</a>
         <a href="#sec-redes">📱 Redes</a>
         <a href="#sec-proteccion">🛡️ Protección</a>
+        <a href="#sec-franquicias">🤝 Franquicias</a>
         <a href="#sec-ubicacion">📍 Ubicación</a>
         <?php if ($editing): ?>
         <div class="nav-sep"></div>
@@ -1324,6 +1362,148 @@ function chanChk($brand, $val) {
             </div>
         </div>
 
+        <!-- ── FRANQUICIAS ── -->
+        <div class="section" id="sec-franquicias">
+            <div class="section-head">
+                <div class="icon" style="background:#7c3aed;">🤝</div>
+                <div>
+                    <h2>Franquicias</h2>
+                    <p>Ofrecé tu marca como franquicia y aparecé en el filtro especial FRANQUICIAS</p>
+                </div>
+            </div>
+
+            <?php if (!$editing): ?>
+            <div style="padding:14px 16px;background:#f0fdf4;border-left:4px solid #22c55e;border-radius:8px;margin-bottom:16px;">
+                <p style="margin:0;font-size:13px;color:#15803d;font-weight:600;">
+                    💡 Crear franquicias desde editar — Guardá la marca primero y luego completá el panel de Franquicias.
+                </p>
+            </div>
+            <?php endif; ?>
+
+            <!-- Toggle CREAR FRANQUICIA -->
+            <label class="toggle-row <?= chk($brand ?? [], 'crear_franquicia') ? 'on' : '' ?>"
+                   onclick="toggleRow(this); toggleFranquiciaPanel(this)"
+                   style="margin-bottom:16px;">
+                <input type="checkbox" name="crear_franquicia" <?= chk($brand ?? [], 'crear_franquicia') ?>>
+                <div class="toggle-dot"></div>
+                <div style="display:flex;align-items:center;gap:12px;flex:1;">
+                    <div>
+                        <div class="toggle-label">🤝 CREAR FRANQUICIA</div>
+                        <div class="toggle-sub">Activá para completar el panel y aparecer en el filtro FRANQUICIAS del mapa</div>
+                    </div>
+                    <?php if (!empty($brand['crear_franquicia'])): ?>
+                    <span style="margin-left:auto;background:#7c3aed;color:white;font-size:11px;font-weight:700;
+                                 padding:3px 10px;border-radius:20px;">ACTIVO</span>
+                    <?php endif; ?>
+                </div>
+            </label>
+
+            <div id="franquiciaPanel" style="<?= empty($brand['crear_franquicia']) ? 'display:none' : '' ?>">
+                <!-- Banner ALFO -->
+                <div style="display:flex;align-items:flex-start;gap:12px;padding:14px 16px;
+                            background:linear-gradient(135deg,#1B3B6F,#2E5FA3);
+                            border-radius:10px;color:white;margin-bottom:16px;">
+                    <div style="font-size:2em;line-height:1;">💡</div>
+                    <div style="flex:1;">
+                        <div style="font-weight:700;font-size:14px;margin-bottom:4px;">¿Sin sitio web para tu franquicia?</div>
+                        <p style="margin:0 0 8px;font-size:12px;opacity:.9;">
+                            Usá <a class="alfo-link" href="https://www.alfoweb.com.ar"
+                               target="_blank" rel="noopener noreferrer"
+                               style="color:#fbbf24;font-weight:900;">ALFO</a>
+                            y obtené tu sitio web de forma <strong>libre y gratuita</strong>
+                            para presentar tu propuesta de franquicia en línea.
+                        </p>
+                        <a href="https://www.alfoweb.com.ar" target="_blank" rel="noopener noreferrer"
+                           style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;
+                                  border-radius:8px;background:rgba(255,255,255,.15);color:#fff;
+                                  text-decoration:none;font-weight:700;font-size:12px;
+                                  border:1px solid rgba(255,255,255,.3);">
+                            🔗 Conocé ALFO
+                        </a>
+                    </div>
+                </div>
+
+                <div class="fgrid col1">
+                    <div class="field">
+                        <label>Descripción de la Franquicia <span class="req">*</span></label>
+                        <textarea name="franquicia_descripcion" rows="4"
+                                  placeholder="Describí brevemente qué ofrece la franquicia, el modelo de negocio, inversión inicial estimada..."
+                                  id="franquicia_descripcion"><?= val($brand,'franquicia_descripcion') ?></textarea>
+                        <span class="hint">Requerido si activás CREAR FRANQUICIA</span>
+                    </div>
+                    <div class="field">
+                        <label>Condiciones Generales</label>
+                        <textarea name="franquicia_condiciones" rows="3"
+                                  placeholder="Plazo del contrato, royalties, canon de entrada, soporte brindado, restricciones..."><?= val($brand,'franquicia_condiciones') ?></textarea>
+                    </div>
+                </div>
+
+                <div class="fgrid">
+                    <label class="toggle-row <?= chk($brand ?? [], 'franquicia_exclusividad') ? 'on' : '' ?>"
+                           onclick="toggleRow(this)" style="align-self:center;">
+                        <input type="checkbox" name="franquicia_exclusividad" <?= chk($brand ?? [], 'franquicia_exclusividad') ?>>
+                        <div class="toggle-dot"></div>
+                        <div>
+                            <div class="toggle-label">🎯 Con Exclusividad Territorial</div>
+                            <div class="toggle-sub">El franquiciado opera en zona exclusiva</div>
+                        </div>
+                    </label>
+                    <div class="field">
+                        <label>Ámbito Territorial</label>
+                        <input type="text" name="franquicia_territorio"
+                               placeholder="Ej: Nacional, por provincia, por municipio..."
+                               value="<?= val($brand,'franquicia_territorio') ?>">
+                    </div>
+                    <div class="field">
+                        <label>Productos / Servicios Incluidos</label>
+                        <input type="text" name="franquicia_productos"
+                               placeholder="Listá los productos o servicios principales del modelo"
+                               value="<?= val($brand,'franquicia_productos') ?>">
+                    </div>
+                    <div class="field">
+                        <label>Garantías</label>
+                        <input type="text" name="franquicia_garantias"
+                               placeholder="Ej: asistencia técnica, capacitación, stock inicial garantizado..."
+                               value="<?= val($brand,'franquicia_garantias') ?>">
+                    </div>
+                    <div class="field full">
+                        <label>
+                            🔗 Enlace para más información <span class="req">*</span>
+                            <button type="button" class="web-help-btn"
+                                    onclick="toggleWebHelp('wh-franquicia-url')"
+                                    title="¿Sin sitio web? Ver opciones gratuitas"
+                                    aria-label="Ayuda para el campo enlace de franquicia"
+                                    aria-expanded="false" aria-controls="wh-franquicia-url">💡</button>
+                        </label>
+                        <div class="web-help-wrap">
+                            <input type="url" name="franquicia_url" id="franquicia_url"
+                                   placeholder="https://tusitio.com/franquicias"
+                                   value="<?= val($brand,'franquicia_url') ?>">
+                            <div id="wh-franquicia-url" class="web-help-popover" role="tooltip">
+                                <div class="web-help-popover-header">
+                                    <span class="web-help-popover-title">💡 ¿Sin página web?</span>
+                                    <button type="button" class="web-help-close"
+                                            onclick="toggleWebHelp('wh-franquicia-url')"
+                                            aria-label="Cerrar ayuda">✕</button>
+                                </div>
+                                <p>
+                                    Si no tenés sitio web para tu franquicia, podés usar
+                                    <a class="alfo-link" href="https://www.alfoweb.com.ar"
+                                       target="_blank" rel="noopener noreferrer">ALFO</a>
+                                    para crear uno de forma <strong>libre y gratuita</strong>.
+                                </p>
+                                <a class="web-help-cta"
+                                   href="https://www.alfoweb.com.ar" target="_blank" rel="noopener noreferrer">
+                                    💡 Crear sitio en ALFO
+                                </a>
+                            </div>
+                        </div>
+                        <span class="hint">URL del sitio web con más detalles de la franquicia. Requerido si activás CREAR FRANQUICIA.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- ── UBICACIÓN ── -->
         <div class="section" id="sec-ubicacion">
             <div class="section-head">
@@ -1573,6 +1753,21 @@ mapPicker.on('click', e => {
 function toggleInpiFields(row) {
     const cb = row.querySelector('input[type=checkbox]');
     document.getElementById('inpiFields').style.display = cb.checked ? '' : 'none';
+}
+
+// ── Toggle Franquicia panel ───────────────────────────────────────────────────
+function toggleFranquiciaPanel(row) {
+    const cb = row.querySelector('input[type=checkbox]');
+    document.getElementById('franquiciaPanel').style.display = cb.checked ? '' : 'none';
+    // Client-side validation hint
+    const descEl = document.getElementById('franquicia_descripcion');
+    const urlEl  = document.getElementById('franquicia_url');
+    if (cb.checked) {
+        if (descEl) descEl.setAttribute('required', 'required');
+    } else {
+        if (descEl) descEl.removeAttribute('required');
+        if (urlEl)  urlEl.removeAttribute('required');
+    }
 }
 
 // ── Pills (checkboxes) ────────────────────────────────────────────────────────

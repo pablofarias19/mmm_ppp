@@ -14,6 +14,14 @@ try {
     $db     = \Core\Database::getInstance()->getConnection();
     $marcas = \Brand::allWithCoordinates($db);
 
+    // Filtro ?franquicias=1: solo marcas con crear_franquicia activo
+    $soloFranquicias = isset($_GET['franquicias']) && $_GET['franquicias'] == '1';
+    if ($soloFranquicias) {
+        $marcas = array_values(array_filter($marcas, function($m) {
+            return !empty($m['crear_franquicia']) && $m['crear_franquicia'] == 1;
+        }));
+    }
+
     $uploadsBase = __DIR__ . '/../uploads/brands/';
     foreach ($marcas as &$m) {
         $id      = (int)$m['id'];

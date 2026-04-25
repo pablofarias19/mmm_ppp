@@ -97,6 +97,14 @@ class Brand {
                     " . self::columnExpr($db, 'brands', 'b', 'registry_date') . ",
                     " . self::columnExpr($db, 'brands', 'b', 'registry_expiry') . ",
                     " . self::columnExpr($db, 'brands', 'b', 'registry_type') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'crear_franquicia') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'franquicia_descripcion') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'franquicia_condiciones') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'franquicia_exclusividad') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'franquicia_territorio') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'franquicia_productos') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'franquicia_garantias') . ",
+                    " . self::columnExpr($db, 'brands', 'b', 'franquicia_url') . ",
                     'brands' AS fuente
                 FROM brands b
                 WHERE " . ($hasBrandsVisible ? 'b.visible = 1' : '1=1') . "
@@ -167,6 +175,14 @@ class Brand {
                     NULL AS registry_date,
                     NULL AS registry_expiry,
                     NULL AS registry_type,
+                    NULL AS crear_franquicia,
+                    NULL AS franquicia_descripcion,
+                    NULL AS franquicia_condiciones,
+                    NULL AS franquicia_exclusividad,
+                    NULL AS franquicia_territorio,
+                    NULL AS franquicia_productos,
+                    NULL AS franquicia_garantias,
+                    NULL AS franquicia_url,
                     'marcas' AS fuente
                 FROM marcas m
                 {$joinClasificacionNiza}
