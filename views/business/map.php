@@ -1285,6 +1285,20 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                         title="Consultá transportistas en un área geográfica">
                     🚚 Consulta Envío
                 </button>
+                <!-- ── CERCA (Inmuebles de inmobiliarias) ──────────────────────── -->
+                <div class="cq-section-label" style="margin-top:10px;">── Inmobiliarias ───</div>
+                <button type="button" class="cq-btn" id="btn-cerca"
+                        onclick="toggleCerca()"
+                        title="Muestra inmuebles publicados por inmobiliarias. Solo inmobiliarias pueden publicar inmuebles.">
+                    🏘️ CERCA
+                </button>
+                <!-- ── CONVOCAR (Obra de Arte) ─────────────────────────────── -->
+                <div class="cq-section-label" style="margin-top:10px;">── Arte & Cultura ───</div>
+                <button type="button" class="cq-btn" id="btn-convocar"
+                        onclick="abrirConvocar()"
+                        title="Convoca artistas/servicios para tu OBRA DE ARTE. Solo titulares de OBRA DE ARTE pueden usarlo.">
+                    🎭 CONVOCAR
+                </button>
                 <!-- ── FIN CONSULTAS MASIVAS ─────────────────────────────── -->
             </div>
             <div id="selection-panel" class="selection-panel" aria-live="polite" style="display:none;">
@@ -1487,6 +1501,38 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 🚪 Cerrar Sesión
             </button>
         <?php endif; ?>
+    </div>
+</div>
+
+<!-- ── Modal CONVOCAR ───────────────────────────────────────────────────── -->
+<div id="modal-convocar" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
+    <div style="background:white;border-radius:14px;padding:24px;max-width:480px;width:94%;max-height:90vh;overflow-y:auto;box-shadow:0 8px 40px rgba(0,0,0,.3);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+            <h3 style="margin:0;font-size:1.1em;color:#1f2937;">🎭 Lanzar Convocatoria</h3>
+            <button onclick="cerrarConvocar()" style="background:none;border:none;font-size:1.4em;cursor:pointer;color:#6b7280;">✕</button>
+        </div>
+        <p style="margin:0 0 14px;font-size:.84em;color:#6b7280;">Convoca artistas y servicios para tu proyecto. Se enviará notificación a todos los servicios que coincidan con los roles definidos en tu Obra de Arte.</p>
+        <div style="margin-bottom:12px;">
+            <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:4px;">Obra de Arte *</label>
+            <select id="conv-obra-select" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:.9em;">
+                <option value="">Seleccioná una obra...</option>
+            </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
+            <div>
+                <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:4px;">Fecha inicio *</label>
+                <input type="date" id="conv-fecha-inicio" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:.88em;">
+            </div>
+            <div>
+                <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:4px;">Fecha fin *</label>
+                <input type="date" id="conv-fecha-fin" style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;font-size:.88em;">
+            </div>
+        </div>
+        <div id="conv-msg" style="display:none;font-size:.82em;margin-bottom:10px;padding:8px 12px;border-radius:6px;"></div>
+        <div style="display:flex;gap:8px;justify-content:flex-end;">
+            <button onclick="cerrarConvocar()" style="padding:10px 16px;border:1px solid #d1d5db;border-radius:8px;background:white;cursor:pointer;font-size:.88em;">Cancelar</button>
+            <button id="conv-btn-enviar" onclick="enviarConvocatoria()" style="padding:10px 20px;background:#7c3aed;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.88em;font-weight:700;">🎭 Enviar convocatoria</button>
+        </div>
     </div>
 </div>
 
@@ -6254,6 +6300,160 @@ function toggleLangPicker() {
                 document.removeEventListener('click', _close);
             });
         }, 50);
+    }
+}
+
+// ─── CERCA: Inmuebles de inmobiliarias ───────────────────────────────────────
+let _cercaActivo = false;
+let _cercaLayer  = null;
+
+function toggleCerca() {
+    if (_cercaActivo) {
+        desactivarCerca();
+    } else {
+        activarCerca();
+    }
+}
+
+async function activarCerca() {
+    const btn = document.getElementById('btn-cerca');
+    if (btn) { btn.style.background = '#16a34a'; btn.style.color = 'white'; btn.textContent = '✅ CERCA (activo)'; }
+    _cercaActivo = true;
+    // Hide normal markers
+    if (typeof markerCluster !== 'undefined' && markerCluster) {
+        mapa.removeLayer(markerCluster);
+    }
+    // Load inmuebles
+    try {
+        const r = await fetch('/api/inmuebles.php?all=1');
+        const d = await r.json();
+        if (_cercaLayer) { mapa.removeLayer(_cercaLayer); _cercaLayer = null; }
+        if (!d.success || !d.data || !d.data.length) {
+            alert('No hay inmuebles publicados cerca por inmobiliarias.');
+            desactivarCerca();
+            return;
+        }
+        _cercaLayer = L.layerGroup();
+        d.data.forEach(function(inm) {
+            const lat = parseFloat(inm.lat) || parseFloat(inm.inm_lat_fallback) || 0;
+            const lng = parseFloat(inm.lng) || parseFloat(inm.inm_lng_fallback) || 0;
+            if (!lat || !lng) return;
+
+            const iconHtml = inm.inmobiliaria_icon
+                ? '<img src="' + escapeHtml(inm.inmobiliaria_icon) + '" style="width:36px;height:36px;border-radius:50%;border:2px solid #16a34a;object-fit:cover;" />'
+                : '<div style="background:#16a34a;color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;">🏘️</div>';
+            const mk = L.marker([lat, lng], {
+                icon: L.divIcon({
+                    className: '',
+                    html: iconHtml,
+                    iconSize: [36, 36],
+                    iconAnchor: [18, 18],
+                })
+            });
+
+            const op = inm.operacion === 'alquiler' ? '🔑 Alquiler' : '🏠 Venta';
+            const precio = inm.precio ? ' — $' + Number(inm.precio).toLocaleString() : '';
+            let popup = '<div style="min-width:200px;">';
+            popup += '<div style="font-weight:700;font-size:.95em;margin-bottom:4px;">' + escapeHtml(inm.titulo || 'Inmueble') + '</div>';
+            popup += '<div style="font-size:.82em;color:#16a34a;margin-bottom:4px;">' + op + precio + '</div>';
+            popup += '<div style="font-size:.8em;color:#555;margin-bottom:3px;">🏢 ' + escapeHtml(inm.inmobiliaria_nombre || 'Inmobiliaria') + '</div>';
+            if (inm.descripcion) popup += '<div style="font-size:.8em;color:#374151;margin-bottom:4px;">' + escapeHtml(inm.descripcion) + '</div>';
+            if (inm.direccion)   popup += '<div style="font-size:.79em;color:#6b7280;">📍 ' + escapeHtml(inm.direccion) + '</div>';
+            if (inm.contacto)    popup += '<div style="font-size:.79em;color:#1d4ed8;margin-top:4px;">📞 ' + escapeHtml(inm.contacto) + '</div>';
+            popup += '</div>';
+            mk.bindPopup(popup);
+            _cercaLayer.addLayer(mk);
+        });
+        _cercaLayer.addTo(mapa);
+    } catch (e) {
+        alert('Error al cargar inmuebles.');
+        desactivarCerca();
+    }
+}
+
+function desactivarCerca() {
+    _cercaActivo = false;
+    const btn = document.getElementById('btn-cerca');
+    if (btn) { btn.style.background = ''; btn.style.color = ''; btn.textContent = '🏘️ CERCA'; }
+    if (_cercaLayer) { mapa.removeLayer(_cercaLayer); _cercaLayer = null; }
+    // Restore normal markers
+    if (typeof markerCluster !== 'undefined' && markerCluster && !mapa.hasLayer(markerCluster)) {
+        mapa.addLayer(markerCluster);
+    }
+}
+
+// ─── CONVOCAR: Obra de Arte ─────────────────────────────────────────────────
+function abrirConvocar() {
+    <?php if (empty($_SESSION['user_id'])): ?>
+    alert('Debés iniciar sesión para usar esta función.');
+    return;
+    <?php endif; ?>
+    const modal = document.getElementById('modal-convocar');
+    if (!modal) return;
+    modal.style.display = 'flex';
+    cargarMisObras();
+}
+
+function cerrarConvocar() {
+    const modal = document.getElementById('modal-convocar');
+    if (modal) modal.style.display = 'none';
+}
+
+async function cargarMisObras() {
+    const sel = document.getElementById('conv-obra-select');
+    const msg = document.getElementById('conv-msg');
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Cargando...</option>';
+    try {
+        const r = await fetch('/api/convocatorias.php?action=mis_obras');
+        const d = await r.json();
+        if (!d.success || !d.data || !d.data.length) {
+            sel.innerHTML = '<option value="">Sin obras de arte publicadas</option>';
+            if (msg) { msg.textContent = 'No tenés negocios del tipo OBRA DE ARTE publicados.'; msg.style.display = 'block'; msg.style.color = '#991b1b'; }
+            return;
+        }
+        sel.innerHTML = '<option value="">Seleccioná una obra...</option>' +
+            d.data.map(o => '<option value="' + o.id + '">' + escapeHtml(o.name) + '</option>').join('');
+        if (msg) msg.style.display = 'none';
+    } catch (e) {
+        sel.innerHTML = '<option value="">Error al cargar</option>';
+    }
+}
+
+async function enviarConvocatoria() {
+    const bizId      = document.getElementById('conv-obra-select')?.value;
+    const fechaInicio = document.getElementById('conv-fecha-inicio')?.value;
+    const fechaFin    = document.getElementById('conv-fecha-fin')?.value;
+    const msg        = document.getElementById('conv-msg');
+    const btn        = document.getElementById('conv-btn-enviar');
+
+    if (!bizId)      { if (msg) { msg.textContent='Seleccioná una obra.';msg.style.color='#991b1b';msg.style.display='block';} return; }
+    if (!fechaInicio){ if (msg) { msg.textContent='Ingresá fecha de inicio.';msg.style.color='#991b1b';msg.style.display='block';} return; }
+    if (!fechaFin)   { if (msg) { msg.textContent='Ingresá fecha de fin.';msg.style.color='#991b1b';msg.style.display='block';} return; }
+
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Enviando…'; }
+    try {
+        const r = await fetch('/api/convocatorias.php?action=convocar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ business_id: parseInt(bizId, 10), fecha_inicio: fechaInicio, fecha_fin: fechaFin })
+        });
+        const d = await r.json();
+        if (msg) {
+            msg.textContent = d.success ? ('✅ ' + (d.message || 'Convocatoria enviada')) : ('❌ ' + (d.message || 'Error'));
+            msg.style.color = d.success ? '#065f46' : '#991b1b';
+            msg.style.background = d.success ? '#d1fae5' : '#fee2e2';
+            msg.style.padding = '8px 12px';
+            msg.style.borderRadius = '6px';
+            msg.style.display = 'block';
+        }
+        if (d.success) {
+            setTimeout(cerrarConvocar, 3000);
+        }
+    } catch (e) {
+        if (msg) { msg.textContent = 'Error de conexión.'; msg.style.display = 'block'; msg.style.color = '#991b1b'; }
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '🎭 Enviar convocatoria'; }
     }
 }
 </script>
