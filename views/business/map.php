@@ -3907,11 +3907,7 @@ function buildPopup(n, isMarca) {
         p += '</div>';
         // Legal info panel (toggles on ? click)
         p += '<div class="brand-legal-tooltip" role="note">'
-           + '<p><strong>Ley 22.362 — Marcas y designaciones (Arg)</strong></p>'
-           + '<p>Estos activos intangibles pueden ser capitalizados adecuadamente si reúnen los requisitos esenciales.</p>'
-           + '<p>Para más información '
-           + '<a href="https://www.fariasortiz.com.ar/marcas.html" target="_blank" rel="noopener noreferrer" class="brand-legal-link">Estudio Farías Ortiz ↗</a>'
-           + '</p>'
+           + '<p><strong>Ley 22.362 (Arg):</strong> Estos activos intangibles pueden ser capitalizados adecuadamente si reúnen los requisitos esenciales. Para más <a href="https://www.fariasortiz.com.ar/marcas.html" target="_blank" rel="noopener noreferrer" class="brand-legal-link">información...</a></p>'
            + '</div>';
 
         // Clase Niza + Rubro pills
