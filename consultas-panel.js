@@ -43,7 +43,8 @@
         return null;
     }
 
-    /* ── Bootstrap ─────────────────────────────────────────────────────────── */    if (document.readyState === 'loading') {
+    /* ── Bootstrap ─────────────────────────────────────────────────────────── */
+    if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
         init();

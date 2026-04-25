@@ -58,14 +58,14 @@ function cq_require_login(): int {
     return $uid;
 }
 
-/** Máximo de destinatarios por consulta general. */
+/** Máximo de destinatarios por consulta general (combinado forzados + radio). */
 define('CQ_MAX_GENERAL',    20);
 
 /** Máximo de destinatarios aleatorios por consulta masiva y proveedores. */
 define('CQ_MAX_MASIVA',     20);
 
-/** Radio por defecto en km para Consulta General (usuario puede ajustarlo). */
-define('CQ_GENERAL_RADIUS_KM', 25);
+/** Radio por defecto en km para Consulta General (el cliente puede ajustarlo). */
+define('CQ_GENERAL_DEFAULT_RADIUS_KM', 25);
 
 /**
  * Tipos de negocio RESTRINGIDOS para consultas generales:
@@ -196,7 +196,7 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
         // ── CONSULTA GENERAL: servicios especiales habilitados por admin ──────
         // - Solo tipos restringidos con consulta_habilitada = 1
         // - Negocios FORZADOS: propietario admin (sin restricción de radio)
-        // - Radio configurable desde el cliente (default CQ_GENERAL_RADIUS_KM)
+        // - Radio configurable desde el cliente (default CQ_GENERAL_DEFAULT_RADIUS_KM)
         // - Máximo CQ_MAX_GENERAL destinatarios, ordenados por proximidad
         case 'general': {
             $userLat = isset($input['user_lat']) ? (float)$input['user_lat'] : null;
@@ -207,7 +207,7 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
             }
 
             // Radio: tomado del cliente, con límites de seguridad
-            $radiusKm = isset($input['radius_km']) ? (float)$input['radius_km'] : (float)CQ_GENERAL_RADIUS_KM;
+            $radiusKm = isset($input['radius_km']) ? (float)$input['radius_km'] : (float)CQ_GENERAL_DEFAULT_RADIUS_KM;
             if ($radiusKm < 5)   $radiusKm = 5;
             if ($radiusKm > 500) $radiusKm = 500;
 
