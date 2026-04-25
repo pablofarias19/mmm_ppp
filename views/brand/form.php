@@ -148,7 +148,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($crear_franquicia && !$franquicia_descripcion && !$franquicia_url) {
         $message = 'Para activar CREAR FRANQUICIA, completá al menos la descripción o el enlace de información.';
         $msgType = 'error';
-        goto render_form;
     }
     // INPI
     $inpi_registrada          = isset($_POST['inpi_registrada']) ? 1 : 0;
@@ -173,6 +172,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!$nombre || !$rubro) {
         $message = 'El nombre y rubro son obligatorios.';
         $msgType = 'error';
+    } elseif ($crear_franquicia && !$franquicia_descripcion && !$franquicia_url) {
+        // Validación ya capturada arriba, no procesar DB
     } else {
         try {
             $db = getDbConnection();
@@ -417,7 +418,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-render_form:
 // ── Helper ────────────────────────────────────────────────────────────────────
 function val($brand, $key, $default = '') {
     return htmlspecialchars($brand[$key] ?? $default);
@@ -1425,11 +1425,11 @@ function chanChk($brand, $val) {
 
                 <div class="fgrid col1">
                     <div class="field">
-                        <label>Descripción de la Franquicia <span class="req">*</span></label>
+                        <label>Descripción de la Franquicia <span class="req" title="Requerido: completá este campo o el enlace de información">*</span></label>
                         <textarea name="franquicia_descripcion" rows="4"
                                   placeholder="Describí brevemente qué ofrece la franquicia, el modelo de negocio, inversión inicial estimada..."
                                   id="franquicia_descripcion"><?= val($brand,'franquicia_descripcion') ?></textarea>
-                        <span class="hint">Requerido si activás CREAR FRANQUICIA</span>
+                        <span class="hint">Requerido (o completá el enlace de información más abajo)</span>
                     </div>
                     <div class="field">
                         <label>Condiciones Generales</label>
@@ -1468,7 +1468,7 @@ function chanChk($brand, $val) {
                     </div>
                     <div class="field full">
                         <label>
-                            🔗 Enlace para más información <span class="req">*</span>
+                            🔗 Enlace para más información <span class="req" title="Requerido: completá este campo o la descripción arriba">*</span>
                             <button type="button" class="web-help-btn"
                                     onclick="toggleWebHelp('wh-franquicia-url')"
                                     title="¿Sin sitio web? Ver opciones gratuitas"

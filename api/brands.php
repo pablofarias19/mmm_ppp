@@ -18,7 +18,7 @@ try {
     $soloFranquicias = isset($_GET['franquicias']) && $_GET['franquicias'] == '1';
     if ($soloFranquicias) {
         $marcas = array_values(array_filter($marcas, function($m) {
-            return !empty($m['crear_franquicia']) && $m['crear_franquicia'] == 1;
+            return $m['crear_franquicia'] == 1;
         }));
     }
 
