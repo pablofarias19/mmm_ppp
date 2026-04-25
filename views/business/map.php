@@ -2689,6 +2689,8 @@ function inicializarMapa() {
     mapa = L.map('map').setView([-34.6037, -58.3816], 12);
 
     const capas = {
+        'Claro':    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+                        { subdomains: 'abcd', maxZoom: 20, attribution: '© OpenStreetMap © CartoDB' }),
         'Mapa':     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
                         { attribution: '© OpenStreetMap' }),
         'Satélite': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
@@ -2696,7 +2698,7 @@ function inicializarMapa() {
         'Oscuro':   L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
                         { attribution: '© OpenStreetMap © CartoDB' })
     };
-    capas['Mapa'].addTo(mapa);
+    capas['Claro'].addTo(mapa);
     L.control.layers(capas, {}, { position: 'topright', collapsed: true }).addTo(mapa);
 
     clusterGroup = L.markerClusterGroup({ disableClusteringAtZoom: 16 });
