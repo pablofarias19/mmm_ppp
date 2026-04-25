@@ -541,6 +541,14 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 line-height: 1.5;
             }
         }
+        @media (min-width: 769px) {
+            #sb-sec-selection .sb-section-body {
+                display: block !important;
+                max-height: none !important;
+                opacity: 1 !important;
+                overflow: visible !important;
+            }
+        }
 
         /* ── Popup action buttons ──────────────────── */
         .popup-action {
