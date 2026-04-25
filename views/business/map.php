@@ -839,8 +839,13 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         🏪 <span class="btn-label">Negocios</span>
     </button>
     <button onclick="toggleVer('marcas')" id="sel-marcas" class="toggle-btn active"
-            style="border-radius:0 20px 20px 0;">
+            style="border-radius:0;">
         🏷️ <span class="btn-label">Marcas</span>
+    </button>
+    <button onclick="toggleFranquiciasFilter()" id="sel-franquicias" class="toggle-btn"
+            style="border-radius:0 20px 20px 0;"
+            title="Mostrar solo marcas con franquicias disponibles">
+        🤝 <span class="btn-label">Franquicias</span>
     </button>
 </div>
 
@@ -3308,7 +3313,7 @@ function filtrar() {
     const languageFilter = (document.getElementById('filter-language-code')?.value || '').trim().toLowerCase();
 
     // Update UI visibility for brand/business-only filters
-    const showBrandFilters = (currentVer === 'marcas' || currentVer === 'ambos');
+    const showBrandFilters = (currentVer === 'marcas' || currentVer === 'ambos') || franquiciasFilter;
     document.getElementById('filter-protection-container').style.display = showBrandFilters ? '' : 'none';
     document.getElementById('filter-sector-container').style.display = showBrandFilters ? '' : 'none';
 
@@ -3369,6 +3374,9 @@ function filtrar() {
         marcas_filtered = marcas.filter(m => {
             // Basic filter
             if (texto && !(m.nombre||'').toLowerCase().includes(texto)) return false;
+
+            // FRANQUICIAS filter: solo marcas con crear_franquicia=1
+            if (franquiciasFilter && !(m.crear_franquicia == 1 || m.crear_franquicia === true || m.crear_franquicia === '1')) return false;
 
             // Protection filter
             if (protectionFilter && !protectionFilter.includes(m.nivel_proteccion)) return false;
@@ -3735,16 +3743,18 @@ function buildPopup(n, isMarca) {
         // ── Brand popup ──────────────────────────────────────────────────────
 
         // Status badges row
-        const inpiReg = n.inpi_registrada == 1 || n.inpi_registrada === true || n.inpi_registrada === '1';
-        const esFranq = n.es_franquicia == 1 || n.es_franquicia === true || n.es_franquicia === '1';
-        const tieneL  = n.tiene_licencia == 1 || n.tiene_licencia === true || n.tiene_licencia === '1';
+        const inpiReg    = n.inpi_registrada == 1 || n.inpi_registrada === true || n.inpi_registrada === '1';
+        const esFranq    = n.es_franquicia == 1 || n.es_franquicia === true || n.es_franquicia === '1';
+        const tieneL     = n.tiene_licencia == 1 || n.tiene_licencia === true || n.tiene_licencia === '1';
+        const crearFranq = n.crear_franquicia == 1 || n.crear_franquicia === true || n.crear_franquicia === '1';
         p += '<div class="brand-status-row">';
         if (inpiReg) {
             p += '<span class="brand-status-badge brand-status-badge--inpi">✅ INPI Registrada</span>';
         } else {
             p += '<span class="brand-status-badge brand-status-badge--hecho">⚪ Marca de Hecho</span>';
         }
-        if (esFranq) p += '<span class="brand-status-badge brand-status-badge--franquicia">🏢 Franquicia</span>';
+        if (crearFranq) p += '<span class="brand-status-badge brand-status-badge--franquicia" style="background:#7c3aed;">🤝 Franquicia disponible</span>';
+        else if (esFranq) p += '<span class="brand-status-badge brand-status-badge--franquicia">🏢 Franquicia</span>';
         if (tieneL)  p += '<span class="brand-status-badge brand-status-badge--licencia">📜 Con Licencia</span>';
         p += '<button type="button" class="brand-legal-hint-btn" aria-label="Información legal Ley 22.362"'
            + ' onclick="toggleBrandLegalInfo(this)"'
@@ -3802,11 +3812,56 @@ function buildPopup(n, isMarca) {
             p += '</div>';
         }
 
-        // Franchise details
-        if (esFranq && n.franchise_details) {
+        // Franchise details (legacy field + new crear_franquicia panel)
+        // crearFranq is already defined above from n.crear_franquicia
+        if (esFranq && n.franchise_details && !crearFranq) {
             p += '<div class="popup-section" style="margin-bottom:8px;">';
             p += '<div class="popup-label">🏢 Detalles de franquicia</div>';
             p += '<div class="popup-value" style="font-size:12px;">' + escapeHtml(n.franchise_details) + '</div>';
+            p += '</div>';
+        }
+        if (crearFranq) {
+            p += '<div class="popup-section" style="background:#f5f3ff;border:1px solid #c4b5fd;border-radius:8px;padding:10px 12px;margin-bottom:8px;">';
+            p += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;">';
+            p += '<span style="font-size:16px;">🤝</span>';
+            p += '<span style="font-weight:700;color:#7c3aed;font-size:13px;">FRANQUICIA DISPONIBLE</span>';
+            p += '<a href="https://www.alfoweb.com.ar" target="_blank" rel="noopener noreferrer" '
+               + 'title="Conocé ALFO — sitios web gratuitos" '
+               + 'style="margin-left:auto;font-size:14px;text-decoration:none;" aria-label="ALFO web gratuito">💡</a>';
+            p += '</div>';
+            if (n.franquicia_descripcion) {
+                p += '<p style="margin:0 0 6px;font-size:12px;color:#374151;line-height:1.45;">' + escapeHtml(n.franquicia_descripcion) + '</p>';
+            }
+            const fItems = [];
+            if (n.franquicia_condiciones)  fItems.push(['📋 Condiciones', n.franquicia_condiciones]);
+            if (n.franquicia_territorio)   fItems.push(['🗺️ Territorio', n.franquicia_territorio]);
+            if (n.franquicia_productos)    fItems.push(['📦 Productos', n.franquicia_productos]);
+            if (n.franquicia_garantias)    fItems.push(['🛡️ Garantías', n.franquicia_garantias]);
+            const exclVal = n.franquicia_exclusividad == 1 || n.franquicia_exclusividad === true || n.franquicia_exclusividad === '1';
+            if (exclVal) fItems.push(['🎯 Exclusividad', 'Con exclusividad territorial']);
+            if (fItems.length) {
+                p += '<div style="display:grid;gap:4px;margin-top:4px;">';
+                fItems.forEach(([lbl, val]) => {
+                    p += '<div style="font-size:11px;">'
+                       + '<span style="font-weight:700;color:#7c3aed;">' + escapeHtml(lbl) + ':</span> '
+                       + '<span style="color:#374151;">' + escapeHtml(String(val)) + '</span>'
+                       + '</div>';
+                });
+                p += '</div>';
+            }
+            if (n.franquicia_url) {
+                let safeFrqUrl = null;
+                try {
+                    const uf = new URL(String(n.franquicia_url));
+                    if (uf.protocol === 'https:' || uf.protocol === 'http:') safeFrqUrl = escapeHtml(uf.href);
+                } catch (_) { /* URL inválida */ }
+                if (safeFrqUrl) {
+                    p += '<a href="' + safeFrqUrl + '" target="_blank" rel="noopener" '
+                       + 'style="display:inline-flex;align-items:center;gap:5px;margin-top:8px;padding:6px 12px;'
+                       + 'background:#7c3aed;color:white;border-radius:20px;text-decoration:none;'
+                       + 'font-size:11px;font-weight:700;">🔗 Más info sobre la franquicia</a>';
+                }
+            }
             p += '</div>';
         }
 
@@ -4246,6 +4301,21 @@ function toggleExclusivasMarca() {
 // Estado de visibilidad (nuevo sistema de toggles independientes)
 let mostrarNegocios = true;
 let mostrarMarcas = true;
+let franquiciasFilter = false;
+
+function toggleFranquiciasFilter() {
+    franquiciasFilter = !franquiciasFilter;
+    const btn = document.getElementById('sel-franquicias');
+    if (btn) btn.classList.toggle('active', franquiciasFilter);
+    // Al activar FRANQUICIAS, asegurarse de que marcas esté visible
+    if (franquiciasFilter && !mostrarMarcas) {
+        mostrarMarcas = true;
+        const btnMarcas = document.getElementById('sel-marcas');
+        if (btnMarcas) btnMarcas.classList.add('active');
+        if (mostrarNegocios) { currentVer = 'ambos'; } else { currentVer = 'marcas'; }
+    }
+    filtrar();
+}
 
 function toggleVer(tipo) {
     if (tipo === 'negocios') {
