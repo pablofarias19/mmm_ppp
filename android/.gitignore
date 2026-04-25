@@ -1,0 +1,14 @@
+# Android build outputs – do not commit
+.gradle/
+local.properties
+build/
+*.apk
+*.aab
+*.aar
+*.jks
+*.keystore
+captures/
+.externalNativeBuild/
+.cxx/
+.idea/
+*.iml

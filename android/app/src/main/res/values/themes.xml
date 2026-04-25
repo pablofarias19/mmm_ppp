@@ -1,0 +1,7 @@
+<resources>
+    <!-- Base application theme: fullscreen / no action bar so the WebView fills the display. -->
+    <style name="Theme.Mapita" parent="Theme.AppCompat.Light.NoActionBar">
+        <item name="android:windowBackground">@android:color/white</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+    </style>
+</resources>
