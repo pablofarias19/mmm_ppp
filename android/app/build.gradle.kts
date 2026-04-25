@@ -24,20 +24,18 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Signing config: uncomment and fill in after creating a keystore.
-            // signingConfig = signingConfigs.getByName("release")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 
-    // Signing configs placeholder – fill in before generating a signed release APK.
-    // signingConfigs {
-    //     create("release") {
-    //         keyAlias = System.getenv("KEY_ALIAS") ?: "your-key-alias"
-    //         keyPassword = System.getenv("KEY_PASSWORD") ?: "your-key-password"
-    //         storeFile = file(System.getenv("STORE_FILE") ?: "your-keystore.jks")
-    //         storePassword = System.getenv("STORE_PASSWORD") ?: "your-store-password"
-    //     }
-    // }
+    signingConfigs {
+        create("release") {
+            keyAlias = System.getenv("KEY_ALIAS") ?: "your-key-alias"
+            keyPassword = System.getenv("KEY_PASSWORD") ?: "your-key-password"
+            storeFile = file(System.getenv("STORE_FILE") ?: "your-keystore.jks")
+            storePassword = System.getenv("STORE_PASSWORD") ?: "your-store-password"
+        }
+    }
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
