@@ -23,6 +23,13 @@ if ($_sessionUserId > 0) {
     } catch (Throwable $_e) { /* silencioso */ }
 }
 
+// ── Idioma de interfaz ────────────────────────────────────────────────────────
+// Persistir si viene por GET (el selector JS recarga con ?lang=xx)
+if (isset($_GET['lang'])) {
+    setUILanguage($_GET['lang']);
+}
+$_html_lang = getUILanguage();
+
 // ── Open Graph ────────────────────────────────────────────────────────────────
 $og_title       = 'MAPITA - Mapa de Marcas y Negocios';
 $og_description = 'Descubrí marcas y negocios cerca tuyo.';
@@ -31,7 +38,7 @@ $_scheme        = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? '
 $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') . '/img/og-mapita.png';
 ?>
 <!DOCTYPE html>
-<html lang="es">
+<html lang="<?= htmlspecialchars($_html_lang, ENT_QUOTES) ?>">
 <head>
     <meta charset="UTF-8">
     <title>🗺️ Mapita — Mapa de Negocios y Marcas</title>
@@ -1660,15 +1667,15 @@ function uiStr(key) {
     return (UI_STRINGS[MAPITA_UI_LANG] || UI_STRINGS.es)[key] || key;
 }
 
-/** Cambia el idioma de interfaz y redibuja el mapa. */
+/** Cambia el idioma de interfaz, persiste en sesión PHP y recarga la página. */
 function setMapUILang(lang) {
     if (!UI_STRINGS[lang]) return;
     MAPITA_UI_LANG = lang;
     localStorage.setItem('mapita_ui_lang', lang);
-    document.querySelectorAll('#lang-btn-option').forEach(el => {
-        el.style.fontWeight = (el.dataset.lang === lang) ? '700' : '400';
-    });
-    filtrar();
+    // Recarga la página pasando el idioma como param; map.php lo persiste en sesión
+    const url = new URL(window.location.href);
+    url.searchParams.set('lang', lang);
+    window.location.href = url.toString();
 }
 
 let negocios  = [];
