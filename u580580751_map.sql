@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Servidor: 127.0.0.1:3306
--- Tiempo de generación: 21-04-2026 a las 16:25:06
+-- Tiempo de generación: 25-04-2026 a las 13:40:17
 -- Versión del servidor: 11.8.6-MariaDB-log
 -- Versión de PHP: 7.2.34
 
@@ -92,6 +92,23 @@ CREATE TABLE `audit_log` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Volcado de datos para la tabla `audit_log`
+--
+
+INSERT INTO `audit_log` (`id`, `user_id`, `username`, `action`, `entity_type`, `entity_id`, `details`, `ip`, `user_agent`, `created_at`) VALUES
+(1, 5, 'Pablo_Farias', 'login', 'user', 5, '{\"username\":\"Pablo_Farias\"}', '201.235.95.238', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-21 18:19:16'),
+(2, 5, 'Pablo_Farias', 'login', 'user', 5, '{\"username\":\"Pablo_Farias\"}', '201.235.95.238', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-22 18:13:38'),
+(3, 5, 'Pablo_Farias', 'login', 'user', 5, '{\"username\":\"Pablo_Farias\"}', '201.235.95.238', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-23 22:22:09'),
+(4, 5, 'Pablo_Farias', 'login', 'user', 5, '{\"username\":\"Pablo_Farias\"}', '201.235.95.238', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-24 15:54:51'),
+(5, 5, 'Pablo_Farias', 'login', 'user', 5, '{\"username\":\"Pablo_Farias\"}', '201.235.95.238', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-24 18:43:46'),
+(6, 5, 'Pablo_Farias', 'login', 'user', 5, '{\"username\":\"Pablo_Farias\"}', '181.9.226.160', 'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Mobile Safari/537.36', '2026-04-24 21:33:07'),
+(7, 5, 'Pablo_Farias', 'logout', 'user', 5, NULL, '201.235.95.238', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-25 02:49:09'),
+(8, 5, 'Pablo_Farias', 'login', 'user', 5, '{\"username\":\"Pablo_Farias\"}', '201.235.95.238', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-25 02:49:30'),
+(9, 5, 'Pablo_Farias', 'toggle_consulta_habilitada', 'business', 9150, '{\"consulta_habilitada\":1}', '201.235.95.238', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-25 02:49:52'),
+(10, 5, 'Pablo_Farias', 'toggle_consulta_siempre', 'business', 9150, '{\"consulta_siempre\":1}', '201.235.95.238', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-25 02:49:55'),
+(11, 5, 'Pablo_Farias', 'login', 'user', 5, '{\"username\":\"Pablo_Farias\"}', '201.235.95.238', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/147.0.0.0 Safari/537.36', '2026-04-25 12:35:38');
+
 -- --------------------------------------------------------
 
 --
@@ -146,19 +163,35 @@ CREATE TABLE `brands` (
   `youtube` varchar(255) DEFAULT NULL,
   `whatsapp` varchar(50) DEFAULT NULL,
   `logo_url` varchar(255) DEFAULT NULL COMMENT 'Ruta pública del logo del mapa',
-  `mapita_id` varchar(64) DEFAULT NULL
+  `mapita_id` varchar(64) DEFAULT NULL,
+  `country_code` char(2) DEFAULT NULL COMMENT 'ISO 3166-1 alpha-2 del país de registro',
+  `language_code` char(5) DEFAULT NULL COMMENT 'BCP 47 del idioma principal de la marca',
+  `currency_code` char(3) DEFAULT NULL COMMENT 'Moneda del valor_activo (ISO 4217)',
+  `registry_authority` varchar(50) DEFAULT NULL COMMENT 'Organismo registrador: INPI, USPTO, EUIPO, JPO…',
+  `registry_number` varchar(100) DEFAULT NULL COMMENT 'Número de expediente genérico',
+  `registry_date` date DEFAULT NULL COMMENT 'Fecha de registro (genérico)',
+  `registry_expiry` date DEFAULT NULL COMMENT 'Fecha de vencimiento (genérico)',
+  `registry_type` varchar(20) DEFAULT NULL COMMENT 'national|madrid_protocol|eu_trademark|us_federal',
+  `crear_franquicia` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = la marca ofrece franquicias (habilita panel Franquicias)',
+  `franquicia_descripcion` text DEFAULT NULL COMMENT 'Texto explicativo de la franquicia',
+  `franquicia_condiciones` text DEFAULT NULL COMMENT 'Condiciones generales de la franquicia',
+  `franquicia_exclusividad` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = con exclusividad territorial',
+  `franquicia_territorio` text DEFAULT NULL COMMENT 'Ámbito territorial de la franquicia',
+  `franquicia_productos` text DEFAULT NULL COMMENT 'Productos o servicios incluidos en la franquicia',
+  `franquicia_garantias` text DEFAULT NULL COMMENT 'Garantías ofrecidas al franquiciado',
+  `franquicia_url` varchar(500) DEFAULT NULL COMMENT 'URL con más información sobre la franquicia'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `brands`
 --
 
-INSERT INTO `brands` (`id`, `user_id`, `nombre`, `clase_principal`, `rubro`, `lat`, `lng`, `website`, `nivel_proteccion`, `riesgo_oposicion`, `valor_activo`, `tiene_zona`, `zona_radius_km`, `tiene_licencia`, `licencia_detalle`, `es_franquicia`, `franchise_details`, `zona_exclusiva`, `zona_exclusiva_radius_km`, `scope`, `channels`, `annual_revenue`, `founded_year`, `extended_description`, `description`, `visible`, `created_at`, `updated_at`, `ubicacion`, `estado`, `inpi_registrada`, `inpi_numero`, `inpi_fecha_registro`, `inpi_vencimiento`, `inpi_clases_registradas`, `inpi_tipo`, `historia_marca`, `target_audience`, `propuesta_valor`, `instagram`, `facebook`, `tiktok`, `twitter`, `linkedin`, `youtube`, `whatsapp`, `logo_url`, `mapita_id`) VALUES
-(1, 1, 'Nike Argentina', '25', 'Ropa Deportiva', -34.60370000, -58.38160000, NULL, NULL, NULL, NULL, 0, 10, 0, NULL, 0, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-16 07:07:40', '2026-04-16 07:07:40', 'Argentina', 'Activa', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(2, 1, 'Coca-Cola', '32', 'Bebidas', -34.60100000, -58.37300000, NULL, NULL, NULL, NULL, 0, 10, 0, NULL, 0, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-16 07:07:40', '2026-04-16 07:07:40', 'Argentina', 'Activa', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(3, 1, 'Quilmes', '32', 'Bebidas', -34.60800000, -58.38500000, NULL, NULL, NULL, NULL, 0, 10, 0, NULL, 0, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-16 07:07:40', '2026-04-16 07:07:40', 'Argentina', 'Activa', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(4, 1, 'Farmacity', '5', 'Farmacia', -34.59500000, -58.39000000, NULL, NULL, NULL, NULL, 0, 10, 0, NULL, 0, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-16 07:07:40', '2026-04-16 07:07:40', 'Argentina', 'Activa', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(5, 1, 'Adidas', '25', 'Ropa Deportiva', -34.60200000, -58.37600000, NULL, NULL, NULL, NULL, 0, 10, 0, NULL, 0, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-16 07:07:40', '2026-04-16 07:07:40', 'Argentina', 'Activa', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+INSERT INTO `brands` (`id`, `user_id`, `nombre`, `clase_principal`, `rubro`, `lat`, `lng`, `website`, `nivel_proteccion`, `riesgo_oposicion`, `valor_activo`, `tiene_zona`, `zona_radius_km`, `tiene_licencia`, `licencia_detalle`, `es_franquicia`, `franchise_details`, `zona_exclusiva`, `zona_exclusiva_radius_km`, `scope`, `channels`, `annual_revenue`, `founded_year`, `extended_description`, `description`, `visible`, `created_at`, `updated_at`, `ubicacion`, `estado`, `inpi_registrada`, `inpi_numero`, `inpi_fecha_registro`, `inpi_vencimiento`, `inpi_clases_registradas`, `inpi_tipo`, `historia_marca`, `target_audience`, `propuesta_valor`, `instagram`, `facebook`, `tiktok`, `twitter`, `linkedin`, `youtube`, `whatsapp`, `logo_url`, `mapita_id`, `country_code`, `language_code`, `currency_code`, `registry_authority`, `registry_number`, `registry_date`, `registry_expiry`, `registry_type`, `crear_franquicia`, `franquicia_descripcion`, `franquicia_condiciones`, `franquicia_exclusividad`, `franquicia_territorio`, `franquicia_productos`, `franquicia_garantias`, `franquicia_url`) VALUES
+(1, 1, 'Nike Argentina', '25', 'Ropa Deportiva', -34.60370000, -58.38160000, NULL, NULL, NULL, NULL, 0, 10, 0, NULL, 0, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-16 07:07:40', '2026-04-16 07:07:40', 'Argentina', 'Activa', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL),
+(2, 1, 'Coca-Cola', '32', 'Bebidas', -34.60100000, -58.37300000, NULL, NULL, NULL, NULL, 0, 10, 0, NULL, 0, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-16 07:07:40', '2026-04-16 07:07:40', 'Argentina', 'Activa', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL),
+(3, 1, 'Quilmes', '32', 'Bebidas', -34.60800000, -58.38500000, NULL, NULL, NULL, NULL, 0, 10, 0, NULL, 0, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-16 07:07:40', '2026-04-16 07:07:40', 'Argentina', 'Activa', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL),
+(4, 1, 'Farmacity', '5', 'Farmacia', -34.59500000, -58.39000000, NULL, NULL, NULL, NULL, 0, 10, 0, NULL, 0, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-16 07:07:40', '2026-04-16 07:07:40', 'Argentina', 'Activa', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL),
+(5, 1, 'Adidas', '25', 'Ropa Deportiva', -34.60200000, -58.37600000, NULL, NULL, NULL, NULL, 0, 10, 0, NULL, 0, NULL, 0, 2, NULL, NULL, NULL, NULL, NULL, NULL, 1, '2026-04-16 07:07:40', '2026-04-16 07:07:40', 'Argentina', 'Activa', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL, NULL, 0, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -248,22 +281,33 @@ CREATE TABLE `businesses` (
   `mapita_id` varchar(64) DEFAULT NULL,
   `oferta_activa_id` int(10) UNSIGNED DEFAULT NULL,
   `disponibles_activo` tinyint(1) NOT NULL DEFAULT 0,
-  `og_image_url` varchar(255) DEFAULT NULL COMMENT 'URL pública de la imagen Open Graph del negocio'
+  `job_offer_active` tinyint(1) NOT NULL DEFAULT 0,
+  `job_offer_position` varchar(255) DEFAULT NULL,
+  `job_offer_description` text DEFAULT NULL,
+  `job_offer_url` varchar(500) DEFAULT NULL COMMENT 'Link externo opcional',
+  `og_image_url` varchar(255) DEFAULT NULL COMMENT 'URL pública de la imagen Open Graph del negocio',
+  `es_proveedor` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = negocio marcado como Proveedor (P); solo negocios comerciales/industriales',
+  `consulta_habilitada` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Admin designa: 1 = habilitado para recibir CONSULTA GENERAL (servicios especiales)',
+  `consulta_siempre` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Admin: 1 = este negocio siempre entra en Consulta Masiva dentro del área',
+  `proveedor_siempre` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Admin: 1 = este negocio P siempre entra en Consulta Global Proveedores',
+  `timezone` varchar(64) NOT NULL DEFAULT 'America/Argentina/Buenos_Aires',
+  `country_code` char(2) DEFAULT NULL COMMENT 'ISO 3166-1 alpha-2 (AR, US, DE…)',
+  `language_code` char(5) DEFAULT NULL COMMENT 'BCP 47 (es-AR, en-US, ja-JP…)',
+  `currency_code` char(3) DEFAULT NULL COMMENT 'ISO 4217 (ARS, USD, EUR, JPY…)',
+  `phone_country_code` varchar(6) DEFAULT NULL COMMENT 'Prefijo internacional (+54, +1, +81…)',
+  `address_format` varchar(20) DEFAULT NULL COMMENT 'Perfil de formato de dirección: ar|us|jp|eu',
+  `oda_descripcion_proyecto` text DEFAULT NULL COMMENT 'Descripcion del proyecto (obra_de_arte)',
+  `oda_requisitos` text DEFAULT NULL COMMENT 'Requisitos para participar (obra_de_arte)',
+  `oda_roles_buscados` text DEFAULT NULL COMMENT 'JSON array de roles que busca (obra_de_arte)',
+  `encuestas_override` enum('heredar','habilitada','deshabilitada') NOT NULL DEFAULT 'heredar' COMMENT 'Override de permiso de encuestas: heredar de industria, o forzar habilitada/deshabilitada'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `businesses`
 --
 
-INSERT INTO `businesses` (`id`, `user_id`, `name`, `address`, `lat`, `lng`, `phone`, `email`, `website`, `instagram`, `facebook`, `tiktok`, `certifications`, `has_delivery`, `has_card_payment`, `is_franchise`, `verified`, `business_type`, `visible`, `status`, `created_at`, `updated_at`, `price_range`, `description`, `subcategory_id`, `company_size`, `location_city`, `style`, `mapita_id`, `oferta_activa_id`, `disponibles_activo`, `og_image_url`) VALUES
-(9142, 1, 'Panadería Central', 'Av. Corrientes 1234, CABA', -34.603700, -58.381600, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'comercio', 1, 'active', '2026-04-16 07:07:40', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL),
-(9143, 1, 'Hotel Plaza Mayor', 'San Martín 456, CABA', -34.601000, -58.373000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'hotel', 1, 'active', '2026-04-16 07:07:40', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL),
-(9144, 1, 'Restaurante La Típica', 'Humberto 1° 789, CABA', -34.608000, -58.385000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'restaurante', 1, 'active', '2026-04-16 07:07:40', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL),
-(9145, 1, 'Farmacia Salud Plus', 'Belgrano 321, CABA', -34.595000, -58.390000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'farmacia', 1, 'active', '2026-04-16 07:07:40', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL),
-(9146, 1, 'Gimnasio FitLife', 'Lavalle 654, CABA', -34.602000, -58.376000, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'gimnasio', 1, 'active', '2026-04-16 07:07:40', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL),
-(9147, 5, 'pasito de los toros', 'BARRIO LULUS FRIEND', -32.806335, -56.519024, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'comercio', 1, 'active', '2026-04-17 01:20:32', NULL, 3, 'Es un fabrica que vende pasito de los toros.', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL),
-(9148, 5, 'PASITO DE LOS TOROS', 'Baltasar Brum', -32.814667, -56.514715, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'comercio', 1, 'active', '2026-04-17 01:22:37', NULL, 3, 'XD', NULL, NULL, NULL, NULL, NULL, NULL, 0, NULL),
-(9149, 6, 'Nico', 'Julio Verne 616', -34.616882, -58.369492, '+541168480793', 'estudio@fariasortiz.com.ar', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 'panaderia', 1, 'active', '2026-04-20 06:15:41', '2026-04-20 16:03:08', 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0, '/uploads/businesses/9149/og_cover.jpg');
+INSERT INTO `businesses` (`id`, `user_id`, `name`, `address`, `lat`, `lng`, `phone`, `email`, `website`, `instagram`, `facebook`, `tiktok`, `certifications`, `has_delivery`, `has_card_payment`, `is_franchise`, `verified`, `business_type`, `visible`, `status`, `created_at`, `updated_at`, `price_range`, `description`, `subcategory_id`, `company_size`, `location_city`, `style`, `mapita_id`, `oferta_activa_id`, `disponibles_activo`, `job_offer_active`, `job_offer_position`, `job_offer_description`, `job_offer_url`, `og_image_url`, `es_proveedor`, `consulta_habilitada`, `consulta_siempre`, `proveedor_siempre`, `timezone`, `country_code`, `language_code`, `currency_code`, `phone_country_code`, `address_format`, `oda_descripcion_proyecto`, `oda_requisitos`, `oda_roles_buscados`, `encuestas_override`) VALUES
+(9150, 5, 'María Celeste Ortiz', '6 de Agosto 331, CP 5000, Córdoba Capital', -31.371407, -64.178861, '+549-11-1566311985', 'propiedades@mariacelesteortiz.com.ar', 'https://www.mariacelesteortiz.com.ar', NULL, NULL, NULL, 'Estacionamiento, Acceso universal, Reservas online, Factura fiscal, Mercado Pago', 0, 1, 0, 0, 'inmobiliaria', 1, 'active', '2026-04-25 02:13:50', '2026-04-25 02:53:40', 3, 'Ofrecemos un análisis exhaustivo del valor de mercado de tus propiedades, garantizando la precisión y confiabilidad.', NULL, NULL, NULL, NULL, NULL, NULL, 0, 0, NULL, NULL, NULL, NULL, 0, 1, 1, 0, 'America/Argentina/Buenos_Aires', 'AR', 'es', 'ARS', '+54', 'ar', NULL, NULL, NULL, 'heredar');
 
 -- --------------------------------------------------------
 
@@ -500,6 +544,7 @@ CREATE TABLE `comercios` (
   `horario_apertura` time DEFAULT NULL,
   `horario_cierre` time DEFAULT NULL,
   `dias_cierre` varchar(100) DEFAULT NULL,
+  `timezone` varchar(64) NOT NULL DEFAULT 'America/Argentina/Buenos_Aires',
   `categorias_productos` text DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -507,10 +552,8 @@ CREATE TABLE `comercios` (
 -- Volcado de datos para la tabla `comercios`
 --
 
-INSERT INTO `comercios` (`id`, `business_id`, `tipo_comercio`, `horario_apertura`, `horario_cierre`, `dias_cierre`, `categorias_productos`) VALUES
-(6, 9147, NULL, NULL, NULL, NULL, NULL),
-(7, 9148, NULL, NULL, NULL, NULL, NULL),
-(8, 9149, 'Española', '09:00:00', '18:00:00', NULL, NULL);
+INSERT INTO `comercios` (`id`, `business_id`, `tipo_comercio`, `horario_apertura`, `horario_cierre`, `dias_cierre`, `timezone`, `categorias_productos`) VALUES
+(9, 9150, 'Alquiler - Venta - Tasación', '09:00:00', '16:00:00', 'Sábado,Domingo', 'America/Argentina/Buenos_Aires', 'alquiler,venta,tasaciones,departamentos,casas,locales,oficinas,ph');
 
 -- --------------------------------------------------------
 
@@ -572,6 +615,51 @@ DELIMITER ;
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `consultas_destinatarios`
+--
+
+CREATE TABLE `consultas_destinatarios` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `consulta_id` bigint(20) UNSIGNED NOT NULL,
+  `business_id` int(11) NOT NULL,
+  `notificado` tinyint(1) NOT NULL DEFAULT 0,
+  `leido_en` datetime DEFAULT NULL COMMENT 'Cuándo el propietario del negocio lo leyó'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `consultas_masivas`
+--
+
+CREATE TABLE `consultas_masivas` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `user_id` int(11) NOT NULL COMMENT 'Usuario que origina la consulta',
+  `tipo` enum('masiva','general','global_proveedor','envio') NOT NULL COMMENT 'masiva=geo+todos; general=servicios habilitados; global_proveedor=rubro P; envio=transportistas geo',
+  `rubro` varchar(100) DEFAULT NULL COMMENT 'Para tipo=global_proveedor: business_type destino',
+  `geo_bounds` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '{north,south,east,west} — para masiva y envio' CHECK (json_valid(`geo_bounds`)),
+  `texto` varchar(500) NOT NULL COMMENT 'Texto de la consulta enviada',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `consultas_respuestas`
+--
+
+CREATE TABLE `consultas_respuestas` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `consulta_id` bigint(20) UNSIGNED NOT NULL,
+  `business_id` int(11) NOT NULL COMMENT 'Negocio que responde',
+  `user_id` int(11) NOT NULL COMMENT 'Propietario/responsable que escribe la respuesta',
+  `texto` varchar(500) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `content_reports`
 --
 
@@ -589,6 +677,38 @@ CREATE TABLE `content_reports` (
   `resolution_note` text DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `convocatorias`
+--
+
+CREATE TABLE `convocatorias` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `business_id` int(11) NOT NULL COMMENT 'Negocio OBRA DE ARTE convocante',
+  `user_id` int(11) NOT NULL COMMENT 'Usuario titular',
+  `fecha_inicio` datetime NOT NULL,
+  `fecha_fin` datetime NOT NULL,
+  `roles_requeridos` text NOT NULL COMMENT 'JSON array de business_type roles',
+  `estado` enum('activa','cerrada','cancelada') NOT NULL DEFAULT 'activa',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `convocatoria_destinatarios`
+--
+
+CREATE TABLE `convocatoria_destinatarios` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `convocatoria_id` bigint(20) UNSIGNED NOT NULL,
+  `business_id` int(11) NOT NULL COMMENT 'Negocio/servicio convocado',
+  `notificado_wt` tinyint(1) NOT NULL DEFAULT 0,
+  `notificado_mail` tinyint(1) NOT NULL DEFAULT 0,
+  `leido_en` datetime DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -831,19 +951,21 @@ CREATE TABLE `encuestas` (
   `link` varchar(255) DEFAULT NULL COMMENT 'Link externo a la encuesta',
   `activo` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `detalle_activo` tinyint(1) NOT NULL DEFAULT 1 COMMENT '1 = habilitar panel Detalle con gráficos; 0 = solo popup',
+  `graficos_config` varchar(255) NOT NULL DEFAULT 'barras,torta,tendencia' COMMENT 'Lista CSV de tipos de gráfico habilitados: barras, torta, tendencia'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `encuestas`
 --
 
-INSERT INTO `encuestas` (`id`, `titulo`, `descripcion`, `lat`, `lng`, `fecha_creacion`, `fecha_expiracion`, `link`, `activo`, `created_at`, `updated_at`) VALUES
-(1, 'Opinión sobre transporte público', '¿Qué opinas sobre el servicio de transporte en la zona?', -34.60123400, -58.37567800, '2025-03-01', '2025-05-01', 'https://forms.example.com/transportesurvey', 0, '2025-03-30 06:03:57', '2025-03-31 05:17:49'),
-(2, 'Encuesta de satisfacción comercial', 'Ayúdanos a mejorar la experiencia comercial', -34.60876500, -58.39234500, '2025-03-15', '2025-04-30', 'https://forms.example.com/comerciosurvey', 1, '2025-03-30 06:03:57', '2025-03-30 06:03:57'),
-(3, 'Preferencias de ocio', '¿Qué actividades te gustaría ver en el barrio?', -34.59543200, -58.41098700, '2025-03-20', '2025-05-15', 'https://forms.example.com/ociosurvey', 1, '2025-03-30 06:03:57', '2025-03-30 06:03:57'),
-(4, 'Opinión sobre candidatos imaginarios', '¿Qué opinás de los candidatos A y B? Respondé esta breve encuesta.', -34.60000000, -58.37000000, '2025-03-30', '2025-12-31', 'https://tusitio.com/encuesta.php?id=2', 1, '2025-03-30 07:00:05', '2025-03-30 07:00:05'),
-(5, 'Votaciones Legislativas', 'Vamos a decir lo que pensamos', -31.23834350, -64.47077750, '2025-03-30', '2025-04-08', 'https://mapita.com.ar/submapita/encuestas/encuesta.php?id=5', 1, '2025-03-30 07:18:11', '2025-04-07 02:39:53');
+INSERT INTO `encuestas` (`id`, `titulo`, `descripcion`, `lat`, `lng`, `fecha_creacion`, `fecha_expiracion`, `link`, `activo`, `created_at`, `updated_at`, `detalle_activo`, `graficos_config`) VALUES
+(1, 'Opinión sobre transporte público', '¿Qué opinas sobre el servicio de transporte en la zona?', -34.60123400, -58.37567800, '2025-03-01', '2025-05-01', 'https://forms.example.com/transportesurvey', 0, '2025-03-30 06:03:57', '2026-04-25 00:29:00', 1, 'barras,torta,tendencia'),
+(2, 'Encuesta de satisfacción comercial', 'Ayúdanos a mejorar la experiencia comercial', -34.60876500, -58.39234500, '2025-03-15', '2025-04-30', 'https://forms.example.com/comerciosurvey', 1, '2025-03-30 06:03:57', '2025-03-30 06:03:57', 1, 'barras,torta,tendencia'),
+(3, 'Preferencias de ocio', '¿Qué actividades te gustaría ver en el barrio?', -34.59543200, -58.41098700, '2025-03-20', '2025-05-15', 'https://forms.example.com/ociosurvey', 1, '2025-03-30 06:03:57', '2025-03-30 06:03:57', 1, 'barras,torta,tendencia'),
+(4, 'Opinión sobre candidatos imaginarios', '¿Qué opinás de los candidatos A y B? Respondé esta breve encuesta.', -34.60000000, -58.37000000, '2025-03-30', '2025-12-31', 'https://tusitio.com/encuesta.php?id=2', 1, '2025-03-30 07:00:05', '2025-03-30 07:00:05', 1, 'barras,torta,tendencia'),
+(5, 'Votaciones Legislativas', 'Vamos a decir lo que pensamos', -31.23834350, -64.47077750, '2025-03-30', '2025-04-08', 'https://mapita.com.ar/submapita/encuestas/encuesta.php?id=5', 1, '2025-03-30 07:18:11', '2025-04-07 02:39:53', 1, 'barras,torta,tendencia');
 
 -- --------------------------------------------------------
 
@@ -1027,6 +1149,63 @@ CREATE TABLE `hoteles` (
 -- --------------------------------------------------------
 
 --
+-- Estructura de tabla para la tabla `industrial_sectors`
+--
+
+CREATE TABLE `industrial_sectors` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `name` varchar(255) NOT NULL,
+  `type` enum('mineria','energia','agro','infraestructura','inmobiliario','industrial') NOT NULL,
+  `subtype` varchar(100) DEFAULT NULL,
+  `geometry` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL COMMENT 'GeoJSON (Feature o Geometry)' CHECK (json_valid(`geometry`)),
+  `status` enum('proyecto','activo','potencial') NOT NULL DEFAULT 'potencial',
+  `investment_level` enum('bajo','medio','alto') NOT NULL DEFAULT 'medio',
+  `risk_level` enum('bajo','medio','alto') NOT NULL DEFAULT 'medio',
+  `jurisdiction` varchar(255) DEFAULT NULL,
+  `description` text DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `industries`
+--
+
+CREATE TABLE `industries` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `user_id` int(10) UNSIGNED NOT NULL COMMENT 'Usuario propietario',
+  `industrial_sector_id` int(10) UNSIGNED DEFAULT NULL COMMENT 'FK a industrial_sectors (catálogo)',
+  `business_id` int(11) DEFAULT NULL,
+  `brand_id` int(11) DEFAULT NULL,
+  `name` varchar(255) NOT NULL,
+  `description` text DEFAULT NULL,
+  `website` varchar(500) DEFAULT NULL,
+  `contact_email` varchar(255) DEFAULT NULL,
+  `contact_phone` varchar(50) DEFAULT NULL,
+  `country` varchar(100) DEFAULT NULL,
+  `country_code` char(2) DEFAULT NULL COMMENT 'ISO 3166-1 alpha-2',
+  `language_code` char(5) DEFAULT NULL COMMENT 'BCP 47 del idioma principal',
+  `currency_code` char(3) DEFAULT NULL COMMENT 'ISO 4217 — moneda de referencia',
+  `region` varchar(100) DEFAULT NULL,
+  `city` varchar(100) DEFAULT NULL,
+  `employees_range` enum('1-10','11-50','51-200','201-500','500+') DEFAULT NULL COMMENT 'Rango de empleados',
+  `annual_revenue` enum('micro','pequeña','mediana','grande','corporación') DEFAULT NULL COMMENT 'Escala de la industria',
+  `certifications` text DEFAULT NULL COMMENT 'Certificaciones separadas por coma',
+  `naics_code` varchar(20) DEFAULT NULL COMMENT 'Código NAICS (opcional)',
+  `isic_code` varchar(20) DEFAULT NULL COMMENT 'Código ISIC (opcional)',
+  `nace_code` varchar(20) DEFAULT NULL COMMENT 'Clasificador NACE Rev. 2 (Europa)',
+  `ciiu_code` varchar(20) DEFAULT NULL COMMENT 'Clasificador CIIU/ISIC Rev. 4 (OIT/LATAM)',
+  `status` enum('borrador','activa','archivada') NOT NULL DEFAULT 'borrador',
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime DEFAULT NULL ON UPDATE current_timestamp(),
+  `encuestas_permitidas` tinyint(1) NOT NULL DEFAULT 0 COMMENT '1 = la industria puede crear encuestas; 0 = no puede'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Estructura de tabla para la tabla `inmobiliarias`
 --
 
@@ -1036,6 +1215,50 @@ CREATE TABLE `inmobiliarias` (
   `tipos_propiedades` text DEFAULT NULL,
   `zonas_operacion` text DEFAULT NULL,
   `comision` decimal(5,2) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `inmuebles`
+--
+
+CREATE TABLE `inmuebles` (
+  `id` bigint(20) UNSIGNED NOT NULL,
+  `business_id` int(11) NOT NULL COMMENT 'ID de la inmobiliaria',
+  `operacion` enum('venta','alquiler') NOT NULL DEFAULT 'venta',
+  `titulo` varchar(255) NOT NULL,
+  `descripcion` text DEFAULT NULL,
+  `precio` decimal(15,2) DEFAULT NULL,
+  `moneda` varchar(10) NOT NULL DEFAULT 'ARS',
+  `direccion` varchar(500) DEFAULT NULL,
+  `lat` decimal(10,7) DEFAULT NULL,
+  `lng` decimal(10,7) DEFAULT NULL,
+  `foto_url` varchar(500) DEFAULT NULL,
+  `contacto` varchar(255) DEFAULT NULL,
+  `activo` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp(),
+  `updated_at` datetime NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `job_applications`
+--
+
+CREATE TABLE `job_applications` (
+  `id` int(10) UNSIGNED NOT NULL,
+  `business_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL COMMENT 'Login obligatorio — NOT NULL',
+  `applicant_name` varchar(255) NOT NULL,
+  `applicant_email` varchar(255) NOT NULL,
+  `applicant_phone` varchar(50) DEFAULT NULL,
+  `message` text DEFAULT NULL,
+  `estado` enum('pendiente','vista','aceptada','rechazada') NOT NULL DEFAULT 'pendiente',
+  `consent` tinyint(1) NOT NULL DEFAULT 1,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NULL DEFAULT NULL ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1185,7 +1408,10 @@ CREATE TABLE `noticias` (
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
   `lat` decimal(10,6) DEFAULT NULL COMMENT 'Latitud de la noticia',
   `lng` decimal(10,6) DEFAULT NULL COMMENT 'Longitud de la noticia',
-  `ubicacion` varchar(255) DEFAULT NULL COMMENT 'Lugar al que refiere la noticia'
+  `ubicacion` varchar(255) DEFAULT NULL COMMENT 'Lugar al que refiere la noticia',
+  `link` varchar(500) DEFAULT NULL COMMENT 'URL a la noticia completa',
+  `resumen_popup` text DEFAULT NULL COMMENT 'Resumen breve para mostrar en popup del mapa',
+  `tags` varchar(500) DEFAULT NULL COMMENT 'Etiquetas separadas por comas'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -1419,6 +1645,16 @@ CREATE TABLE `rate_limit_log` (
   `endpoint` varchar(100) NOT NULL,
   `hit_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Volcado de datos para la tabla `rate_limit_log`
+--
+
+INSERT INTO `rate_limit_log` (`id`, `ip`, `endpoint`, `hit_at`) VALUES
+(6, '181.9.226.160', 'login', '2026-04-24 21:33:07'),
+(5, '201.235.95.238', 'login', '2026-04-24 18:43:46'),
+(7, '201.235.95.238', 'login', '2026-04-25 02:49:30'),
+(8, '201.235.95.238', 'login', '2026-04-25 12:35:38');
 
 -- --------------------------------------------------------
 
@@ -1773,16 +2009,18 @@ CREATE TABLE `transmisiones` (
   `en_vivo` tinyint(1) NOT NULL DEFAULT 0,
   `activo` tinyint(1) NOT NULL DEFAULT 1,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `fecha_inicio` datetime DEFAULT NULL COMMENT 'Fecha y hora de inicio programada de la transmisión',
+  `fecha_fin` datetime DEFAULT NULL COMMENT 'Fecha y hora de fin programada de la transmisión'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Volcado de datos para la tabla `transmisiones`
 --
 
-INSERT INTO `transmisiones` (`id`, `titulo`, `descripcion`, `tipo`, `stream_url`, `lat`, `lng`, `business_id`, `evento_id`, `en_vivo`, `activo`, `created_at`, `updated_at`) VALUES
-(1, 'Radio Local en Vivo', 'Transmision de radio local las 24hs con noticias y musica regional.', 'radio_stream', 'https://stream.zeno.fm/ejemplo', -34.60370000, -58.38160000, NULL, NULL, 0, 1, '2026-04-17 23:45:20', '2026-04-17 23:45:20'),
-(2, 'Canal Municipal YouTube', 'Sesiones del Consejo Municipal y eventos oficiales en vivo.', 'youtube_live', 'https://www.youtube.com/@municipio/live', -34.60500000, -58.39000000, NULL, NULL, 0, 1, '2026-04-17 23:45:20', '2026-04-17 23:45:20');
+INSERT INTO `transmisiones` (`id`, `titulo`, `descripcion`, `tipo`, `stream_url`, `lat`, `lng`, `business_id`, `evento_id`, `en_vivo`, `activo`, `created_at`, `updated_at`, `fecha_inicio`, `fecha_fin`) VALUES
+(1, 'Radio Local en Vivo', 'Transmision de radio local las 24hs con noticias y musica regional.', 'radio_stream', 'https://stream.zeno.fm/ejemplo', -34.60370000, -58.38160000, NULL, NULL, 0, 1, '2026-04-17 23:45:20', '2026-04-17 23:45:20', NULL, NULL),
+(2, 'Canal Municipal YouTube', 'Sesiones del Consejo Municipal y eventos oficiales en vivo.', 'youtube_live', 'https://www.youtube.com/@municipio/live', -34.60500000, -58.39000000, NULL, NULL, 0, 1, '2026-04-17 23:45:20', '2026-04-17 23:45:20', NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -1880,7 +2118,13 @@ CREATE TABLE `trivias` (
   `lat` decimal(10,6) DEFAULT NULL COMMENT 'Latitud donde se realiza la trivia',
   `lng` decimal(10,6) DEFAULT NULL COMMENT 'Longitud donde se realiza la trivia',
   `ubicacion` varchar(255) DEFAULT NULL COMMENT 'Nombre del lugar',
-  `business_id` int(11) DEFAULT NULL COMMENT 'Negocio que la organiza'
+  `business_id` int(11) DEFAULT NULL COMMENT 'Negocio que la organiza',
+  `svg` varchar(500) DEFAULT NULL COMMENT 'URL o path a imagen SVG ilustrativa',
+  `referencia` varchar(255) DEFAULT NULL COMMENT 'Referencia del juego',
+  `tipo` varchar(100) DEFAULT NULL COMMENT 'Tipo de juego',
+  `edad` varchar(50) DEFAULT NULL COMMENT 'Edad recomendada',
+  `emojis` varchar(255) DEFAULT NULL COMMENT 'Emojis decorativos del popup',
+  `app_path` varchar(500) DEFAULT NULL COMMENT 'Path relativo del archivo PHP de la app (dentro de apps/trivias/)'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
@@ -2007,7 +2251,7 @@ INSERT INTO `users` (`id`, `username`, `password`, `email`, `phone`, `email_veri
 (2, 'Lulu1', '$2y$10$aRlnyV1MUROFGas8gfud1O.O.lQT0HvxEVPXAOVg3ZT3IJ8Vh.Ac2', NULL, NULL, 1, NULL, NULL, 0, '2025-03-29 02:44:35', '2026-04-20 15:00:02', NULL, NULL),
 (3, 'Lulu13', '$2y$10$paGP0LTwW.FI3imVvRds0.whMd28EKyLXk/Lgp9WCRoEBRJMmtxvO', NULL, NULL, 1, NULL, NULL, 0, '2025-03-29 17:52:53', '2026-04-20 15:00:02', NULL, NULL),
 (4, 'martilleracelesteortiz@gmail.com', '$2y$10$ZiXMPysIFxGcgWWAxhzmSOD.2woxXw5vJxi8o5ejgrrB9wOk8YxbS', NULL, NULL, 1, NULL, NULL, 0, '2025-04-01 03:44:07', '2026-04-20 15:00:02', NULL, NULL),
-(5, 'Pablo_Farias', '$2y$10$2/lTT0OjnVkUVMaJt6i4Yuw40uhT4v2focifLJUYnb9GDrRKTLb1S', 'pablofarias19@gmail.com', NULL, 0, NULL, NULL, 1, '2026-04-10 16:06:07', '2026-04-21 15:39:04', NULL, NULL),
+(5, 'Pablo_Farias', '$2y$10$2/lTT0OjnVkUVMaJt6i4Yuw40uhT4v2focifLJUYnb9GDrRKTLb1S', 'pablofarias19@gmail.com', NULL, 0, NULL, NULL, 1, '2026-04-10 16:06:07', '2026-04-25 12:35:38', NULL, NULL),
 (6, 'Nicolas_FO', '$2y$10$iJKRWAHEyxVW.5jzL593zOEO4/uWjiFB2Y0A25kv2LghjjHRSIfWu', NULL, NULL, 1, NULL, NULL, 0, '2026-04-20 06:13:48', '2026-04-20 15:00:02', NULL, NULL);
 
 -- --------------------------------------------------------
@@ -2165,7 +2409,7 @@ CREATE TABLE `wt_presence` (
 INSERT INTO `wt_presence` (`id`, `entity_type`, `entity_id`, `user_id`, `user_name`, `sender_key`, `last_seen`, `updated_at`) VALUES
 (1, 'negocio', 9142, 5, 'Pablo_Farias', 'uid:5', '2026-04-20 19:46:33', '2026-04-20 19:46:33'),
 (12, 'negocio', 9146, 5, 'Pablo_Farias', 'uid:5', '2026-04-20 18:24:33', '2026-04-20 18:24:33'),
-(15, 'negocio', 9143, 5, 'Pablo_Farias', 'uid:5', '2026-04-21 15:49:13', '2026-04-21 15:49:13'),
+(15, 'negocio', 9143, 5, 'Pablo_Farias', 'uid:5', '2026-04-21 18:22:23', '2026-04-21 18:22:23'),
 (72, 'negocio', 9145, 5, 'Pablo_Farias', 'uid:5', '2026-04-21 15:49:16', '2026-04-21 15:49:16'),
 (163, 'negocio', 9148, 5, 'Pablo_Farias', 'uid:5', '2026-04-20 21:57:02', '2026-04-20 21:57:02'),
 (205, 'negocio', 9144, 5, 'Pablo_Farias', 'uid:5', '2026-04-21 02:44:33', '2026-04-21 02:44:33'),
@@ -2177,20 +2421,54 @@ INSERT INTO `wt_presence` (`id`, `entity_type`, `entity_id`, `user_id`, `user_na
 (390, 'negocio', 9145, NULL, 'Invitado', 'sid:444f8825ce2281b52deea490043af7ab23c703e1', '2026-04-20 06:13:05', '2026-04-20 06:13:05'),
 (403, 'negocio', 9148, 6, 'Nicolas_FO', 'uid:6', '2026-04-21 11:11:32', '2026-04-21 11:11:32'),
 (406, 'negocio', 9149, 6, 'Nicolas_FO', 'uid:6', '2026-04-21 02:47:40', '2026-04-21 02:47:40'),
-(410, 'negocio', 9149, 5, 'Pablo_Farias', 'uid:5', '2026-04-21 11:17:13', '2026-04-21 11:17:13'),
+(410, 'negocio', 9149, 5, 'Pablo_Farias', 'uid:5', '2026-04-23 22:31:34', '2026-04-23 22:31:34'),
 (763, 'negocio', 9149, NULL, 'Invitado', 'sid:4ba5d14a4b4aa99f127d17e4d3c805dddd206881', '2026-04-20 14:20:43', '2026-04-20 14:20:43'),
-(1442, 'marca', 3, 5, 'Pablo_Farias', 'uid:5', '2026-04-20 19:11:33', '2026-04-20 19:11:33'),
+(1442, 'marca', 3, 5, 'Pablo_Farias', 'uid:5', '2026-04-24 14:13:22', '2026-04-24 14:13:22'),
 (1955, 'negocio', 9147, 5, 'Pablo_Farias', 'uid:5', '2026-04-20 21:57:00', '2026-04-20 21:57:00'),
-(2536, 'marca', 4, 5, 'Pablo_Farias', 'uid:5', '2026-04-21 01:16:42', '2026-04-21 01:16:42'),
-(2921, 'evento', 4, 5, 'Pablo_Farias', 'uid:5', '2026-04-21 11:19:16', '2026-04-21 11:19:16'),
+(2536, 'marca', 4, 5, 'Pablo_Farias', 'uid:5', '2026-04-24 21:44:16', '2026-04-24 21:44:16'),
+(2921, 'evento', 4, 5, 'Pablo_Farias', 'uid:5', '2026-04-21 18:22:33', '2026-04-21 18:22:33'),
 (3248, 'negocio', 9147, 6, 'Nicolas_FO', 'uid:6', '2026-04-21 11:19:04', '2026-04-21 11:19:04'),
 (3295, 'evento', 4, 6, 'Nicolas_FO', 'uid:6', '2026-04-21 11:19:11', '2026-04-21 11:19:11'),
-(3396, 'negocio', 9144, NULL, 'Invitado', 'sid:2c67c3481eae76e457aa0805f105f86a20645535', '2026-04-21 16:24:13', '2026-04-21 16:24:13'),
+(3396, 'negocio', 9144, NULL, 'Invitado', 'sid:2c67c3481eae76e457aa0805f105f86a20645535', '2026-04-21 16:47:06', '2026-04-21 16:47:06'),
 (3400, 'evento', 4, NULL, 'Invitado', 'sid:2c67c3481eae76e457aa0805f105f86a20645535', '2026-04-21 15:16:47', '2026-04-21 15:16:47'),
 (3408, 'negocio', 9149, NULL, 'Invitado', 'sid:2c67c3481eae76e457aa0805f105f86a20645535', '2026-04-21 15:16:29', '2026-04-21 15:16:29'),
-(3430, 'negocio', 9142, NULL, 'Invitado', 'sid:2c67c3481eae76e457aa0805f105f86a20645535', '2026-04-21 16:24:13', '2026-04-21 16:24:13'),
+(3430, 'negocio', 9142, NULL, 'Invitado', 'sid:2c67c3481eae76e457aa0805f105f86a20645535', '2026-04-21 16:47:06', '2026-04-21 16:47:06'),
 (3446, 'negocio', 9149, NULL, 'Invitado', 'sid:db6aa0a2537a6fe242faa943cd62d44c180c7287', '2026-04-21 13:43:07', '2026-04-21 13:43:07'),
-(4357, 'negocio', 9146, NULL, 'Invitado', 'sid:4a7c1c6f13af0ec3e9ae91c6a5a25dbb6f93deca', '2026-04-21 15:38:50', '2026-04-21 15:38:50');
+(4357, 'negocio', 9146, NULL, 'Invitado', 'sid:4a7c1c6f13af0ec3e9ae91c6a5a25dbb6f93deca', '2026-04-21 15:38:50', '2026-04-21 15:38:50'),
+(4523, 'negocio', 9142, NULL, 'Invitado', 'sid:f99c50632d21e07636168111b7f8a6c507f86e1a', '2026-04-21 18:18:53', '2026-04-21 18:18:53'),
+(4673, 'marca', 2, NULL, 'Invitado', 'sid:f99c50632d21e07636168111b7f8a6c507f86e1a', '2026-04-21 18:18:57', '2026-04-21 18:18:57'),
+(4689, 'negocio', 9145, NULL, 'Invitado', 'sid:a6f4c201e4968d9a2d8e9fffe392b226536dbb63', '2026-04-22 03:06:27', '2026-04-22 03:06:27'),
+(4694, 'negocio', 9149, NULL, 'Invitado', 'sid:a6f4c201e4968d9a2d8e9fffe392b226536dbb63', '2026-04-22 03:06:17', '2026-04-22 03:06:17'),
+(4703, 'negocio', 9149, NULL, 'Invitado', 'sid:546cd793bdfd4072daa9314248c9bbc1f80abe43', '2026-04-22 18:53:47', '2026-04-22 18:53:47'),
+(5165, 'negocio', 9145, NULL, 'Invitado', 'sid:0e045fcdd76a5012ca840622bc92c7046e4425aa', '2026-04-23 00:48:56', '2026-04-23 00:48:56'),
+(5169, 'negocio', 9149, NULL, 'Invitado', 'sid:0e045fcdd76a5012ca840622bc92c7046e4425aa', '2026-04-23 00:12:42', '2026-04-23 00:12:42'),
+(5187, 'negocio', 9144, NULL, 'Invitado', 'sid:0e045fcdd76a5012ca840622bc92c7046e4425aa', '2026-04-23 00:12:34', '2026-04-23 00:12:34'),
+(5200, 'negocio', 9148, NULL, 'Invitado', 'sid:0e045fcdd76a5012ca840622bc92c7046e4425aa', '2026-04-23 00:12:45', '2026-04-23 00:12:45'),
+(5206, 'marca', 4, NULL, 'Invitado', 'sid:0e045fcdd76a5012ca840622bc92c7046e4425aa', '2026-04-23 01:45:58', '2026-04-23 01:45:58'),
+(5211, 'marca', 2, NULL, 'Invitado', 'sid:0e045fcdd76a5012ca840622bc92c7046e4425aa', '2026-04-23 00:57:25', '2026-04-23 00:57:25'),
+(5214, 'marca', 3, NULL, 'Invitado', 'sid:0e045fcdd76a5012ca840622bc92c7046e4425aa', '2026-04-23 20:32:18', '2026-04-23 20:32:18'),
+(5442, 'marca', 5, NULL, 'Invitado', 'sid:0e045fcdd76a5012ca840622bc92c7046e4425aa', '2026-04-23 00:52:16', '2026-04-23 00:52:16'),
+(5565, 'marca', 5, NULL, 'Invitado', 'sid:ece1ef09c8a7429f581df5c027502faafbf24c5a', '2026-04-23 01:50:19', '2026-04-23 01:50:19'),
+(5567, 'marca', 2, NULL, 'Invitado', 'sid:ece1ef09c8a7429f581df5c027502faafbf24c5a', '2026-04-23 01:50:16', '2026-04-23 01:50:16'),
+(5852, 'negocio', 9149, NULL, 'Invitado', 'sid:441d8adadf3dc88d478292ce66a48fbacd431c93', '2026-04-23 12:15:56', '2026-04-23 12:15:56'),
+(5856, 'marca', 3, NULL, 'Invitado', 'sid:441d8adadf3dc88d478292ce66a48fbacd431c93', '2026-04-23 12:15:50', '2026-04-23 12:15:50'),
+(5880, 'negocio', 9145, NULL, 'Invitado', 'sid:441d8adadf3dc88d478292ce66a48fbacd431c93', '2026-04-23 12:30:29', '2026-04-23 12:30:29'),
+(6860, 'negocio', 9149, NULL, 'Invitado', 'sid:c896563784d3f3052962f76cb3a2c1be0a7ebdeb', '2026-04-24 01:01:19', '2026-04-24 01:01:19'),
+(6868, 'marca', 4, NULL, 'Invitado', 'sid:c896563784d3f3052962f76cb3a2c1be0a7ebdeb', '2026-04-24 01:01:31', '2026-04-24 01:01:31'),
+(6883, 'marca', 5, 5, 'Pablo_Farias', 'uid:5', '2026-04-24 14:07:08', '2026-04-24 14:07:08'),
+(6895, 'negocio', 9150, 5, 'Pablo_Farias', 'uid:5', '2026-04-25 02:48:41', '2026-04-25 02:48:41');
+
+-- --------------------------------------------------------
+
+--
+-- Estructura de tabla para la tabla `wt_user_areas`
+--
+
+CREATE TABLE `wt_user_areas` (
+  `user_id` int(11) NOT NULL,
+  `area_slug` varchar(64) NOT NULL,
+  `created_at` datetime NOT NULL DEFAULT current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- --------------------------------------------------------
 
@@ -2203,7 +2481,7 @@ CREATE TABLE `wt_user_blocks` (
   `blocker_user_id` int(11) NOT NULL,
   `blocked_user_id` int(11) NOT NULL,
   `created_at` datetime NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ;
 
 -- --------------------------------------------------------
 
@@ -2262,7 +2540,9 @@ ALTER TABLE `brands`
   ADD KEY `user_id` (`user_id`),
   ADD KEY `visible` (`visible`),
   ADD KEY `idx_scope` (`scope`),
-  ADD KEY `idx_founded` (`founded_year`);
+  ADD KEY `idx_founded` (`founded_year`),
+  ADD KEY `idx_brands_country_code` (`country_code`),
+  ADD KEY `idx_brands_crear_franquicia` (`crear_franquicia`);
 
 --
 -- Indices de la tabla `brand_delegations`
@@ -2301,7 +2581,8 @@ ALTER TABLE `businesses`
   ADD KEY `idx_verified` (`verified`),
   ADD KEY `idx_has_delivery` (`has_delivery`),
   ADD KEY `idx_instagram` (`instagram`),
-  ADD KEY `idx_business_oferta_activa` (`oferta_activa_id`);
+  ADD KEY `idx_business_oferta_activa` (`oferta_activa_id`),
+  ADD KEY `idx_businesses_country_code` (`country_code`);
 
 --
 -- Indices de la tabla `business_categories`
@@ -2401,6 +2682,32 @@ ALTER TABLE `compras_paquetes`
   ADD KEY `idx_usuario_estado` (`usuario_id`,`estado`);
 
 --
+-- Indices de la tabla `consultas_destinatarios`
+--
+ALTER TABLE `consultas_destinatarios`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_cd_consulta_negocio` (`consulta_id`,`business_id`),
+  ADD KEY `idx_cd_negocio` (`business_id`);
+
+--
+-- Indices de la tabla `consultas_masivas`
+--
+ALTER TABLE `consultas_masivas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cm_user` (`user_id`),
+  ADD KEY `idx_cm_tipo` (`tipo`),
+  ADD KEY `idx_cm_created_at` (`created_at`);
+
+--
+-- Indices de la tabla `consultas_respuestas`
+--
+ALTER TABLE `consultas_respuestas`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_cr_consulta` (`consulta_id`),
+  ADD KEY `idx_cr_business` (`business_id`),
+  ADD KEY `idx_cr_created_at` (`created_at`);
+
+--
 -- Indices de la tabla `content_reports`
 --
 ALTER TABLE `content_reports`
@@ -2409,6 +2716,23 @@ ALTER TABLE `content_reports`
   ADD KEY `idx_reports_content` (`content_type`,`content_id`),
   ADD KEY `idx_reports_reporter` (`reporter_user_id`),
   ADD KEY `idx_reports_created` (`created_at`);
+
+--
+-- Indices de la tabla `convocatorias`
+--
+ALTER TABLE `convocatorias`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_conv_business` (`business_id`),
+  ADD KEY `idx_conv_user` (`user_id`),
+  ADD KEY `idx_conv_estado` (`estado`);
+
+--
+-- Indices de la tabla `convocatoria_destinatarios`
+--
+ALTER TABLE `convocatoria_destinatarios`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_conv_dest` (`convocatoria_id`,`business_id`),
+  ADD KEY `idx_cd_business` (`business_id`);
 
 --
 -- Indices de la tabla `cursos`
@@ -2592,11 +2916,51 @@ ALTER TABLE `hoteles`
   ADD UNIQUE KEY `business_id` (`business_id`);
 
 --
+-- Indices de la tabla `industrial_sectors`
+--
+ALTER TABLE `industrial_sectors`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_is_type` (`type`),
+  ADD KEY `idx_is_status` (`status`);
+
+--
+-- Indices de la tabla `industries`
+--
+ALTER TABLE `industries`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_ind_user_id` (`user_id`),
+  ADD KEY `idx_ind_industrial_sector_id` (`industrial_sector_id`),
+  ADD KEY `idx_ind_name` (`name`),
+  ADD KEY `idx_ind_status` (`status`),
+  ADD KEY `idx_industries_country_code` (`country_code`),
+  ADD KEY `idx_industries_business_id` (`business_id`),
+  ADD KEY `idx_industries_brand_id` (`brand_id`);
+
+--
 -- Indices de la tabla `inmobiliarias`
 --
 ALTER TABLE `inmobiliarias`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `business_id` (`business_id`);
+
+--
+-- Indices de la tabla `inmuebles`
+--
+ALTER TABLE `inmuebles`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_inm_business` (`business_id`),
+  ADD KEY `idx_inm_operacion` (`operacion`),
+  ADD KEY `idx_inm_activo` (`activo`);
+
+--
+-- Indices de la tabla `job_applications`
+--
+ALTER TABLE `job_applications`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `uq_jobapp_user_biz` (`business_id`,`user_id`),
+  ADD KEY `idx_jobapp_business` (`business_id`),
+  ADD KEY `idx_jobapp_user` (`user_id`),
+  ADD KEY `idx_jobapp_estado` (`business_id`,`estado`);
 
 --
 -- Indices de la tabla `marcadores`
@@ -2827,7 +3191,8 @@ ALTER TABLE `transmisiones`
   ADD KEY `idx_activo` (`activo`),
   ADD KEY `idx_en_vivo` (`en_vivo`),
   ADD KEY `idx_coords` (`lat`,`lng`),
-  ADD KEY `idx_tipo` (`tipo`);
+  ADD KEY `idx_tipo` (`tipo`),
+  ADD KEY `idx_trans_ventana` (`activo`,`fecha_inicio`,`fecha_fin`);
 
 --
 -- Indices de la tabla `transmisiones_vivo`
@@ -2939,13 +3304,21 @@ ALTER TABLE `wt_presence`
   ADD KEY `idx_wt_presence_seen` (`entity_type`,`entity_id`,`last_seen`);
 
 --
+-- Indices de la tabla `wt_user_areas`
+--
+ALTER TABLE `wt_user_areas`
+  ADD PRIMARY KEY (`user_id`,`area_slug`),
+  ADD KEY `idx_wt_area_slug_user` (`area_slug`,`user_id`);
+
+--
 -- Indices de la tabla `wt_user_blocks`
 --
 ALTER TABLE `wt_user_blocks`
   ADD PRIMARY KEY (`id`),
   ADD UNIQUE KEY `uq_wt_block` (`blocker_user_id`,`blocked_user_id`),
   ADD KEY `idx_wt_block_blocker` (`blocker_user_id`),
-  ADD KEY `idx_wt_block_blocked` (`blocked_user_id`);
+  ADD KEY `idx_wt_block_blocked` (`blocked_user_id`),
+  ADD KEY `idx_wt_block_blocked_blocker` (`blocked_user_id`,`blocker_user_id`);
 
 --
 -- Indices de la tabla `wt_user_preferences`
@@ -2979,7 +3352,7 @@ ALTER TABLE `attachments`
 -- AUTO_INCREMENT de la tabla `audit_log`
 --
 ALTER TABLE `audit_log`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT de la tabla `brands`
@@ -3009,7 +3382,7 @@ ALTER TABLE `brand_gallery_v2`
 -- AUTO_INCREMENT de la tabla `businesses`
 --
 ALTER TABLE `businesses`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9150;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9151;
 
 --
 -- AUTO_INCREMENT de la tabla `business_categories`
@@ -3075,7 +3448,7 @@ ALTER TABLE `clasificacion_niza`
 -- AUTO_INCREMENT de la tabla `comercios`
 --
 ALTER TABLE `comercios`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=10;
 
 --
 -- AUTO_INCREMENT de la tabla `compras_paquetes`
@@ -3084,10 +3457,40 @@ ALTER TABLE `compras_paquetes`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `consultas_destinatarios`
+--
+ALTER TABLE `consultas_destinatarios`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `consultas_masivas`
+--
+ALTER TABLE `consultas_masivas`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `consultas_respuestas`
+--
+ALTER TABLE `consultas_respuestas`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `content_reports`
 --
 ALTER TABLE `content_reports`
   MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `convocatorias`
+--
+ALTER TABLE `convocatorias`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `convocatoria_destinatarios`
+--
+ALTER TABLE `convocatoria_destinatarios`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `cursos`
@@ -3216,10 +3619,34 @@ ALTER TABLE `hoteles`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT de la tabla `industrial_sectors`
+--
+ALTER TABLE `industrial_sectors`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `industries`
+--
+ALTER TABLE `industries`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT de la tabla `inmobiliarias`
 --
 ALTER TABLE `inmobiliarias`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `inmuebles`
+--
+ALTER TABLE `inmuebles`
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT;
+
+--
+-- AUTO_INCREMENT de la tabla `job_applications`
+--
+ALTER TABLE `job_applications`
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT de la tabla `marcadores`
@@ -3315,7 +3742,7 @@ ALTER TABLE `promociones`
 -- AUTO_INCREMENT de la tabla `rate_limit_log`
 --
 ALTER TABLE `rate_limit_log`
-  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(10) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT de la tabla `remates`
@@ -3459,7 +3886,7 @@ ALTER TABLE `wt_messages`
 -- AUTO_INCREMENT de la tabla `wt_presence`
 --
 ALTER TABLE `wt_presence`
-  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4477;
+  MODIFY `id` bigint(20) UNSIGNED NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7023;
 
 --
 -- AUTO_INCREMENT de la tabla `wt_user_blocks`
@@ -3586,6 +4013,39 @@ ALTER TABLE `compras_paquetes`
   ADD CONSTRAINT `compras_paquetes_ibfk_2` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`);
 
 --
+-- Filtros para la tabla `consultas_destinatarios`
+--
+ALTER TABLE `consultas_destinatarios`
+  ADD CONSTRAINT `fk_cd_consulta` FOREIGN KEY (`consulta_id`) REFERENCES `consultas_masivas` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_cd_negocio` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `consultas_masivas`
+--
+ALTER TABLE `consultas_masivas`
+  ADD CONSTRAINT `fk_cm_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `consultas_respuestas`
+--
+ALTER TABLE `consultas_respuestas`
+  ADD CONSTRAINT `fk_cr_consulta` FOREIGN KEY (`consulta_id`) REFERENCES `consultas_masivas` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `convocatorias`
+--
+ALTER TABLE `convocatorias`
+  ADD CONSTRAINT `fk_conv_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_conv_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `convocatoria_destinatarios`
+--
+ALTER TABLE `convocatoria_destinatarios`
+  ADD CONSTRAINT `fk_cd_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE,
+  ADD CONSTRAINT `fk_cd_conv` FOREIGN KEY (`convocatoria_id`) REFERENCES `convocatorias` (`id`) ON DELETE CASCADE;
+
+--
 -- Filtros para la tabla `cursos`
 --
 ALTER TABLE `cursos`
@@ -3684,10 +4144,29 @@ ALTER TABLE `hoteles`
   ADD CONSTRAINT `hoteles_ibfk_1` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE;
 
 --
+-- Filtros para la tabla `industries`
+--
+ALTER TABLE `industries`
+  ADD CONSTRAINT `fk_industries_brand` FOREIGN KEY (`brand_id`) REFERENCES `brands` (`id`) ON DELETE SET NULL ON UPDATE CASCADE,
+  ADD CONSTRAINT `fk_industries_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+--
 -- Filtros para la tabla `inmobiliarias`
 --
 ALTER TABLE `inmobiliarias`
   ADD CONSTRAINT `inmobiliarias_ibfk_1` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `inmuebles`
+--
+ALTER TABLE `inmuebles`
+  ADD CONSTRAINT `fk_inm_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `job_applications`
+--
+ALTER TABLE `job_applications`
+  ADD CONSTRAINT `fk_jobapp_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `marcas`
@@ -3850,6 +4329,12 @@ ALTER TABLE `valoraciones_servicios`
 --
 ALTER TABLE `vehiculos_venta`
   ADD CONSTRAINT `fk_vehiculos_business` FOREIGN KEY (`business_id`) REFERENCES `businesses` (`id`) ON DELETE CASCADE;
+
+--
+-- Filtros para la tabla `wt_user_areas`
+--
+ALTER TABLE `wt_user_areas`
+  ADD CONSTRAINT `fk_wt_user_areas_user` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Filtros para la tabla `wt_user_blocks`
