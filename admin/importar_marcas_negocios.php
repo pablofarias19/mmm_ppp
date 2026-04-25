@@ -50,7 +50,7 @@ const BRAND_BOOL_FIELDS = ['inpi_registrada', 'es_franquicia', 'tiene_zona', 'ti
 /** Campos de fecha INPI que deben seguir formato YYYY-MM-DD */
 const BRAND_DATE_FIELDS = ['inpi_fecha_registro', 'inpi_vencimiento'];
 
-/** Coordenadas de fallback cuando no hay dirección geocodificable (centro de Argentina) */
+/** Coordenadas de fallback cuando no hay dirección geocodificable (Buenos Aires, Argentina) */
 const ARGENTINA_LAT = -34.6037;
 const ARGENTINA_LNG = -58.3816;
 
@@ -253,12 +253,15 @@ function deduplicateBrands(array $items): array {
             sort($merged, SORT_NUMERIC);
             $result[$idx]['inpi_clases_registradas'] = implode(',', $merged);
 
-            // Agregar nota en extended_description
-            $extra = "Clases NIZA adicionales consolidadas: " . implode(',', array_diff($classesB, $classesA)) . ".";
-            if (!empty($result[$idx]['extended_description'])) {
-                $result[$idx]['extended_description'] .= ' ' . $extra;
-            } else {
-                $result[$idx]['extended_description'] = $extra;
+            // Agregar nota en extended_description solo cuando hay clases nuevas
+            $newClasses = array_diff($classesB, $classesA);
+            if (!empty($newClasses)) {
+                $extra = "Clases NIZA adicionales consolidadas: " . implode(',', $newClasses) . ".";
+                if (!empty($result[$idx]['extended_description'])) {
+                    $result[$idx]['extended_description'] .= ' ' . $extra;
+                } else {
+                    $result[$idx]['extended_description'] = $extra;
+                }
             }
 
             $dupes++;
@@ -310,7 +313,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $decoded = json_decode($raw, true);
                 if (json_last_error() !== JSON_ERROR_NONE) {
                     $errors[] = 'El archivo no es JSON válido: ' . json_last_error_msg();
-                } elseif (!is_array($decoded) || (count($decoded) > 0 && array_keys($decoded) !== range(0, count($decoded) - 1))) {
+                } elseif (!is_array($decoded) || !array_is_list($decoded)) {
                     // Verificar que la raíz sea un array indexado (no objeto)
                     $errors[] = 'La raíz del JSON debe ser un array [ { ... }, { ... } ], no un objeto.';
                 } elseif (empty($decoded)) {
@@ -681,7 +684,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <div class="alert alert-info">
             <strong>📄 Formato requerido:</strong> Array JSON en la raíz con objetos de marcas o negocios.
-            Consultá <code>admin/bulk_import_templates.md</code> para el prompt de IA y ejemplos completos.
+            Consultá <code>admin/bulk_import_templates.md</code> para el prompt de IA y ejemplos completos.<br>
+            <small>⏱️ Si los registros no tienen lat/lng, se geocodifica vía Nominatim (1 s/registro). Para lotes grandes puede tardar varios minutos.</small>
         </div>
 
         <form method="post" enctype="multipart/form-data">

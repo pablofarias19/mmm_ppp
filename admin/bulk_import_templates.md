@@ -21,8 +21,8 @@ Cuando un JSON llega sin `lat`/`lng`, el módulo de importación masiva
    a [Nominatim (OpenStreetMap)](https://nominatim.openstreetmap.org/) para obtener
    latitud y longitud sin costo.
 2. **Fallo de geocodificación**: si Nominatim no puede resolver la dirección, se usan
-   las coordenadas de fallback de Argentina (`-34.6037`, `-58.3816`).
-3. **Sin dirección**: se aplica directamente el fallback de Argentina.
+   las coordenadas de fallback de Buenos Aires (`-34.6037`, `-58.3816`).
+3. **Sin dirección**: se aplica directamente el fallback de Buenos Aires.
 
 > **Regla de ubicación de la marca:**
 > - Primero se usa el domicilio del titular.
@@ -234,7 +234,7 @@ EJEMPLO DE SALIDA:
 5. El campo `lat`/`lng` es **opcional** para ambos tipos. Si se omite, el módulo
    `admin/importar_marcas_negocios.php` geocodifica automáticamente usando la dirección
    (campo `ubicacion` para marcas o `address` para negocios) vía OpenStreetMap Nominatim.
-   Si la geocodificación falla, se usan las coordenadas de Argentina como fallback.
+   Si la geocodificación falla, se usan las coordenadas de Buenos Aires como fallback (-34.6037, -58.3816).
 6. Los tipos de negocio deben coincidir exactamente con la lista indicada en el prompt.
 7. Para marcas, todos los campos booleanos y `estado` son ahora **obligatorios** en el módulo
    `admin/importar_marcas_negocios.php`. El widget rápido del Panel Admin sigue siendo permisivo.
