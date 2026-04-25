@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Foreground layer for the adaptive icon.
+     Replace this vector with a version of logoapp.png once it is available.
+     Recommended: use Android Studio > Image Asset to generate all mipmap sizes. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Simple "M" letter as placeholder – replace with actual logo. -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M24,80 L24,28 L40,28 L54,56 L68,28 L84,28 L84,80 L72,80 L72,50 L58,78 L50,78 L36,50 L36,80 Z" />
+</vector>
