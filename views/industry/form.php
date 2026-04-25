@@ -629,7 +629,7 @@ function fieldVal(string $key, ?array $row, $default = ''): string {
                                     para empezar a trabajar de forma virtual.
                                 </p>
                                 <a class="web-help-cta"
-                                   href="mailto:estudio@fariasortiz.com.ar?subject=Consulta%20Mapita%20-%20Sitio%20web">
+                                   href="mailto:myweb@alfoweb.com.ar?subject=Consulta%20Mapita%20-%20Sitio%20web">
                                     ✉️ Consultar por email
                                 </a>
                             </div>

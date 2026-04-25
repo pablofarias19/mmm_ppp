@@ -878,7 +878,7 @@ function chanChk($brand, $val) {
                                 para empezar a trabajar de forma virtual.
                             </p>
                             <a class="web-help-cta"
-                               href="mailto:estudio@fariasortiz.com.ar?subject=Consulta%20Mapita%20-%20Sitio%20web">
+                               href="mailto:myweb@alfoweb.com.ar?subject=Consulta%20Mapita%20-%20Sitio%20web">
                                 ✉️ Consultar por email
                             </a>
                         </div>
@@ -1253,7 +1253,7 @@ function chanChk($brand, $val) {
                                 para empezar a trabajar de forma virtual.
                             </p>
                             <a class="web-help-cta"
-                               href="mailto:estudio@fariasortiz.com.ar?subject=Consulta%20Mapita%20-%20Sitio%20web">
+                               href="mailto:myweb@alfoweb.com.ar?subject=Consulta%20Mapita%20-%20Sitio%20web">
                                 ✉️ Consultar por email
                             </a>
                         </div>
@@ -1689,7 +1689,7 @@ function chanChk($brand, $val) {
             <div class="fgrid">
                 <div class="field">
                     <label for="brand-delegate-query">Username o email del destinatario</label>
-                    <input type="text" id="brand-delegate-query" maxlength="120" placeholder="ej: usuario o mail@dominio.com">
+                    <input type="text" id="brand-delegate-query" maxlength="120" placeholder="ej: usuario o mail@dominio.com" autocomplete="username">
                 </div>
                 <div class="field">
                     <label for="brand-delegate-password">Tu password de confirmación</label>
