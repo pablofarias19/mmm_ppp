@@ -110,7 +110,7 @@ $noProveedorTypes = [
     'laboratorio', 'enfermeria', 'asistencia_ancianos', 'psicologo', 'psicopedagogo',
     'fonoaudiologo', 'grafologo', 'academia', 'idiomas', 'escuela', 'maestro_particular',
     'arquitectura', 'ingenieria', 'ingenieria_civil', 'electricista', 'gasista', 'contador',
-    'seguridad',
+    'seguridad', 'obra_de_arte',
 ];
 $puedeSerProveedor = $editing && !in_array($selectedType, $noProveedorTypes, true);
 
@@ -208,6 +208,25 @@ $tipos = [
     'Otros' => [
         'otros' => ['📍', 'Otro tipo'],
     ],
+    'Arte & Cultura' => [
+        'obra_de_arte'          => ['🎭', 'Obra de Arte / Proyecto Artístico'],
+        'musico'                => ['🎸', 'Músico'],
+        'cantante'              => ['🎤', 'Cantante'],
+        'bailarin'              => ['💃', 'Bailarín/a'],
+        'actor'                 => ['🎭', 'Actor'],
+        'actriz'                => ['🎭', 'Actriz'],
+        'director_artistico'    => ['🎬', 'Director/a artístico/a'],
+        'guionista'             => ['📝', 'Guionista'],
+        'escenografo'           => ['🖼️', 'Escenógrafo/a'],
+        'fotografo_artistico'   => ['📷', 'Fotógrafo/a artístico/a'],
+        'productor_artistico'   => ['🎙️', 'Productor/a artístico/a'],
+        'maquillador'           => ['💄', 'Maquillador/a'],
+        'pintor'                => ['🎨', 'Pintor/a'],
+        'poeta'                 => ['📜', 'Poeta'],
+        'musicalizador'         => ['🎵', 'Musicalizador/a'],
+        'editor_grafico'        => ['🖥️', 'Editor/a gráfico/a'],
+        'asistente_artistico'   => ['🤝', 'Asistente artístico/a'],
+    ],
 ];
 
 $subtypeLabels = [
@@ -263,6 +282,23 @@ $subtypeLabels = [
     'autos_venta'    => 'Tipo de vehículo (ej: sedán, SUV, utilitario, 0km, usado…)',
     'motos_venta'    => 'Tipo de moto (ej: urbana, enduro, scooter, cilindrada…)',
     'remate'         => 'Tipo de subasta (ej: judicial, ganadera, online, loteo…)',
+    'obra_de_arte'        => 'Tipo de proyecto (ej: teatro, danza, música, circo, performance…)',
+    'musico'              => 'Instrumento o género (ej: guitarra, jazz, clásico, folk…)',
+    'cantante'            => 'Estilo vocal (ej: lírico, pop, folklore, gospel…)',
+    'bailarin'            => 'Estilo de danza (ej: contemporánea, tango, flamenco, ballet…)',
+    'actor'               => 'Especialidad (ej: teatro, cine, doblaje, comedia…)',
+    'actriz'              => 'Especialidad (ej: teatro, cine, doblaje, comedia…)',
+    'director_artistico'  => 'Área (ej: teatro, ópera, danza, eventos…)',
+    'guionista'           => 'Formato (ej: cine, teatro, publicidad, webserie…)',
+    'escenografo'         => 'Especialidad (ej: teatro, cine, eventos, instalaciones…)',
+    'fotografo_artistico' => 'Estilo (ej: retrato, documental, moda, arte…)',
+    'productor_artistico' => 'Área (ej: música, teatro, cine, eventos…)',
+    'maquillador'         => 'Especialidad (ej: artístico, cinematográfico, caracterización…)',
+    'pintor'              => 'Estilo (ej: óleo, acuarela, mural, abstracto…)',
+    'poeta'               => 'Género (ej: verso libre, haiku, slam, spoken word…)',
+    'musicalizador'       => 'Contexto (ej: teatro, cine, eventos, radio…)',
+    'editor_grafico'      => 'Especialidad (ej: identidad visual, editorial, multimedia…)',
+    'asistente_artistico' => 'Área de asistencia (ej: producción, escenografía, dirección…)',
 ];
 
 $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
@@ -1151,6 +1187,132 @@ $descriptionPlaceholders = [
         </div>
         <?php endif; ?>
         <!-- ══ FIN MÓDULO PROVEEDOR "P" ══════════════════════════════════════ -->
+
+        <!-- ══ MÓDULO INMUEBLES (solo inmobiliaria) ══════════════════════════════ -->
+        <?php if ($editing && $selectedType === 'inmobiliaria'): ?>
+        <div class="form-section" id="section-inmuebles">
+            <div class="section-head">
+                <span class="section-icon">🏘️</span>
+                <div>
+                    <div class="section-title">Inmuebles publicados</div>
+                    <div class="section-desc">Publicá propiedades en venta o alquiler. Aparecen en el mapa al presionar CERCA.</div>
+                </div>
+            </div>
+            <div class="section-body">
+                <div id="inmuebles-list" style="margin-bottom:12px;"></div>
+                <button type="button" class="btn-save" style="width:auto;padding:8px 14px;background:#16a34a;" onclick="abrirFormInmueble(null)">
+                    ➕ Agregar inmueble
+                </button>
+                <div id="inmueble-form" style="display:none;margin-top:14px;padding:14px;border:1px solid #d1fae5;border-radius:10px;background:#f0fdf4;">
+                    <input type="hidden" id="inm-id">
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                        <div>
+                            <label style="font-size:.82em;font-weight:600;">Operación *</label>
+                            <select id="inm-operacion" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                                <option value="venta">Venta</option>
+                                <option value="alquiler">Alquiler</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:.82em;font-weight:600;">Precio</label>
+                            <input type="number" id="inm-precio" min="0" step="0.01" placeholder="0.00" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:.82em;font-weight:600;">Título *</label>
+                        <input type="text" id="inm-titulo" maxlength="255" placeholder="Ej: Departamento 2 ambientes" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:.82em;font-weight:600;">Descripción</label>
+                        <textarea id="inm-descripcion" rows="3" maxlength="2000" placeholder="Descripción del inmueble..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;"></textarea>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:.82em;font-weight:600;">Dirección</label>
+                        <input type="text" id="inm-direccion" maxlength="500" placeholder="Dirección del inmueble" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                    </div>
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                        <div>
+                            <label style="font-size:.82em;font-weight:600;">Latitud</label>
+                            <input type="number" id="inm-lat" step="any" placeholder="-34.6037" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                        </div>
+                        <div>
+                            <label style="font-size:.82em;font-weight:600;">Longitud</label>
+                            <input type="number" id="inm-lng" step="any" placeholder="-58.3816" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                        </div>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:.82em;font-weight:600;">Contacto (teléfono o email)</label>
+                        <input type="text" id="inm-contacto" maxlength="255" placeholder="Teléfono o email de contacto" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                    </div>
+                    <div id="inmueble-msg" style="margin-bottom:8px;font-size:.82em;"></div>
+                    <div style="display:flex;gap:8px;">
+                        <button type="button" class="btn-save" style="width:auto;padding:8px 14px;" onclick="guardarInmueble()">💾 Guardar</button>
+                        <button type="button" style="padding:8px 14px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;" onclick="cerrarFormInmueble()">Cancelar</button>
+                    </div>
+                </div>
+                <div id="inmuebles-msg" style="margin-top:8px;font-size:.82em;"></div>
+            </div>
+        </div>
+        <?php endif; ?>
+        <!-- ══ FIN MÓDULO INMUEBLES ══════════════════════════════════════════════ -->
+
+        <!-- ══ MÓDULO OBRA DE ARTE ══════════════════════════════════════════════ -->
+        <?php if ($editing && $selectedType === 'obra_de_arte'): ?>
+        <div class="form-section" id="section-obra-arte">
+            <div class="section-head">
+                <span class="section-icon">🎭</span>
+                <div>
+                    <div class="section-title">Proyecto Artístico</div>
+                    <div class="section-desc">Describí tu proyecto y los roles que buscás convocar.</div>
+                </div>
+            </div>
+            <div class="section-body">
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:4px;">Descripción del proyecto</label>
+                    <textarea id="oda-descripcion" name="oda_descripcion_proyecto" rows="5" maxlength="5000"
+                        placeholder="Describí tu proyecto artístico: de qué trata, cuándo y dónde será, qué buscás lograr..."
+                        style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;resize:vertical;font-family:inherit;"
+                    ><?php echo htmlspecialchars($business['oda_descripcion_proyecto'] ?? ''); ?></textarea>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:4px;">Requisitos para ser parte</label>
+                    <textarea id="oda-requisitos" name="oda_requisitos" rows="4" maxlength="3000"
+                        placeholder="¿Qué perfil buscás? Experiencia, disponibilidad, herramientas necesarias..."
+                        style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;resize:vertical;font-family:inherit;"
+                    ><?php echo htmlspecialchars($business['oda_requisitos'] ?? ''); ?></textarea>
+                </div>
+                <div style="margin-bottom:12px;">
+                    <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:8px;">Roles que buscás convocar</label>
+                    <?php
+                    $odaRoles = json_decode($business['oda_roles_buscados'] ?? '[]', true) ?: [];
+                    $artRoles = [
+                        'musico'=>'🎸 Músico','cantante'=>'🎤 Cantante','bailarin'=>'💃 Bailarín/a',
+                        'actor'=>'🎭 Actor','actriz'=>'🎭 Actriz','director_artistico'=>'🎬 Director/a artístico/a',
+                        'guionista'=>'📝 Guionista','escenografo'=>'🖼️ Escenógrafo/a',
+                        'fotografo_artistico'=>'📷 Fotógrafo/a artístico/a','productor_artistico'=>'🎙️ Productor/a artístico/a',
+                        'maquillador'=>'💄 Maquillador/a','pintor'=>'🎨 Pintor/a','poeta'=>'📜 Poeta',
+                        'musicalizador'=>'🎵 Musicalizador/a','editor_grafico'=>'🖥️ Editor/a gráfico/a',
+                        'asistente_artistico'=>'🤝 Asistente artístico/a',
+                    ];
+                    ?>
+                    <div style="display:flex;flex-wrap:wrap;gap:8px;">
+                    <?php foreach ($artRoles as $roleKey => $roleLabel): ?>
+                        <label style="display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid #d1d5db;border-radius:20px;cursor:pointer;font-size:.82em;background:white;">
+                            <input type="checkbox" name="oda_roles[]" value="<?php echo $roleKey; ?>"
+                                <?php echo in_array($roleKey, $odaRoles, true) ? 'checked' : ''; ?>>
+                            <?php echo $roleLabel; ?>
+                        </label>
+                    <?php endforeach; ?>
+                    </div>
+                </div>
+                <div id="oda-msg" style="margin:8px 0;font-size:.82em;"></div>
+                <button type="button" class="btn-save" style="width:auto;padding:10px 16px;" onclick="guardarObraArte()">
+                    💾 Guardar datos del proyecto
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+        <!-- ══ FIN MÓDULO OBRA DE ARTE ══════════════════════════════════════════ -->
 
         <!-- ══ REDES SOCIALES ════════════════════════════════════════════════ -->        <div class="form-section">
             <div class="section-head">
@@ -2313,6 +2475,165 @@ function onCountryChange(cc) {
     const sel = document.getElementById('country_code');
     if (sel && sel.value) onCountryChange(sel.value);
 })();
+
+// ── MÓDULO INMUEBLES (inmobiliaria) ──────────────────────────────────────────
+<?php if ($editing && $selectedType === 'inmobiliaria'): ?>
+(function() {
+    const BIZ = <?php echo (int)$businessId; ?>;
+    function inmMsg(text, ok) {
+        const el = document.getElementById('inmueble-msg');
+        if (!el) return;
+        el.textContent = text;
+        el.style.color = ok ? '#065f46' : '#991b1b';
+        el.style.background = ok ? '#d1fae5' : '#fee2e2';
+        el.style.padding = '6px 10px';
+        el.style.borderRadius = '6px';
+        el.style.display = text ? 'block' : 'none';
+    }
+    function inmListMsg(text, ok) {
+        const el = document.getElementById('inmuebles-msg');
+        if (!el) return;
+        el.textContent = text;
+        el.style.color = ok ? '#065f46' : '#991b1b';
+        el.style.display = text ? 'block' : 'none';
+    }
+    window.abrirFormInmueble = function(id) {
+        document.getElementById('inm-id').value = id || '';
+        document.getElementById('inm-titulo').value = '';
+        document.getElementById('inm-operacion').value = 'venta';
+        document.getElementById('inm-precio').value = '';
+        document.getElementById('inm-descripcion').value = '';
+        document.getElementById('inm-direccion').value = '';
+        document.getElementById('inm-lat').value = '';
+        document.getElementById('inm-lng').value = '';
+        document.getElementById('inm-contacto').value = '';
+        inmMsg('', true);
+        if (id) {
+            fetch('/api/inmuebles.php?id=' + id)
+                .then(r => r.json()).then(d => {
+                    if (d.success && d.data) {
+                        const n = d.data;
+                        document.getElementById('inm-id').value = n.id;
+                        document.getElementById('inm-titulo').value = n.titulo || '';
+                        document.getElementById('inm-operacion').value = n.operacion || 'venta';
+                        document.getElementById('inm-precio').value = n.precio || '';
+                        document.getElementById('inm-descripcion').value = n.descripcion || '';
+                        document.getElementById('inm-direccion').value = n.direccion || '';
+                        document.getElementById('inm-lat').value = n.lat || '';
+                        document.getElementById('inm-lng').value = n.lng || '';
+                        document.getElementById('inm-contacto').value = n.contacto || '';
+                    }
+                }).catch(() => {});
+        }
+        document.getElementById('inmueble-form').style.display = 'block';
+    };
+    window.cerrarFormInmueble = function() {
+        document.getElementById('inmueble-form').style.display = 'none';
+    };
+    window.guardarInmueble = async function() {
+        const id      = document.getElementById('inm-id').value;
+        const titulo  = document.getElementById('inm-titulo').value.trim();
+        if (!titulo) { inmMsg('El título es obligatorio.', false); return; }
+        const payload = {
+            business_id: BIZ,
+            operacion:   document.getElementById('inm-operacion').value,
+            titulo,
+            descripcion: document.getElementById('inm-descripcion').value.trim(),
+            precio:      document.getElementById('inm-precio').value || null,
+            direccion:   document.getElementById('inm-direccion').value.trim(),
+            lat:         document.getElementById('inm-lat').value || null,
+            lng:         document.getElementById('inm-lng').value || null,
+            contacto:    document.getElementById('inm-contacto').value.trim(),
+        };
+        if (id) payload.id = parseInt(id, 10);
+        try {
+            const r = await fetch('/api/inmuebles.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            const d = await r.json();
+            if (d.success) {
+                inmMsg('✅ ' + (d.message || 'Guardado'), true);
+                cerrarFormInmueble();
+                cargarInmuebles();
+            } else {
+                inmMsg('❌ ' + (d.message || 'Error'), false);
+            }
+        } catch (e) {
+            inmMsg('Error de conexión.', false);
+        }
+    };
+    window.eliminarInmueble = async function(id) {
+        if (!confirm('¿Eliminar este inmueble?')) return;
+        try {
+            const r = await fetch('/api/inmuebles.php?id=' + id, { method: 'DELETE' });
+            const d = await r.json();
+            if (d.success) { inmListMsg('✅ Eliminado', true); cargarInmuebles(); }
+            else inmListMsg('❌ ' + (d.message || 'Error'), false);
+        } catch (e) { inmListMsg('Error de conexión.', false); }
+    };
+    window.cargarInmuebles = async function() {
+        const cont = document.getElementById('inmuebles-list');
+        if (!cont) return;
+        try {
+            const r = await fetch('/api/inmuebles.php?business_id=' + BIZ);
+            const d = await r.json();
+            if (!d.success || !d.data || !d.data.length) {
+                cont.innerHTML = '<p style="font-size:.82em;color:#6b7280;">No hay inmuebles publicados aún.</p>';
+                return;
+            }
+            cont.innerHTML = d.data.map(n => `
+                <div style="border:1px solid #d1d5db;border-radius:8px;padding:10px;margin-bottom:8px;background:white;">
+                    <div style="font-weight:700;font-size:.9em;">${n.titulo || 'Sin título'}</div>
+                    <div style="font-size:.78em;color:#6b7280;">${n.operacion === 'alquiler' ? '🔑 Alquiler' : '🏠 Venta'} ${n.precio ? '— $' + Number(n.precio).toLocaleString() : ''}</div>
+                    <div style="margin-top:6px;display:flex;gap:6px;">
+                        <button type="button" onclick="abrirFormInmueble(${n.id})" style="font-size:.78em;padding:4px 10px;border:1px solid #d1d5db;border-radius:4px;cursor:pointer;background:white;">✏️ Editar</button>
+                        <button type="button" onclick="eliminarInmueble(${n.id})" style="font-size:.78em;padding:4px 10px;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;background:#fff5f5;color:#991b1b;">🗑️ Eliminar</button>
+                    </div>
+                </div>
+            `).join('');
+        } catch (e) {
+            cont.innerHTML = '<p style="font-size:.82em;color:#991b1b;">Error al cargar inmuebles.</p>';
+        }
+    };
+    document.addEventListener('DOMContentLoaded', cargarInmuebles);
+})();
+<?php endif; ?>
+
+// ── MÓDULO OBRA DE ARTE ──────────────────────────────────────────────────────
+<?php if ($editing && $selectedType === 'obra_de_arte'): ?>
+window.guardarObraArte = async function() {
+    const desc = document.getElementById('oda-descripcion')?.value?.trim() || '';
+    const req  = document.getElementById('oda-requisitos')?.value?.trim()  || '';
+    const checkboxes = document.querySelectorAll('input[name="oda_roles[]"]:checked');
+    const roles = Array.from(checkboxes).map(c => c.value);
+    const msg = document.getElementById('oda-msg');
+    const btn = document.querySelector('[onclick="guardarObraArte()"]');
+    if (btn) { btn.disabled = true; btn.textContent = '⏳ Guardando…'; }
+    try {
+        const r = await fetch('/api/convocatorias.php?action=save_proyecto', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ business_id: <?php echo (int)$businessId; ?>, oda_descripcion_proyecto: desc, oda_requisitos: req, oda_roles_buscados: roles })
+        });
+        const d = await r.json();
+        if (msg) {
+            msg.textContent = d.success ? ('✅ ' + (d.message || 'Guardado')) : ('❌ ' + (d.message || 'Error'));
+            msg.style.color = d.success ? '#065f46' : '#991b1b';
+            msg.style.background = d.success ? '#d1fae5' : '#fee2e2';
+            msg.style.padding = '8px 12px';
+            msg.style.borderRadius = '6px';
+            msg.style.display = 'block';
+            setTimeout(() => { if (msg) msg.style.display = 'none'; }, 4000);
+        }
+    } catch (e) {
+        if (msg) { msg.textContent = 'Error de conexión.'; msg.style.display = 'block'; }
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = '💾 Guardar datos del proyecto'; }
+    }
+};
+<?php endif; ?>
 </script>
 </body>
 </html>

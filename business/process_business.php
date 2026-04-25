@@ -27,6 +27,10 @@ function mapitaAllowedBusinessTypes(): array {
         'medico_pediatra','medico_traumatologo','laboratorio','ingenieria_civil','astrologo','grafica',
         'alquiler_mobiliario_fiestas','propalacion_musica','animacion_fiestas','zapatero','gas_en_garrafa',
         'videojuegos','seguridad','electricista','gasista','maestro_particular','asistencia_ancianos','enfermeria',
+        'obra_de_arte',
+        'musico','cantante','bailarin','actor','actriz','director_artistico','guionista','escenografo',
+        'fotografo_artistico','productor_artistico','maquillador','pintor','poeta','musicalizador',
+        'editor_grafico','asistente_artistico',
         'otros',
     ];
 }
