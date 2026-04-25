@@ -6329,7 +6329,7 @@ async function activarCerca() {
         const d = await r.json();
         if (_cercaLayer) { mapa.removeLayer(_cercaLayer); _cercaLayer = null; }
         if (!d.success || !d.data || !d.data.length) {
-            alert('No hay inmuebles publicados cerca por inmobiliarias.');
+            alert('No hay inmuebles publicados aún por inmobiliarias.');
             desactivarCerca();
             return;
         }
