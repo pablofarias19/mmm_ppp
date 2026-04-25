@@ -1491,7 +1491,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
     <div class="sb-section" id="sb-sec-results">
         <div class="sb-section-hdr open" onclick="toggleSbSection(this)" aria-expanded="true">
             <span class="sb-section-hdr-label">
-                Resultados
+                RES:
             </span>
             <div style="display:flex;align-items:center;gap:6px;flex-shrink:1;min-width:0;overflow:hidden;">
                 <span id="stats" style="font-size:11px;font-weight:700;color:#667eea;display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap;min-width:0;"></span>
