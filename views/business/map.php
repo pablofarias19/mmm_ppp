@@ -2239,6 +2239,7 @@ function getCtxPanel() {
 }
 
 function showCtxPanel(marker, entity, entityType) {
+    if (window.innerWidth <= 768) return; // skip dark panel on mobile — popup is sufficient
     if (_ctxHideTimer) { clearTimeout(_ctxHideTimer); _ctxHideTimer = null; }
     const panel = getCtxPanel();
     if (!panel || !mapa) return;
