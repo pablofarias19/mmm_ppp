@@ -1282,20 +1282,13 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                     Modo normal. Para salir del modo selección: botón "Salir del modo selección" o tecla S.
                 </div>
 
-                <!-- ── CONSULTAS MASIVAS — acordeón por sección ─────────────── -->
-                <!-- Mejora UX: cada sección puede expandirse/contraerse individualmente -->
+                <!-- ── CONSULTAS MASIVAS ─────────────────────────────────────── -->
+                <!-- Las secciones son siempre visibles — no colapsables        -->
 
                 <!-- Sección: Consultas -->
-                <button type="button" class="cq-acc-hdr" id="cq-hdr-consultas"
-                        aria-expanded="true" aria-controls="cq-grp-consultas"
-                        onclick="toggleCqSection('consultas')">
+                <div class="cq-acc-hdr" id="cq-hdr-consultas">
                     <span>── Consultas ───</span>
-                    <svg class="cq-acc-chevron" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                         stroke-linejoin="round" aria-hidden="true">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </button>
+                </div>
                 <div class="cq-acc-body open" id="cq-grp-consultas">
                     <div class="cq-acc-body-inner">
                         <button type="button" class="cq-btn"
@@ -1322,16 +1315,9 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 </div>
 
                 <!-- Sección: Inmobiliarias -->
-                <button type="button" class="cq-acc-hdr" id="cq-hdr-inmobiliarias"
-                        aria-expanded="true" aria-controls="cq-grp-inmobiliarias"
-                        onclick="toggleCqSection('inmobiliarias')">
+                <div class="cq-acc-hdr" id="cq-hdr-inmobiliarias">
                     <span>── Inmobiliarias ───</span>
-                    <svg class="cq-acc-chevron" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                         stroke-linejoin="round" aria-hidden="true">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </button>
+                </div>
                 <div class="cq-acc-body open" id="cq-grp-inmobiliarias">
                     <div class="cq-acc-body-inner">
                         <button type="button" class="cq-btn" id="btn-cerca"
@@ -1343,16 +1329,9 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 </div>
 
                 <!-- Sección: Arte & Cultura -->
-                <button type="button" class="cq-acc-hdr" id="cq-hdr-arte"
-                        aria-expanded="true" aria-controls="cq-grp-arte"
-                        onclick="toggleCqSection('arte')">
+                <div class="cq-acc-hdr" id="cq-hdr-arte">
                     <span>── Arte &amp; Cultura ───</span>
-                    <svg class="cq-acc-chevron" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
-                         stroke-linejoin="round" aria-hidden="true">
-                        <polyline points="6 9 12 15 18 9"/>
-                    </svg>
-                </button>
+                </div>
                 <div class="cq-acc-body open" id="cq-grp-arte">
                     <div class="cq-acc-body-inner">
                         <button type="button" class="cq-btn" id="btn-convocar"
@@ -1514,8 +1493,8 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             <span class="sb-section-hdr-label">
                 Resultados
             </span>
-            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-                <span id="stats" style="font-size:11px;font-weight:700;color:#667eea;white-space:nowrap;"></span>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:1;min-width:0;overflow:hidden;">
+                <span id="stats" style="font-size:11px;font-weight:700;color:#667eea;display:inline-flex;align-items:center;gap:3px;flex-wrap:wrap;min-width:0;"></span>
                 <svg class="sb-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
             </div>
         </div>
@@ -4722,35 +4701,6 @@ function toggleAccordion(btn) {
     btn.classList.toggle('active');
     content.classList.toggle('active');
 }
-
-// ─── CQ subsection accordion (Consultas / Inmobiliarias / Arte & Cultura) ────────
-// Mejora UX: permite colapsar/expandir cada grupo individualmente.
-// Guarda preferencia del usuario en localStorage bajo la clave 'cq-section-{id}'.
-function toggleCqSection(id) {
-    const hdr  = document.getElementById('cq-hdr-' + id);
-    const body = document.getElementById('cq-grp-' + id);
-    if (!hdr || !body) return;
-    const willOpen = hdr.getAttribute('aria-expanded') !== 'true';
-    hdr.setAttribute('aria-expanded', String(willOpen));
-    body.classList.toggle('open', willOpen);
-    try { localStorage.setItem('cq-section-' + id, willOpen ? '1' : '0'); } catch (_) {}
-}
-
-// Restaurar preferencias guardadas de los acordeones CQ al cargar la página
-(function restoreCqSections() {
-    ['consultas', 'inmobiliarias', 'arte'].forEach(function(id) {
-        var saved = null;
-        try { saved = localStorage.getItem('cq-section-' + id); } catch (_) {}
-        if (saved === '0') {
-            var hdr  = document.getElementById('cq-hdr-' + id);
-            var body = document.getElementById('cq-grp-' + id);
-            if (hdr && body) {
-                hdr.setAttribute('aria-expanded', 'false');
-                body.classList.remove('open');
-            }
-        }
-    });
-})();
 
 // ─── Collapsible sidebar sections (sb-section system) ────────────────────────────
 function toggleSbSection(hdr) {
