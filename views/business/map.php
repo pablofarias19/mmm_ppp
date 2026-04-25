@@ -1247,6 +1247,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 </div>
                 <div style="display:flex;gap:5px;margin-top:5px;">
                     <button id="btn-follow-me" onclick="toggleFollowMe()"
+                            aria-pressed="false"
                             style="flex:1;padding:10px;background:#95a5a6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
                         📡 Seguirme
                     </button>
@@ -1476,8 +1477,8 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         </div>
         <div class="sb-section-body open">
             <div style="display:flex;align-items:center;gap:6px;padding:6px 8px 4px;border-bottom:1px solid #eef0f5;">
-                <label style="font-size:11px;color:#555;white-space:nowrap;">📏 Radio:</label>
-                <select id="sb-radius-select" onchange="filtrar()" style="font-size:11px;padding:2px 4px;border:1px solid #d0d5dd;border-radius:4px;flex:1;">
+                <label id="sb-radius-lbl" style="font-size:11px;color:#555;white-space:nowrap;" for="sb-radius-select">📏 Radio:</label>
+                <select id="sb-radius-select" onchange="filtrar()" aria-labelledby="sb-radius-lbl" style="font-size:11px;padding:2px 4px;border:1px solid #d0d5dd;border-radius:4px;flex:1;">
                     <option value="1">1 km</option>
                     <option value="2">2 km</option>
                     <option value="5" selected>5 km</option>
@@ -3438,7 +3439,7 @@ function filtrar() {
     }
 
     document.getElementById('stats').textContent =
-        'Total: ' + (cntN + cntM) + '  |  Cerca (' + sbRadius + 'km): ' + sidebarItems.length;
+        `Total: ${cntN + cntM}  |  Cerca (${sbRadius} km): ${sidebarItems.length}`;
 
     mostrarLista(sidebarItems, { geoRequired: true, sbRadius });
     mostrarMarcadores(items);
@@ -3475,7 +3476,7 @@ function mostrarLista(lista, opts) {
     if (total > SIDEBAR_LIST_LIMIT) {
         const hint = document.createElement('div');
         hint.style.cssText = 'padding:8px 12px;text-align:center;color:#888;font-size:11px;border-top:1px solid #eef0f5;margin-top:4px;';
-        hint.textContent = 'Mostrando ' + SIDEBAR_LIST_LIMIT + ' de ' + total + ' dentro de ' + sbRadius + ' km. Refiná con filtros para ver más.';
+        hint.textContent = `Mostrando ${SIDEBAR_LIST_LIMIT} de ${total} dentro de ${sbRadius} km. Refiná con filtros para ver más.`;
         contenedor.appendChild(hint);
     }
 }
@@ -4572,8 +4573,8 @@ function ubicarme() {
     if (watchID === null) {
         watchID = navigator.geolocation.watchPosition(
             pos => _applyPosition(pos, followMe),
-            () => {},
-            { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 }
+            err => console.warn('watchPosition error', err.code, err.message),
+            { enableHighAccuracy: false, maximumAge: 15000, timeout: 30000 }
         );
     }
 
@@ -4590,9 +4591,15 @@ function toggleFollowMe() {
     if (btn) {
         btn.style.background = followMe ? '#27ae60' : '#95a5a6';
         btn.textContent = followMe ? '📡 Seguirme ✓' : '📡 Seguirme';
+        btn.setAttribute('aria-pressed', String(followMe));
     }
     if (followMe && miUbicacion) {
         mapa.setView([miUbicacion.lat, miUbicacion.lng], 14);
+    }
+    // When disabling follow-me, stop the watch to save battery
+    if (!followMe && watchID !== null) {
+        navigator.geolocation.clearWatch(watchID);
+        watchID = null;
     }
 }
 
