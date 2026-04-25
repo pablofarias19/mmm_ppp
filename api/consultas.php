@@ -58,14 +58,14 @@ function cq_require_login(): int {
     return $uid;
 }
 
-/** Máximo de destinatarios por consulta general. */
-define('CQ_MAX_GENERAL',    30);
+/** Máximo de destinatarios por consulta general (combinado forzados + radio). */
+define('CQ_MAX_GENERAL',    20);
 
 /** Máximo de destinatarios aleatorios por consulta masiva y proveedores. */
 define('CQ_MAX_MASIVA',     20);
 
-/** Radio máximo en km para Consulta General. */
-define('CQ_GENERAL_RADIUS_KM', 10);
+/** Radio por defecto en km para Consulta General (el cliente puede ajustarlo). */
+define('CQ_GENERAL_DEFAULT_RADIUS_KM', 25);
 
 /**
  * Tipos de negocio RESTRINGIDOS para consultas generales:
@@ -195,7 +195,8 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
 
         // ── CONSULTA GENERAL: servicios especiales habilitados por admin ──────
         // - Solo tipos restringidos con consulta_habilitada = 1
-        // - Radio máximo de CQ_GENERAL_RADIUS_KM km desde posición del usuario
+        // - Negocios FORZADOS: propietario admin (sin restricción de radio)
+        // - Radio configurable desde el cliente (default CQ_GENERAL_DEFAULT_RADIUS_KM)
         // - Máximo CQ_MAX_GENERAL destinatarios, ordenados por proximidad
         case 'general': {
             $userLat = isset($input['user_lat']) ? (float)$input['user_lat'] : null;
@@ -204,6 +205,11 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
             if ($userLat === null || $userLng === null) {
                 cq_err('Se requiere la posición del mapa (user_lat, user_lng) para Consulta General.');
             }
+
+            // Radio: tomado del cliente, con límites de seguridad
+            $radiusKm = isset($input['radius_km']) ? (float)$input['radius_km'] : (float)CQ_GENERAL_DEFAULT_RADIUS_KM;
+            if ($radiusKm < 5)   $radiusKm = 5;
+            if ($radiusKm > 500) $radiusKm = 500;
 
             $restrictedForGeneral = cq_restricted_types();
             $phGeneral = implode(',', array_fill(0, count($restrictedForGeneral), '?'));
@@ -215,35 +221,71 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
                          + SIN(RADIANS(?)) * SIN(RADIANS(b.lat))
                        ))";
 
-            $params = [];
-            $sql = "SELECT b.id, b.name, b.business_type,
-                           $havSql AS distancia_km
-                      FROM businesses b
-                     WHERE b.visible = 1
-                       AND b.consulta_habilitada = 1
-                       AND b.business_type IN ($phGeneral)
-                       AND b.lat IS NOT NULL AND b.lng IS NOT NULL
-                       AND $havSql <= ?";
-
-            // Params: Haversine SELECT (lat, lng, lat), IN types, Haversine WHERE (lat, lng, lat), radius
-            $params = [
-                $userLat, $userLng, $userLat,
-            ];
-            foreach ($restrictedForGeneral as $rt) $params[] = $rt;
-            $params[] = $userLat;
-            $params[] = $userLng;
-            $params[] = $userLat;
-            $params[] = (float)CQ_GENERAL_RADIUS_KM;
-
+            $typeFilterSql    = '';
+            $typeFilterParams = [];
             if ($bizType !== '' && in_array($bizType, $restrictedForGeneral, true)) {
-                $sql .= ' AND b.business_type = ?';
-                $params[] = $bizType;
+                $typeFilterSql    = ' AND b.business_type = ?';
+                $typeFilterParams = [$bizType];
             }
 
-            $sql .= ' ORDER BY distancia_km ASC LIMIT ' . CQ_MAX_GENERAL;
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            // ① Negocios FORZADOS: propietario admin + habilitado (sin límite de radio)
+            $sqlForced = "SELECT b.id, b.name, b.business_type,
+                                 $havSql AS distancia_km
+                            FROM businesses b
+                            JOIN users u ON u.id = b.user_id
+                           WHERE b.visible = 1
+                             AND b.consulta_habilitada = 1
+                             AND b.business_type IN ($phGeneral)
+                             AND b.lat IS NOT NULL AND b.lng IS NOT NULL
+                             AND u.is_admin = 1
+                             $typeFilterSql";
+            $paramsForced = array_merge(
+                [$userLat, $userLng, $userLat],
+                $restrictedForGeneral,
+                $typeFilterParams
+            );
+            $stmtForced = $db->prepare($sqlForced);
+            $stmtForced->execute($paramsForced);
+            $forced    = $stmtForced->fetchAll(\PDO::FETCH_ASSOC);
+            $forcedIds = array_column($forced, 'id');
+
+            // ② Negocios dentro del radio, excluyendo los forzados
+            $excludeForced = '';
+            $excludeParams = [];
+            if (!empty($forcedIds)) {
+                $ph            = implode(',', array_fill(0, count($forcedIds), '?'));
+                $excludeForced = " AND b.id NOT IN ($ph)";
+                $excludeParams = $forcedIds;
+            }
+
+            $remaining = CQ_MAX_GENERAL - count($forced);
+            $regular   = [];
+            if ($remaining > 0) {
+                $sqlRegular = "SELECT b.id, b.name, b.business_type,
+                                      $havSql AS distancia_km
+                                 FROM businesses b
+                                WHERE b.visible = 1
+                                  AND b.consulta_habilitada = 1
+                                  AND b.business_type IN ($phGeneral)
+                                  AND b.lat IS NOT NULL AND b.lng IS NOT NULL
+                                  AND $havSql <= ?
+                                  $typeFilterSql
+                                  $excludeForced
+                                ORDER BY distancia_km ASC
+                                LIMIT $remaining";
+                $paramsRegular = array_merge(
+                    [$userLat, $userLng, $userLat],
+                    $restrictedForGeneral,
+                    [$userLat, $userLng, $userLat, $radiusKm],
+                    $typeFilterParams,
+                    $excludeParams
+                );
+                $stmtRegular = $db->prepare($sqlRegular);
+                $stmtRegular->execute($paramsRegular);
+                $regular = $stmtRegular->fetchAll(\PDO::FETCH_ASSOC);
+            }
+
+            return array_merge($forced, $regular);
         }
 
         // ── CONSULTA GLOBAL PROVEEDORES: negocios P del rubro solicitado ──────
@@ -342,15 +384,17 @@ if ($method === 'GET') {
         if (!empty($_GET['geo_bounds'])) {
             $bounds = json_decode($_GET['geo_bounds'], true);
         }
-        $userLat = isset($_GET['user_lat']) ? (float)$_GET['user_lat'] : null;
-        $userLng = isset($_GET['user_lng']) ? (float)$_GET['user_lng'] : null;
+        $userLat  = isset($_GET['user_lat'])   ? (float)$_GET['user_lat']  : null;
+        $userLng  = isset($_GET['user_lng'])   ? (float)$_GET['user_lng']  : null;
+        $radiusKm = isset($_GET['radius_km'])  ? (float)$_GET['radius_km'] : null;
         $input = [
-            'tipo'      => $tipo,
-            'rubro'     => $rubro,
-            'geo_bounds'=> $bounds,
-            'biz_type'  => $bizType,
-            'user_lat'  => $userLat,
-            'user_lng'  => $userLng,
+            'tipo'       => $tipo,
+            'rubro'      => $rubro,
+            'geo_bounds' => $bounds,
+            'biz_type'   => $bizType,
+            'user_lat'   => $userLat,
+            'user_lng'   => $userLng,
+            'radius_km'  => $radiusKm,
         ];
         try {
             $recipients = cq_resolve_recipients($db, $input);
@@ -562,10 +606,11 @@ if ($method === 'POST') {
         $texto = mb_substr(trim($input['texto'] ?? ''), 0, 500);
         if ($texto === '') cq_err('El texto de la consulta es obligatorio.');
 
-        $rubro   = mb_substr(trim($input['rubro']    ?? ''), 0, 100) ?: null;
-        $bizType = mb_substr(trim($input['biz_type'] ?? ''), 0, 60)  ?: null;
-        $userLat = isset($input['user_lat']) ? (float)$input['user_lat'] : null;
-        $userLng = isset($input['user_lng']) ? (float)$input['user_lng'] : null;
+        $rubro    = mb_substr(trim($input['rubro']    ?? ''), 0, 100) ?: null;
+        $bizType  = mb_substr(trim($input['biz_type'] ?? ''), 0, 60)  ?: null;
+        $userLat  = isset($input['user_lat'])  ? (float)$input['user_lat']  : null;
+        $userLng  = isset($input['user_lng'])  ? (float)$input['user_lng']  : null;
+        $radiusKm = isset($input['radius_km']) ? (float)$input['radius_km'] : null;
         $bounds = $input['geo_bounds'] ?? null;
         if ($bounds && !is_array($bounds)) {
             $bounds = json_decode($bounds, true);
@@ -580,6 +625,7 @@ if ($method === 'POST') {
                 'biz_type'   => $bizType ?? '',
                 'user_lat'   => $userLat,
                 'user_lng'   => $userLng,
+                'radius_km'  => $radiusKm,
             ]);
         } catch (\Throwable $e) {
             cq_err($e->getMessage());

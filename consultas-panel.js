@@ -32,6 +32,17 @@
         threadBizId:      null,
     };
 
+    /* ── Helpers ────────────────────────────────────────────────────────────── */
+
+    /** Devuelve el centro del mapa Leaflet o null si no está disponible. */
+    function getMapCenter() {
+        if (typeof mapa !== 'undefined' && mapa) {
+            const c = mapa.getCenter();
+            return { lat: c.lat, lng: c.lng };
+        }
+        return null;
+    }
+
     /* ── Bootstrap ─────────────────────────────────────────────────────────── */
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
@@ -78,6 +89,17 @@
         <label for="cq-biztype-sel">Filtrar por tipo de negocio <span style="color:#9ca3af;font-weight:400;">(opcional — todos si no elegís)</span></label>
         <select id="cq-biztype-sel">
           <option value="">⬛ Todos los tipos</option>
+        </select>
+      </div>
+      <!-- Selector de radio para Consulta General -->
+      <div id="cq-radius-row" style="display:none;">
+        <label for="cq-general-radius">Radio de búsqueda</label>
+        <select id="cq-general-radius">
+          <option value="25" selected>25 km (predeterminado)</option>
+          <option value="50">50 km</option>
+          <option value="100">100 km</option>
+          <option value="300">300 km</option>
+          <option value="500">500 km</option>
         </select>
       </div>
       <!-- Rubro proveedor (global_proveedor únicamente) -->
@@ -153,6 +175,7 @@
         });
         document.getElementById('cq-rubro-sel')?.addEventListener('change',   debouncedPreview);
         document.getElementById('cq-biztype-sel')?.addEventListener('change', debouncedPreview);
+        document.getElementById('cq-general-radius')?.addEventListener('change', debouncedPreview);
 
         document.getElementById('cq-panel-toggle-btn')?.addEventListener('click', CQPanel.open);
         document.getElementById('cq-panel-minimize')?.addEventListener('click',   CQPanel.minimize);
@@ -224,10 +247,10 @@
 
     /* ── Modal ─────────────────────────────────────────────────────────────── */
     const MODAL_CONFIG = {
-        masiva:           { icon: '📣', title: 'Consulta Masiva',             biztypeFilter: true,  rubroFilter: false },
-        general:          { icon: '🏛️', title: 'Consulta General',            biztypeFilter: true,  rubroFilter: false },
-        global_proveedor: { icon: '📦', title: 'Consulta Global Proveedores', biztypeFilter: false, rubroFilter: true  },
-        envio:            { icon: '🚚', title: 'Consulta Envío',              biztypeFilter: false, rubroFilter: false },
+        masiva:           { icon: '📣', title: 'Consulta Masiva',             biztypeFilter: true,  radiusFilter: false, rubroFilter: false },
+        general:          { icon: '🏛️', title: 'Consulta General',            biztypeFilter: true,  radiusFilter: true,  rubroFilter: false },
+        global_proveedor: { icon: '📦', title: 'Consulta Global Proveedores', biztypeFilter: false, radiusFilter: false, rubroFilter: true  },
+        envio:            { icon: '🚚', title: 'Consulta Envío',              biztypeFilter: false, radiusFilter: false, rubroFilter: false },
     };
 
     window.openConsultaModal = function (tipo) {
@@ -247,11 +270,17 @@
 
         /* Mostrar/ocultar filtros */
         const biztypeRow = document.getElementById('cq-biztype-row');
+        const radiusRow  = document.getElementById('cq-radius-row');
         const rubroRow   = document.getElementById('cq-rubro-row');
         biztypeRow.style.display = cfg.biztypeFilter ? 'block' : 'none';
+        radiusRow.style.display  = cfg.radiusFilter  ? 'block' : 'none';
         rubroRow.style.display   = cfg.rubroFilter   ? 'block' : 'none';
 
-        if (cfg.biztypeFilter) loadBizTypes();
+        // Resetear selector de radio al valor por defecto
+        const radiusSel = document.getElementById('cq-general-radius');
+        if (radiusSel) radiusSel.value = '25';
+
+        if (cfg.biztypeFilter) loadBizTypes(tipo);
         if (cfg.rubroFilter)   loadRubrosProveedor();
 
         document.getElementById('cq-modal-overlay').dataset.tipo = tipo;
@@ -259,7 +288,11 @@
         document.getElementById('cq-texto').focus();
 
         /* Preview inmediato para tipos sin geo */
-        if (tipo === 'general') fetchPreview(tipo, null, null, null);
+        if (tipo === 'general') {
+            const center = getMapCenter();
+            const radius = parseFloat(document.getElementById('cq-general-radius')?.value || '25');
+            fetchPreview(tipo, null, null, null, center ? center.lat : null, center ? center.lng : null, radius);
+        }
     };
 
     function closeModal() {
@@ -267,12 +300,16 @@
         document.getElementById('cq-modal-error').textContent = '';
     }
 
-    /* Carga tipos de negocio disponibles para el filtro (masiva y general) */
-    async function loadBizTypes() {
+    /* Carga tipos de negocio disponibles para el filtro.
+     * Para 'general' usa el endpoint restringido; para el resto, todos los visibles. */
+    async function loadBizTypes(tipo) {
         const sel = document.getElementById('cq-biztype-sel');
         sel.innerHTML = '<option value="">⬛ Todos los tipos</option>';
+        const endpoint = (tipo === 'general')
+            ? '/api/consultas.php?action=general_service_types'
+            : '/api/consultas.php?action=biz_types';
         try {
-            const res  = await fetch('/api/consultas.php?action=biz_types');
+            const res  = await fetch(endpoint);
             const data = await res.json();
             if (data.success && data.data.length) {
                 data.data.forEach(t => {
@@ -317,15 +354,27 @@
             const cfg     = MODAL_CONFIG[tipo] || {};
             const rubro   = cfg.rubroFilter   ? (document.getElementById('cq-rubro-sel')?.value   || null) : null;
             const bizType = cfg.biztypeFilter ? (document.getElementById('cq-biztype-sel')?.value || null) : null;
-            fetchPreview(tipo, state.geoBounds, rubro, bizType);
+            const center  = (tipo === 'general') ? getMapCenter() : null;
+            const radius  = cfg.radiusFilter
+                ? parseFloat(document.getElementById('cq-general-radius')?.value || '25')
+                : null;
+            fetchPreview(
+                tipo, state.geoBounds, rubro, bizType,
+                center ? center.lat : null,
+                center ? center.lng : null,
+                radius
+            );
         }, 400);
     }
 
-    async function fetchPreview(tipo, bounds, rubro, bizType) {
+    async function fetchPreview(tipo, bounds, rubro, bizType, userLat, userLng, radiusKm) {
         const params = new URLSearchParams({ action: 'preview', tipo });
-        if (rubro)   params.set('rubro',      rubro);
-        if (bizType) params.set('biz_type',   bizType);
-        if (bounds)  params.set('geo_bounds', JSON.stringify(bounds));
+        if (rubro)    params.set('rubro',      rubro);
+        if (bizType)  params.set('biz_type',   bizType);
+        if (bounds)   params.set('geo_bounds', JSON.stringify(bounds));
+        if (userLat != null) params.set('user_lat',  userLat);
+        if (userLng != null) params.set('user_lng',  userLng);
+        if (radiusKm != null) params.set('radius_km', radiusKm);
         try {
             const res  = await fetch('/api/consultas.php?' + params.toString());
             const data = await res.json();
@@ -355,6 +404,16 @@
         if (rubro)           body.rubro      = rubro;
         if (bizType)         body.biz_type   = bizType;
         if (state.geoBounds) body.geo_bounds = state.geoBounds;
+
+        /* Para Consulta General: coordenadas del centro del mapa y radio elegido */
+        if (tipo === 'general') {
+            const center = getMapCenter();
+            if (center) {
+                body.user_lat = center.lat;
+                body.user_lng = center.lng;
+            }
+            body.radius_km = parseFloat(document.getElementById('cq-general-radius')?.value || '25');
+        }
 
         submitB.disabled    = true;
         submitB.textContent = '⏳ Enviando…';
