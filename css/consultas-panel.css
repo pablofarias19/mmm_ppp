@@ -43,17 +43,17 @@
     padding: 0 2px;
 }
 
-/* ─── Acordeón de subsecciones del sidebar (Consultas / Inmobiliarias / Arte) ── */
-/* UX mejora: cada grupo puede expandirse o contraerse individualmente           */
+/* ─── Secciones fijas del sidebar (Consultas / Inmobiliarias / Arte) ───────── */
+/* Las secciones siempre están visibles; el acordeón colapsable fue removido.  */
 .cq-acc-hdr {
     display: flex;
     align-items: center;
-    justify-content: space-between;
     width: 100%;
     padding: 6px 4px 4px;
     border: none;
     background: none;
-    cursor: pointer;
+    cursor: default;
+    pointer-events: none;
     font-size: 10px;
     font-weight: 800;
     letter-spacing: .08em;
@@ -62,37 +62,20 @@
     margin: 10px 0 0;
     text-align: left;
     line-height: 1.2;
-    transition: color 0.15s;
-    border-radius: 4px;
 }
-.cq-acc-hdr:hover { color: #1565c0; }
-.cq-acc-hdr:focus-visible { outline: 2px solid #667eea; outline-offset: 2px; }
 
-/* Chevron icon inside accordion header */
+/* Chevron oculto — las secciones no son colapsables */
 .cq-acc-chevron {
-    flex-shrink: 0;
-    width: 12px;
-    height: 12px;
-    color: #90a4ae;
-    transition: transform 0.25s cubic-bezier(.4,0,.2,1), color 0.15s;
+    display: none;
+}
+
+/* Cuerpo de sección — siempre visible */
+.cq-acc-body {
     display: block;
 }
-.cq-acc-hdr[aria-expanded="true"] .cq-acc-chevron {
-    transform: rotate(180deg);
-    color: #1565c0;
-}
-.cq-acc-hdr:hover .cq-acc-chevron { color: #1565c0; }
-
-/* Collapsible body for each accordion group */
-.cq-acc-body {
-    max-height: 0;
-    overflow: hidden;
-    opacity: 0;
-    transition: max-height 0.30s cubic-bezier(.4,0,.2,1), opacity 0.22s ease;
-}
+/* Clase .open mantenida por compatibilidad pero no altera la visibilidad */
 .cq-acc-body.open {
-    max-height: 500px;
-    opacity: 1;
+    display: block;
 }
 .cq-acc-body-inner {
     padding: 6px 0 2px;
@@ -278,7 +261,13 @@
     box-shadow: 0 4px 14px rgba(91,33,182,.40);
     transform: translateY(-1px);
 }
-.conv-btn-send:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+.conv-btn-send:disabled {
+    background: linear-gradient(135deg, #a78de0 0%, #7c5cb0 100%);
+    color: #f0e8ff;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
 
 /* ─── Stats bar — resultado de búsqueda mejorado ──────────────────────────── */
 /* Mejora: espaciado y separación visual de datos en la barra de resultados   */
