@@ -1245,6 +1245,12 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                         🧾 PDF
                     </button>
                 </div>
+                <div style="display:flex;gap:5px;margin-top:5px;">
+                    <button id="btn-follow-me" onclick="toggleFollowMe()"
+                            style="flex:1;padding:10px;background:#95a5a6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
+                        📡 Seguirme
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1461,7 +1467,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
     <div class="sb-section" id="sb-sec-results">
         <div class="sb-section-hdr open" onclick="toggleSbSection(this)" aria-expanded="true">
             <span class="sb-section-hdr-label">
-                <span aria-hidden="true">📋</span> Resultados
+                Resultados
             </span>
             <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
                 <span id="stats" style="font-size:11px;font-weight:700;color:#667eea;white-space:nowrap;"></span>
@@ -1469,7 +1475,16 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             </div>
         </div>
         <div class="sb-section-body open">
-            <div id="lista" style="max-height:340px;overflow-y:auto;padding:4px 0 8px;"></div>
+            <div style="display:flex;align-items:center;gap:6px;padding:6px 8px 4px;border-bottom:1px solid #eef0f5;">
+                <label style="font-size:11px;color:#555;white-space:nowrap;">📏 Radio:</label>
+                <select id="sb-radius-select" onchange="filtrar()" style="font-size:11px;padding:2px 4px;border:1px solid #d0d5dd;border-radius:4px;flex:1;">
+                    <option value="1">1 km</option>
+                    <option value="2">2 km</option>
+                    <option value="5" selected>5 km</option>
+                    <option value="10">10 km</option>
+                </select>
+            </div>
+            <div id="lista" style="max-height:320px;overflow-y:auto;padding:4px 0 8px;"></div>
         </div>
     </div>
 
@@ -1733,6 +1748,9 @@ let negocios  = [];
 let marcas    = [];
 let mapa, marcadores = [], miUbicacion = null;
 let currentVer = 'negocios';
+let followMe = false;
+let watchID = null;
+const SIDEBAR_LIST_LIMIT = 200;
 let clusterGroup = null;
 let selectionMode = false;
 let selectionHighlightsLayer = null;
@@ -3293,7 +3311,7 @@ function filtrar() {
 
     if (currentVer === 'ninguno') {
         document.getElementById('stats').textContent = '🏪 0  |  🏷️ 0';
-        mostrarLista([]);
+        mostrarLista([], { geoRequired: false });
         mostrarMarcadores([]);
         return;
     }
@@ -3404,19 +3422,46 @@ function filtrar() {
 
     const cntN = items.filter(i => i.tipo === 'negocio').length;
     const cntM = items.filter(i => i.tipo === 'marca').length;
-    document.getElementById('stats').textContent = '🏪 ' + cntN + '  |  🏷️ ' + cntM;
+    const sbRadius = parseInt(document.getElementById('sb-radius-select')?.value) || 5;
 
-    mostrarLista(items);
+    // Sidebar: requires geolocation; filter by radius and sort by distance ascending
+    let sidebarItems = [];
+    if (miUbicacion) {
+        sidebarItems = items.filter(i => {
+            if (!i.lat || !i.lng) return false;
+            return calcularDistancia(miUbicacion.lat, miUbicacion.lng, i.lat, i.lng) <= sbRadius;
+        });
+        sidebarItems.sort((a, b) =>
+            calcularDistancia(miUbicacion.lat, miUbicacion.lng, a.lat, a.lng) -
+            calcularDistancia(miUbicacion.lat, miUbicacion.lng, b.lat, b.lng)
+        );
+    }
+
+    document.getElementById('stats').textContent =
+        'Total: ' + (cntN + cntM) + '  |  Cerca (' + sbRadius + 'km): ' + sidebarItems.length;
+
+    mostrarLista(sidebarItems, { geoRequired: true, sbRadius });
     mostrarMarcadores(items);
 }
 
 // ─── List rendering ──────────────────────────────────────────────────────────────
-function mostrarLista(lista) {
+function mostrarLista(lista, opts) {
     const contenedor = document.getElementById('lista');
     contenedor.innerHTML = '';
 
-    const negs = lista.filter(i => i.tipo === 'negocio');
-    const mrks = lista.filter(i => i.tipo === 'marca');
+    const geoRequired = !opts || opts.geoRequired !== false;
+    const sbRadius = (opts && opts.sbRadius) || 5;
+
+    if (geoRequired && !miUbicacion) {
+        contenedor.innerHTML = '<div style="padding:16px 12px;text-align:center;color:#667eea;font-size:13px;line-height:1.5;">📍 Activá tu ubicación para ver negocios cercanos.</div>';
+        return;
+    }
+
+    const total = lista.length;
+    const limited = lista.slice(0, SIDEBAR_LIST_LIMIT);
+
+    const negs = limited.filter(i => i.tipo === 'negocio');
+    const mrks = limited.filter(i => i.tipo === 'marca');
 
     if (currentVer === 'ambos' && negs.length && mrks.length) {
         addListHeader(contenedor, '🏪 Negocios (' + negs.length + ')');
@@ -3424,7 +3469,14 @@ function mostrarLista(lista) {
         addListHeader(contenedor, '🏷️ Marcas (' + mrks.length + ')');
         mrks.forEach(m => addListItem(contenedor, m));
     } else {
-        lista.forEach(n => addListItem(contenedor, n));
+        limited.forEach(n => addListItem(contenedor, n));
+    }
+
+    if (total > SIDEBAR_LIST_LIMIT) {
+        const hint = document.createElement('div');
+        hint.style.cssText = 'padding:8px 12px;text-align:center;color:#888;font-size:11px;border-top:1px solid #eef0f5;margin-top:4px;';
+        hint.textContent = 'Mostrando ' + SIDEBAR_LIST_LIMIT + ' de ' + total + ' dentro de ' + sbRadius + ' km. Refiná con filtros para ver más.';
+        contenedor.appendChild(hint);
     }
 }
 
@@ -4491,33 +4543,57 @@ function exportarPDF() {
     });
 }
 
+function _applyPosition(pos, centerMap) {
+    miUbicacion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+
+    // Update marker
+    if (userLocationMarker) mapa.removeLayer(userLocationMarker);
+    userLocationMarker = L.marker([miUbicacion.lat, miUbicacion.lng], {
+        icon: L.divIcon({
+            html: '<div style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:white;border:3px solid var(--primary);border-radius:50%;box-shadow:0 2px 8px rgba(102,126,234,0.3);z-index:1000;"><span style="font-size:14px;">📍</span></div>',
+            className: '',
+            iconSize: [28, 28],
+            iconAnchor: [14, 14],
+            popupAnchor: [0, -16]
+        })
+    })
+    .bindPopup('📍 Tu ubicación')
+    .addTo(mapa);
+
+    updateRadiusCircle();
+    if (centerMap) mapa.setView([miUbicacion.lat, miUbicacion.lng], 14);
+    filtrar();
+}
+
 function ubicarme() {
     if (!navigator.geolocation) { alert('Sin geolocalización'); return; }
-    navigator.geolocation.getCurrentPosition(pos => {
-        miUbicacion = { lat: pos.coords.latitude, lng: pos.coords.longitude };
 
-        // Limpiar marcador anterior
-        if (userLocationMarker) mapa.removeLayer(userLocationMarker);
+    // Start continuous watching if not already active
+    if (watchID === null) {
+        watchID = navigator.geolocation.watchPosition(
+            pos => _applyPosition(pos, followMe),
+            () => {},
+            { enableHighAccuracy: true, maximumAge: 10000, timeout: 30000 }
+        );
+    }
 
-        // Crear marcador mejorado con icono moderno
-        userLocationMarker = L.marker([miUbicacion.lat, miUbicacion.lng], {
-            icon: L.divIcon({
-                html: '<div style="display:flex;align-items:center;justify-content:center;width:28px;height:28px;background:white;border:3px solid var(--primary);border-radius:50%;box-shadow:0 2px 8px rgba(102,126,234,0.3);z-index:1000;"><span style="font-size:14px;">📍</span></div>',
-                className: '',
-                iconSize: [28, 28],
-                iconAnchor: [14, 14],
-                popupAnchor: [0, -16]
-            })
-        })
-        .bindPopup('📍 Tu ubicación')
-        .addTo(mapa);
+    // Also immediately get current position and center map
+    navigator.geolocation.getCurrentPosition(
+        pos => _applyPosition(pos, true),
+        () => alert('No se pudo obtener la ubicación')
+    );
+}
 
-        // Actualizar círculo de radio si el filtro está activo
-        updateRadiusCircle();
-
+function toggleFollowMe() {
+    followMe = !followMe;
+    const btn = document.getElementById('btn-follow-me');
+    if (btn) {
+        btn.style.background = followMe ? '#27ae60' : '#95a5a6';
+        btn.textContent = followMe ? '📡 Seguirme ✓' : '📡 Seguirme';
+    }
+    if (followMe && miUbicacion) {
         mapa.setView([miUbicacion.lat, miUbicacion.lng], 14);
-        filtrar();
-    }, () => alert('No se pudo obtener la ubicación'));
+    }
 }
 
 // ─── Accordion toggle ────────────────────────────────────────────────────────────
@@ -4529,7 +4605,9 @@ function toggleAccordion(btn) {
 
 // ─── Collapsible sidebar sections (sb-section system) ────────────────────────────
 function toggleSbSection(hdr) {
-    const body = hdr.nextElementSibling;
+    const section = hdr.closest('.sb-section');
+    if (!section) return;
+    const body = section.querySelector(':scope > .sb-section-body');
     if (!body) return;
     const willOpen = !hdr.classList.contains('open');
     hdr.classList.toggle('open', willOpen);
@@ -4552,7 +4630,8 @@ function toggleAllSbSections(e) {
     document.querySelectorAll('#sidebar .sb-section-hdr').forEach(hdr => {
         hdr.classList.toggle('open', _sbAllOpen);
         hdr.setAttribute('aria-expanded', String(_sbAllOpen));
-        const body = hdr.nextElementSibling;
+        const section = hdr.closest('.sb-section');
+        const body = section ? section.querySelector(':scope > .sb-section-body') : hdr.nextElementSibling;
         if (body) body.classList.toggle('open', _sbAllOpen);
     });
     const icon = document.getElementById('sb-all-icon');
@@ -4782,7 +4861,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (filtersHdr) {
             filtersHdr.classList.remove('open');
             filtersHdr.setAttribute('aria-expanded', 'false');
-            const body = filtersHdr.nextElementSibling;
+            const filtersSection = filtersHdr.closest('.sb-section');
+            const body = filtersSection ? filtersSection.querySelector(':scope > .sb-section-body') : filtersHdr.nextElementSibling;
             if (body) body.classList.remove('open');
         }
     }
@@ -7198,7 +7278,8 @@ document.addEventListener('DOMContentLoaded', function() {
 <script>
 /* SESSION_USER_ID is already declared as const above; expose for consultas-panel.js */
 window.SESSION_USER_ID = window.SESSION_USER_ID !== undefined ? window.SESSION_USER_ID : <?php echo (int)($_SESSION['user_id'] ?? 0); ?>;
-var BUSINESS_TYPE_LABELS = {
+/* BUSINESS_TYPE_LABELS is already declared as const above; expose for consultas-panel.js */
+window.BUSINESS_TYPE_LABELS = window.BUSINESS_TYPE_LABELS || {
     'restaurante':'Restaurante','cafeteria':'Cafetería','bar':'Bar / Pub','panaderia':'Panadería',
     'heladeria':'Heladería','pizzeria':'Pizzería','supermercado':'Supermercado','comercio':'Tienda / Local',
     'autos_venta':'Autos a la venta','motos_venta':'Motos a la venta','indumentaria':'Indumentaria',
