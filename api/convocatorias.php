@@ -116,7 +116,7 @@ if ($method === 'POST' && $action === 'convocar') {
     $ts_inicio = strtotime($fechaInicio);
     $ts_fin    = strtotime($fechaFin);
     if (!$ts_inicio || !$ts_fin) conv_err('Fechas inválidas');
-    if ($ts_fin <= $ts_inicio)   conv_err('fecha_fin debe ser posterior a fecha_inicio');
+    if ($ts_fin <= $ts_inicio)   conv_err('La fecha de fin debe ser posterior a la fecha de inicio');
 
     // Verify ownership
     $stmt = $db->prepare("SELECT id, name, user_id, business_type, oda_roles_buscados FROM businesses WHERE id = ? LIMIT 1");
@@ -150,8 +150,9 @@ if ($method === 'POST' && $action === 'convocar') {
     ]);
     $convId = (int)$db->lastInsertId();
 
-    // Get obra name
-    $obraName = $biz['name'];
+    // Get obra name (sanitized for use in strings)
+    $obraName     = $biz['name'];
+    $obraNameSafe = strip_tags(trim($obraName));
 
     // Notify each service
     $notificados = 0;
@@ -169,12 +170,12 @@ if ($method === 'POST' && $action === 'convocar') {
         // WT message
         if ($srvUserId > 0) {
             try {
-                $wtMsg = "Convocatoria: \"{$obraName}\" te convoca para participar en su proyecto artístico. " .
+                $wtMsg = "Convocatoria: \"{$obraNameSafe}\" te convoca para participar en su proyecto artístico. " .
                          "Plazo: " . date('d/m/Y', $ts_inicio) . " al " . date('d/m/Y', $ts_fin) . ". " .
                          "Contactá al titular para más información.";
                 $wtMsg = mb_substr($wtMsg, 0, 500);
                 $insWt = $db->prepare("INSERT INTO wt_messages (entity_type, entity_id, user_id, user_name, sender_key, message) VALUES (?,?,?,?,?,?)");
-                $insWt->execute(['negocio', $srvBizId, $userId, $obraName, 'uid:' . $userId, $wtMsg]);
+                $insWt->execute(['negocio', $srvBizId, $userId, $obraNameSafe, 'uid:' . $userId, $wtMsg]);
                 $updDest = $db->prepare("UPDATE convocatoria_destinatarios SET notificado_wt=1 WHERE convocatoria_id=? AND business_id=?");
                 $updDest->execute([$convId, $srvBizId]);
             } catch (\PDOException $e) { /* WT puede no estar disponible */ }
@@ -182,9 +183,9 @@ if ($method === 'POST' && $action === 'convocar') {
 
         // Email notification
         if ($srvEmail !== '') {
-            $subject = "Convocatoria: {$obraName} — MAPITA";
+            $subject = "Convocatoria: {$obraNameSafe} — MAPITA";
             mapitaSendUserNotificationEmail($srvEmail, $subject, 'CONVOCATORIA ARTÍSTICA', [
-                'Proyecto'    => $obraName,
+                'Proyecto'    => $obraNameSafe,
                 'Tu servicio' => $srv['name'],
                 'Plazo'       => date('d/m/Y', $ts_inicio) . ' al ' . date('d/m/Y', $ts_fin),
                 'Plataforma'  => 'https://mapita.com.ar',

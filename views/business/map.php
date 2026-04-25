@@ -6335,9 +6335,9 @@ async function activarCerca() {
         }
         _cercaLayer = L.layerGroup();
         d.data.forEach(function(inm) {
-            const lat = parseFloat(inm.lat) || parseFloat(inm.inm_lat_fallback) || 0;
-            const lng = parseFloat(inm.lng) || parseFloat(inm.inm_lng_fallback) || 0;
-            if (!lat || !lng) return;
+            const lat = parseFloat(inm.lat) || parseFloat(inm.inm_lat_fallback);
+            const lng = parseFloat(inm.lng) || parseFloat(inm.inm_lng_fallback);
+            if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return;
 
             const iconHtml = inm.inmobiliaria_icon
                 ? '<img src="' + escapeHtml(inm.inmobiliaria_icon) + '" style="width:36px;height:36px;border-radius:50%;border:2px solid #16a34a;object-fit:cover;" />'

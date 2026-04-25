@@ -97,7 +97,7 @@ if ($method === 'POST') {
 
     $operacion  = in_array($input['operacion'] ?? '', ['venta','alquiler'], true) ? $input['operacion'] : 'venta';
     $descripcion = mb_substr(trim((string)($input['descripcion'] ?? '')), 0, 2000) ?: null;
-    $precio      = is_numeric($input['precio'] ?? null) ? (float)$input['precio'] : null;
+    $precio      = is_numeric($input['precio'] ?? null) && (float)$input['precio'] >= 0 ? (float)$input['precio'] : null;
     $moneda      = in_array($input['moneda'] ?? 'ARS', ['ARS','USD','EUR'], true) ? $input['moneda'] : 'ARS';
     $direccion   = mb_substr(trim((string)($input['direccion'] ?? '')), 0, 500) ?: null;
     $lat         = is_numeric($input['lat'] ?? null) ? (float)$input['lat'] : null;
