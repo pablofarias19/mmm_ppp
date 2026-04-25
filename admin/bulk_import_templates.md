@@ -1,7 +1,55 @@
-# Prompts para importación masiva en Mapita
+# Guía de importación masiva para Mapita
 
-Usá estos prompts para generar archivos JSON con una IA (ChatGPT, Gemini, Claude, etc.).
-El archivo generado se sube desde el panel Admin → pestaña Negocios o Marcas → sección "Importar en masa".
+> **Para IA / generadores de JSON:** Leé esta guía completa antes de generar datos.
+> Seguir exactamente las reglas garantiza que el JSON sea importado sin errores por el sistema.
+
+Hay **dos formas** de importar en masa:
+
+| Opción | URL | Descripción |
+|--------|-----|-------------|
+| Módulo dedicado (recomendado) | `/admin/importar_marcas_negocios.php` | UI completa: valida, geocodifica, muestra reporte y permite confirmar importación. |
+| Panel Admin (rápido) | `/admin/` → pestaña Negocios o Marcas | Widget integrado, sin reporte de validación detallado. |
+
+---
+
+## ¿Cómo geocodifica Mapita las marcas y negocios?
+
+Cuando un JSON llega sin `lat`/`lng`, el módulo de importación masiva
+(`admin/importar_marcas_negocios.php`) aplica la siguiente lógica **automáticamente**:
+
+1. **Dirección explícita** (`address` para negocios, `ubicacion` para marcas): se envía
+   a [Nominatim (OpenStreetMap)](https://nominatim.openstreetmap.org/) para obtener
+   latitud y longitud sin costo.
+2. **Fallo de geocodificación**: si Nominatim no puede resolver la dirección, se usan
+   las coordenadas de fallback de Argentina (`-34.6037`, `-58.3816`).
+3. **Sin dirección**: se aplica directamente el fallback de Argentina.
+
+> **Regla de ubicación de la marca:**
+> - Primero se usa el domicilio del titular.
+> - Si el titular es extranjero, se usa el domicilio declarado en Argentina.
+> - Si ambos faltan, se asigna `"Argentina"` como `ubicacion` y las coordenadas de fallback.
+
+**Recomendación para la IA generadora:** incluir siempre `lat` y `lng` precalculados
+(obtenidos de cualquier geocodificador) para evitar el fallback y garantizar posicionamiento
+exacto en el mapa. Si no se incluyen, el sistema los calculará automáticamente.
+
+---
+
+## ¿Qué valida el módulo?
+
+El módulo `admin/importar_marcas_negocios.php` ejecuta estas validaciones antes de importar:
+
+| Regla | Detalle |
+|-------|---------|
+| Raíz es array | El JSON debe comenzar con `[` (array), no con `{` (objeto). |
+| Campos obligatorios presentes | Ver lista por tipo más abajo. |
+| Tipos de datos correctos | Strings donde se pide string, números donde se pide número. |
+| Booleanos como 0/1 | Nunca `true`/`false` ni `"yes"`/`"no"`. |
+| Fechas INPI | Formato estricto `YYYY-MM-DD`. |
+| Estado válido | Solo `"Activa"` o `"Inactiva"` (con mayúscula inicial). |
+| Deduplicación de marcas | Si el mismo `nombre` aparece más de una vez, se consolidan automáticamente las clases NIZA. |
+
+---
 
 ---
 
@@ -84,12 +132,17 @@ No incluyas texto adicional, comentarios ni bloque markdown: solo JSON puro.
 CAMPOS OBLIGATORIOS POR OBJETO:
 - "nombre": nombre de la marca (string, máx. 255 chars)
 - "rubro": rubro o industria de la marca (string, ej: "Indumentaria", "Alimentos", "Tecnología")
+- "inpi_registrada": está registrada en INPI Argentina (ENTERO 0 o 1, nunca true/false)
+- "es_franquicia": opera como franquicia (ENTERO 0 o 1, nunca true/false)
+- "tiene_zona": tiene zona de exclusividad (ENTERO 0 o 1, nunca true/false)
+- "tiene_licencia": tiene modelo de licencia (ENTERO 0 o 1, nunca true/false)
+- "estado": SOLO "Activa" o "Inactiva" (con mayúscula inicial, sin variantes)
 
 CAMPOS OPCIONALES:
 - "website": URL completa (string)
 - "ubicacion": ciudad o país de operación (string, default "Argentina")
-- "lat": latitud decimal (número)
-- "lng": longitud decimal (número)
+- "lat": latitud decimal (número, ej: -34.6037). Si no se proporciona, el sistema geocodifica.
+- "lng": longitud decimal (número, ej: -58.3816). Si no se proporciona, el sistema geocodifica.
 - "description": descripción corta de la marca (string)
 - "extended_description": descripción larga o historia (string)
 - "clase_principal": clase NIZA principal (string, ej: "25" para indumentaria)
@@ -105,22 +158,37 @@ CAMPOS OPCIONALES:
 - "historia_marca": historia completa de la marca (string largo)
 - "target_audience": descripción del público objetivo (string)
 - "propuesta_valor": propuesta de valor diferencial (string)
-- "inpi_registrada": está registrada en INPI Argentina (0 o 1)
 - "inpi_numero": número de registro INPI (string)
 - "inpi_fecha_registro": fecha de registro INPI (string "YYYY-MM-DD")
 - "inpi_vencimiento": fecha de vencimiento INPI (string "YYYY-MM-DD")
-- "inpi_clases_registradas": clases NIZA registradas (string, ej: "25,35")
+- "inpi_clases_registradas": clases NIZA registradas separadas por coma (string, ej: "25,35,42")
 - "inpi_tipo": tipo de marca INPI (string, ej: "Nominativa", "Mixta")
-- "es_franquicia": opera como franquicia (0 o 1)
-- "tiene_zona": tiene zona de exclusividad (0 o 1)
 - "zona_radius_km": radio de zona en km (número entero)
-- "tiene_licencia": tiene modelo de licencia (0 o 1)
-- "estado": "Activa" o "Inactiva"
 
-REGLAS IMPORTANTES:
-- El JSON debe ser un array en la raíz: `[ { ... }, { ... } ]`
-- "lat" y "lng" son opcionales, pero si se envían deben ser números decimales válidos.
-- Los campos booleanos (`inpi_registrada`, `es_franquicia`, `tiene_zona`, `tiene_licencia`) deben enviarse como `0` o `1`.
+REGLAS CRÍTICAS — INCUMPLIRLAS CAUSARÁ ERRORES DE IMPORTACIÓN:
+1. La raíz DEBE ser un array: [ { ... }, { ... } ]. Nunca un objeto raíz.
+2. "estado" SOLO puede ser "Activa" o "Inactiva" (con mayúscula exacta).
+3. Los booleanos ("inpi_registrada", "es_franquicia", "tiene_zona", "tiene_licencia") DEBEN ser
+   el ENTERO 0 o el ENTERO 1. Nunca strings "0"/"1", nunca true/false, nunca "sí"/"no".
+4. Las fechas INPI ("inpi_fecha_registro", "inpi_vencimiento") DEBEN tener formato YYYY-MM-DD.
+   Ejemplo correcto: "2023-05-20". Incorrecto: "20/05/2023" o "May 20, 2023".
+5. DEDUPLICACIÓN: si la misma marca aparece en varias clases NIZA, generar UN SOLO objeto:
+   - Conservar la clase principal en "clase_principal".
+   - Incluir todas las clases en "inpi_clases_registradas" (ej: "25,35,42").
+   - Agregar nota en "extended_description" sobre las clases adicionales.
+   - NO repetir objetos con el mismo "nombre" solo por cambiar la clase NIZA.
+6. REGLA DE UBICACIÓN:
+   - Usar el domicilio del titular como "ubicacion".
+   - Si el titular es extranjero, usar su domicilio declarado en Argentina.
+   - Si faltan ambos, usar "Argentina" como valor de "ubicacion".
+   - Incluir "lat" y "lng" cuando se conozcan (coordenadas del domicilio).
+     Si se omiten, el sistema los calculará automáticamente (geocodificación gratuita).
+
+VALIDACIÓN ANTES DE RESPONDER:
+- El JSON debe ser parseable sin errores.
+- No debe haber duplicados de nombre+denominación.
+- "inpi_clases_registradas" debe ser consistente con la regla de consolidación.
+- Verificar que todos los tipos de datos sean correctos.
 
 EJEMPLO DE SALIDA:
 [
@@ -128,7 +196,7 @@ EJEMPLO DE SALIDA:
     "nombre": "Café Martínez",
     "rubro": "Gastronomía",
     "website": "https://www.cafemartinez.com",
-    "ubicacion": "Argentina",
+    "ubicacion": "Av. Corrientes 1234, Buenos Aires, Argentina",
     "lat": -34.6037,
     "lng": -58.3816,
     "description": "Cadena de cafeterías premium con presencia en todo el país.",
@@ -142,10 +210,14 @@ EJEMPLO DE SALIDA:
     "propuesta_valor": "Café de calidad premium con experiencia de café europeo en Argentina.",
     "inpi_registrada": 1,
     "inpi_numero": "2847561",
+    "inpi_fecha_registro": "2005-03-15",
+    "inpi_vencimiento": "2025-03-15",
     "inpi_clases_registradas": "30,43",
+    "inpi_tipo": "Nominativa",
     "es_franquicia": 1,
     "tiene_zona": 1,
     "zona_radius_km": 5,
+    "tiene_licencia": 0,
     "estado": "Activa"
   }
 ]
@@ -159,12 +231,27 @@ EJEMPLO DE SALIDA:
 2. Se puede incluir un negocio o marca por archivo, o varios en el mismo array.
 3. El tamaño máximo del archivo es **2MB**.
 4. Si algún elemento falla la validación, los demás se importan igualmente y los errores se muestran en pantalla.
-5. El campo `lat`/`lng` es opcional para marcas; para negocios es obligatorio.
+5. El campo `lat`/`lng` es **opcional** para ambos tipos. Si se omite, el módulo
+   `admin/importar_marcas_negocios.php` geocodifica automáticamente usando la dirección
+   (campo `ubicacion` para marcas o `address` para negocios) vía OpenStreetMap Nominatim.
+   Si la geocodificación falla, se usan las coordenadas de Argentina como fallback.
 6. Los tipos de negocio deben coincidir exactamente con la lista indicada en el prompt.
+7. Para marcas, todos los campos booleanos y `estado` son ahora **obligatorios** en el módulo
+   `admin/importar_marcas_negocios.php`. El widget rápido del Panel Admin sigue siendo permisivo.
 
 ---
 
 ## Modo de consumo de datos (Admin + API)
+
+### Módulo dedicado (recomendado) — `admin/importar_marcas_negocios.php`
+
+1. Accedé a `/admin/importar_marcas_negocios.php`.
+2. Seleccioná el tipo (Marcas o Negocios) y subí el archivo JSON.
+3. El módulo valida, deduplica y geocodifica automáticamente.
+4. Se muestra un reporte con: registros válidos, errores por fila, duplicados y estado de geocodificación.
+5. Confirmás la importación haciendo clic en el botón de confirmación.
+
+### Widget Panel Admin — `/admin/`
 
 1. Desde **Admin → pestaña Negocios o Marcas**, usá la sección **Importar en masa (JSON)**.
 2. El frontend envía `multipart/form-data` a `POST /api/bulk_import.php` con:
@@ -178,3 +265,17 @@ EJEMPLO DE SALIDA:
    - `errors` (lista de errores por fila)
    - `message` (resumen para UI)
 5. Si `errors` tiene elementos, se muestran en pantalla y el resto de registros válidos igualmente se guarda.
+
+---
+
+## Diferencias entre módulo dedicado y widget del Panel
+
+| Característica | Módulo dedicado | Widget Panel |
+|----------------|-----------------|--------------|
+| URL | `/admin/importar_marcas_negocios.php` | `/admin/` |
+| Geocodificación automática | ✅ Sí (Nominatim) | ❌ No |
+| Validación completa de marcas | ✅ Sí (todos los campos obligatorios) | ⚠️ Mínima |
+| Deduplicación NIZA | ✅ Sí | ❌ No |
+| Reporte de validación | ✅ Detallado | ❌ Solo resumen |
+| Confirmación antes de importar | ✅ Paso de revisión | ❌ Importa directo |
+| JSON enriquecido descargable | ✅ Preview disponible | ❌ No |
