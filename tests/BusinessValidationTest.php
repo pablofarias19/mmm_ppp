@@ -7,8 +7,10 @@ use PHPUnit\Framework\TestCase;
 
 // Cargar process_business sin session ni headers (TESTING=true evita efectos secundarios)
 if (!function_exists('validateBusinessData')) {
-    // stub getDbConnection para que no intente conectarse
-    function getDbConnection() { return null; }
+    // stub getDbConnection para que no intente conectarse (solo si aún no está definida)
+    if (!function_exists('getDbConnection')) {
+        function getDbConnection() { return null; }
+    }
     require_once __DIR__ . '/../business/process_business.php';
 }
 

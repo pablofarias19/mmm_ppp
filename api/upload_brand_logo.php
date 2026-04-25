@@ -6,7 +6,7 @@
  * POST action=delete  brand_id=X             → elimina logo existente
  * GET  ?brand_id=X                           → devuelve info del logo actual
  *
- * Límites: máx 200 KB · JPG / PNG / WebP
+ * Límites: máx 120 KB · JPG / PNG / WebP
  * El logo es la imagen que aparece como icono en el mapa.
  */
 
@@ -90,7 +90,7 @@ if ($method === 'POST') {
 
     // ── Subir logo ────────────────────────────────────────────────────────────
     if ($action === 'upload') {
-        $maxSize = 200 * 1024; // 200 KB — el logo es un ícono de mapa, debe ser liviano
+        $maxSize = 120 * 1024; // 120 KB — el logo es un ícono de mapa, debe ser liviano
 
         if (empty($_FILES['logo']) || $_FILES['logo']['error'] !== UPLOAD_ERR_OK) {
             $errCode = $_FILES['logo']['error'] ?? -1;
@@ -107,7 +107,7 @@ if ($method === 'POST') {
 
         if ($file['size'] > $maxSize) {
             $kb = round($file['size'] / 1024);
-            echo json_encode(['success' => false, 'message' => "Tu archivo pesa {$kb} KB. El logo del mapa debe pesar máximo 200 KB. Comprimilo gratis en squoosh.app o tinypng.com antes de subir."]);
+            echo json_encode(['success' => false, 'message' => "Tu archivo pesa {$kb} KB. El logo del mapa debe pesar máximo 120 KB. Comprimilo gratis en squoosh.app o tinypng.com antes de subir."]);
             exit;
         }
 

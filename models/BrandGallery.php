@@ -7,8 +7,8 @@ use PDO;
 
 class BrandGallery {
     protected $table = 'brand_gallery';
-    public const MAX_IMAGES_PER_BRAND = 2;
-    public const MAX_FILE_BYTES = 200 * 1024; // 200 KB
+    public const MAX_IMAGES_PER_BRAND = 1;
+    public const MAX_FILE_BYTES = 120 * 1024; // 120 KB
 
     /**
      * Obtiene todas las imágenes de una marca
