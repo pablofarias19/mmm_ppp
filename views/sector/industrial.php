@@ -228,11 +228,11 @@ if ($tab === 'overview' || !$tab):
     <p class="muted">Consulta de parámetros de comercio exterior aplicables al sector industrial.</p>
 </div>
 <div id="radar-tabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px;">
-    <button class="btn btn-primary" onclick="showRadarTab('transporte')">🚢 Transporte</button>
-    <button class="btn btn-secondary" onclick="showRadarTab('destinaciones')">📦 Destinaciones</button>
-    <button class="btn btn-secondary" onclick="showRadarTab('restricciones')">🚫 Restricciones</button>
-    <button class="btn btn-secondary" onclick="showRadarTab('controversias')">⚠️ Controversias</button>
-    <button class="btn btn-secondary" onclick="showRadarTab('contratos')">📝 Contratos</button>
+    <button class="btn btn-primary" data-tab="transporte" onclick="showRadarTab('transporte')">🚢 Transporte</button>
+    <button class="btn btn-secondary" data-tab="destinaciones" onclick="showRadarTab('destinaciones')">📦 Destinaciones</button>
+    <button class="btn btn-secondary" data-tab="restricciones" onclick="showRadarTab('restricciones')">🚫 Restricciones</button>
+    <button class="btn btn-secondary" data-tab="controversias" onclick="showRadarTab('controversias')">⚠️ Controversias</button>
+    <button class="btn btn-secondary" data-tab="contratos" onclick="showRadarTab('contratos')">📝 Contratos</button>
 </div>
 <div id="rt-transporte" class="radar-tab-content s-card">
     <h2>🚢 Modos de Transporte</h2>
@@ -299,6 +299,9 @@ if ($tab === 'overview' || !$tab):
 function showRadarTab(tab) {
     document.querySelectorAll('.radar-tab-content').forEach(el => el.style.display='none');
     document.getElementById('rt-'+tab).style.display='block';
+    document.querySelectorAll('#radar-tabs .btn').forEach(b => {
+        b.className = (b.dataset.tab === tab) ? 'btn btn-primary' : 'btn btn-secondary';
+    });
 }
 </script>
 <?php endif; ?>

@@ -120,10 +120,16 @@ class RadarLegal {
         $settings = self::getSettings($sectorType, $sectorId);
         if ($settings) return (bool)$settings['enabled'];
         // Fallback: check radar_enabled flag on sector table
+        if ($sectorType !== 'industrial' && $sectorType !== 'commercial') {
+            return false;
+        }
         try {
             $db = Database::getInstance()->getConnection();
-            $table = $sectorType === 'industrial' ? 'industrial_sectors' : 'commercial_sectors';
-            $stmt = $db->prepare("SELECT radar_enabled FROM $table WHERE id = ?");
+            if ($sectorType === 'industrial') {
+                $stmt = $db->prepare('SELECT radar_enabled FROM industrial_sectors WHERE id = ?');
+            } else {
+                $stmt = $db->prepare('SELECT radar_enabled FROM commercial_sectors WHERE id = ?');
+            }
             $stmt->execute([$sectorId]);
             $row = $stmt->fetch(PDO::FETCH_ASSOC);
             return $row ? (bool)$row['radar_enabled'] : false;

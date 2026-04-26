@@ -36,33 +36,32 @@ $resource = $_GET['resource'] ?? '';
 $action   = $_GET['action']   ?? '';
 
 if ($method === 'GET') {
-    switch ($resource) {
-        case 'transport_modes':
-            rl_json(['data' => RadarLegal::getTransportModes()]);
-        case 'ports':
-            $tmId = !empty($_GET['transport_mode_id']) ? (int)$_GET['transport_mode_id'] : null;
-            rl_json(['data' => RadarLegal::getPorts($tmId)]);
-        case 'destinations':
-            $dir = $_GET['direction'] ?? null;
-            rl_json(['data' => RadarLegal::getDestinations($dir)]);
-        case 'restrictions':
-            $type = $_GET['type'] ?? null;
-            rl_json(['data' => RadarLegal::getRestrictions($type)]);
-        case 'disputes':
-            $type = $_GET['type'] ?? null;
-            rl_json(['data' => RadarLegal::getDisputes($type)]);
-        case 'contract_types':
-            $cat = $_GET['category'] ?? null;
-            rl_json(['data' => RadarLegal::getContractTypes($cat)]);
-        case 'settings':
-            $st = $_GET['sector_type'] ?? '';
-            $si = (int)($_GET['sector_id'] ?? 0);
-            if (!$st || !$si) rl_err('sector_type y sector_id requeridos');
-            $settings = RadarLegal::getSettings($st, $si);
-            $enabled  = RadarLegal::isEnabled($st, $si);
-            rl_json(['settings' => $settings, 'enabled' => $enabled]);
-        default:
-            rl_err('resource no reconocido. Opciones: transport_modes, ports, destinations, restrictions, disputes, contract_types, settings');
+    if ($resource === 'transport_modes') {
+        rl_json(['data' => RadarLegal::getTransportModes()]);
+    } elseif ($resource === 'ports') {
+        $tmId = !empty($_GET['transport_mode_id']) ? (int)$_GET['transport_mode_id'] : null;
+        rl_json(['data' => RadarLegal::getPorts($tmId)]);
+    } elseif ($resource === 'destinations') {
+        $dir = $_GET['direction'] ?? null;
+        rl_json(['data' => RadarLegal::getDestinations($dir)]);
+    } elseif ($resource === 'restrictions') {
+        $type = $_GET['type'] ?? null;
+        rl_json(['data' => RadarLegal::getRestrictions($type)]);
+    } elseif ($resource === 'disputes') {
+        $type = $_GET['type'] ?? null;
+        rl_json(['data' => RadarLegal::getDisputes($type)]);
+    } elseif ($resource === 'contract_types') {
+        $cat = $_GET['category'] ?? null;
+        rl_json(['data' => RadarLegal::getContractTypes($cat)]);
+    } elseif ($resource === 'settings') {
+        $st = $_GET['sector_type'] ?? '';
+        $si = (int)($_GET['sector_id'] ?? 0);
+        if (!$st || !$si) rl_err('sector_type y sector_id requeridos');
+        $settings = RadarLegal::getSettings($st, $si);
+        $enabled  = RadarLegal::isEnabled($st, $si);
+        rl_json(['settings' => $settings, 'enabled' => $enabled]);
+    } else {
+        rl_err('resource no reconocido. Opciones: transport_modes, ports, destinations, restrictions, disputes, contract_types, settings');
     }
 }
 
