@@ -3030,9 +3030,8 @@ function buildOfertaMetadata(o) {
 }
 
 function buildTransmisionMetadata(tx) {
-    const tiposLabel = { youtube_live: 'YouTube Live', youtube_video: 'Video (YouTube)', radio_stream: 'Radio Online', audio_stream: 'Audio Stream', video_stream: 'Video Stream' };
     return buildSelectionMetadata({
-        'Tipo': tiposLabel[tx.tipo] || tx.tipo,
+        'Tipo': TX_TIPOS_LABEL[tx.tipo] || tx.tipo,
         'En vivo': tx.en_vivo ? 'Sí' : 'No',
         'Mapita ID': tx.mapita_id
     });
@@ -6344,7 +6343,7 @@ function mostrarTransmisionesWidget(transmisiones) {
 
     transmisiones.forEach(tx => {
         const isVideo = tx.tipo === 'youtube_video';
-        const itemBorder = isVideo ? '#8e44ad' : '#c0392b';
+        const itemBorder = isVideo ? TX_COLOR_VIDEO : TX_COLOR_DEFAULT;
         const itemBg = isVideo ? 'linear-gradient(135deg, #f9f0ff 0%, #f0e0ff 100%)' : 'linear-gradient(135deg, #fff2f2 0%, #ffe5e5 100%)';
         const item = document.createElement('div');
         item.style.cssText = `
@@ -6365,13 +6364,12 @@ function mostrarTransmisionesWidget(transmisiones) {
         const liveDot = tx.en_vivo
             ? '<span style="display:inline-block;width:7px;height:7px;background:#fff;border-radius:50%;animation:blink 1s infinite;vertical-align:middle;margin-right:4px;"></span>'
             : '';
-        const titleColor = tx.en_vivo ? '#ffffff' : (isVideo ? '#8e44ad' : '#c0392b');
+        const titleColor = tx.en_vivo ? '#ffffff' : (isVideo ? TX_COLOR_VIDEO : TX_COLOR_DEFAULT);
         titulo.innerHTML = liveDot + `<strong style="font-size:13px;color:${titleColor};">${(iconTipo[tx.tipo] || '📡')} ${tx.titulo.substring(0, 32) + (tx.titulo.length > 32 ? '…' : '')}</strong>`;
         titulo.style.margin = '0 0 3px 0';
 
         const sub = document.createElement('p');
-        const tiposLabelWidget = { youtube_live: 'YouTube Live', youtube_video: 'Video (YouTube)', radio_stream: 'Radio Online', audio_stream: 'Audio Stream', video_stream: 'Video Stream' };
-        sub.textContent = tx.en_vivo ? 'EN VIVO ahora' : (tx.descripcion ? tx.descripcion.substring(0, 40) + '…' : (tiposLabelWidget[tx.tipo] || tx.tipo));
+        sub.textContent = tx.en_vivo ? 'EN VIVO ahora' : (tx.descripcion ? tx.descripcion.substring(0, 40) + '…' : (TX_TIPOS_LABEL[tx.tipo] || tx.tipo));
         sub.style.cssText = `margin:0;font-size:11px;color:${tx.en_vivo ? 'rgba(255,255,255,0.85)' : '#888'};font-weight:${tx.en_vivo ? '700' : '400'};`;
 
         item.appendChild(titulo);
@@ -6381,7 +6379,7 @@ function mostrarTransmisionesWidget(transmisiones) {
 }
 
 function abrirTransmisionModal(tx) {
-    const tipos  = { youtube_live: 'YouTube Live', youtube_video: 'Video (YouTube)', radio_stream: 'Radio Online', audio_stream: 'Audio Stream', video_stream: 'Video Stream' };
+    const tipos  = TX_TIPOS_LABEL;
     const isYT   = (tx.tipo === 'youtube_live' || tx.tipo === 'youtube_video') && tx.stream_url;
     let ytEmbed  = '';
     if (isYT) {
@@ -6506,6 +6504,12 @@ function _initTxPanelDrag(panel, handle) {
 // Cache para acceder al objeto completo desde el onclick del popup sin serializar en HTML
 const _txCache = new Map();
 
+// Constantes compartidas para tipos de transmisión
+const TX_TIPOS_LABEL = { youtube_live: 'YouTube Live', youtube_video: 'Video (YouTube)', radio_stream: 'Radio Online', audio_stream: 'Audio Stream', video_stream: 'Video Stream' };
+const TX_COLOR_VIDEO = '#8e44ad';
+const TX_COLOR_LIVE  = '#e74c3c';
+const TX_COLOR_DEFAULT = '#c0392b';
+
 let transmisionMarkers = [];
 function mostrarMarcadoresTransmisiones(transmisiones) {
     transmisionesLayer.clearLayers();
@@ -6514,7 +6518,7 @@ function mostrarMarcadoresTransmisiones(transmisiones) {
     transmisiones.forEach(function(tx) {
         if (!tx.lat || !tx.lng || parseFloat(tx.lat) === 0) return;
         _txCache.set(tx.id, tx);   // guardar referencia por ID
-        var color = tx.en_vivo ? '#e74c3c' : (tx.tipo === 'youtube_video' ? '#8e44ad' : '#c0392b');
+        var color = tx.en_vivo ? TX_COLOR_LIVE : (tx.tipo === 'youtube_video' ? TX_COLOR_VIDEO : TX_COLOR_DEFAULT);
         var label = tx.en_vivo ? '🔴' : (tx.tipo === 'youtube_video' ? '📼' : '📡');
         var svg   = make3dPin(label, color, 30, 42, tx.en_vivo ? 'icon-glow' : '');
         var icon  = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
