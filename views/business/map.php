@@ -809,6 +809,117 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             outline: 2px solid #1B3B6F;
             outline-offset: 2px;
         }
+
+        /* ── TRANSMISION FLOAT PANEL ────────────────────────────────── */
+        #tx-float-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 5000;
+            background: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.32);
+            display: none;
+            flex-direction: column;
+            width: 360px;
+            max-width: calc(100vw - 40px);
+            overflow: hidden;
+            font-family: inherit;
+        }
+        #tx-float-panel.is-minimized {
+            width: 280px;
+            border-radius: 8px;
+        }
+        #tx-float-panel.is-minimized .tx-panel-body {
+            display: none;
+        }
+        #tx-float-panel-header {
+            background: linear-gradient(135deg, #c0392b, #922b21);
+            color: white;
+            padding: 10px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: move;
+            user-select: none;
+            min-width: 0;
+        }
+        #tx-float-panel-title {
+            flex: 1;
+            font-size: 13px;
+            font-weight: 700;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            min-width: 0;
+        }
+        .tx-panel-btn {
+            background: rgba(255,255,255,0.18);
+            border: none;
+            color: white;
+            cursor: pointer;
+            border-radius: 4px;
+            width: 26px;
+            height: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            line-height: 1;
+            flex-shrink: 0;
+            transition: background 0.15s;
+        }
+        .tx-panel-btn:hover { background: rgba(255,255,255,0.32); }
+        .tx-panel-btn:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
+        .tx-panel-body {
+            padding: 14px 16px;
+        }
+        .tx-panel-desc {
+            margin: 0 0 12px;
+            font-size: 13px;
+            color: #555;
+            line-height: 1.5;
+        }
+        .tx-panel-embed {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 */
+            height: 0;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+        .tx-panel-embed iframe {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            border: none;
+            display: block;
+        }
+        .tx-panel-ext-link {
+            display: block;
+            padding: 12px;
+            background: linear-gradient(135deg, #c0392b, #922b21);
+            color: white;
+            text-decoration: none;
+            text-align: center;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 13px;
+            margin-bottom: 4px;
+        }
+        .tx-panel-ext-link:hover { opacity: 0.9; }
+        .tx-panel-ext-hint {
+            font-size: 11px;
+            color: #888;
+            text-align: center;
+            margin: 0;
+        }
+        /* en-vivo item in widget: dark background for white text contrast */
+        .tx-widget-item-live {
+            background: linear-gradient(135deg, #c0392b 0%, #7b241c 100%) !important;
+            border-color: #7b241c !important;
+        }
     </style>
 </head>
 <body>
@@ -6241,20 +6352,22 @@ function mostrarTransmisionesWidget(transmisiones) {
             transition: all 0.2s ease;
             border: 1px solid #c0392b;
         `;
-        item.onmouseover = () => { item.style.transform = 'translateY(-2px)'; item.style.boxShadow = '0 4px 12px rgba(192,57,43,0.2)'; };
+        if (tx.en_vivo) item.classList.add('tx-widget-item-live');
+        item.onmouseover = () => { item.style.transform = 'translateY(-2px)'; item.style.boxShadow = tx.en_vivo ? '0 4px 12px rgba(114,26,14,0.45)' : '0 4px 12px rgba(192,57,43,0.2)'; };
         item.onmouseout  = () => { item.style.transform = 'translateY(0)'; item.style.boxShadow = 'none'; };
         item.onclick     = () => abrirTransmisionModal(tx);
 
         const titulo = document.createElement('div');
         const liveDot = tx.en_vivo
-            ? '<span style="display:inline-block;width:7px;height:7px;background:#e74c3c;border-radius:50%;animation:blink 1s infinite;vertical-align:middle;margin-right:4px;"></span>'
+            ? '<span style="display:inline-block;width:7px;height:7px;background:#fff;border-radius:50%;animation:blink 1s infinite;vertical-align:middle;margin-right:4px;"></span>'
             : '';
-        titulo.innerHTML = liveDot + `<strong style="font-size:13px;color:#c0392b;">${(iconTipo[tx.tipo] || '📡')} ${tx.titulo.substring(0, 32) + (tx.titulo.length > 32 ? '…' : '')}</strong>`;
+        const titleColor = tx.en_vivo ? '#ffffff' : '#c0392b';
+        titulo.innerHTML = liveDot + `<strong style="font-size:13px;color:${titleColor};">${(iconTipo[tx.tipo] || '📡')} ${tx.titulo.substring(0, 32) + (tx.titulo.length > 32 ? '…' : '')}</strong>`;
         titulo.style.margin = '0 0 3px 0';
 
         const sub = document.createElement('p');
         sub.textContent = tx.en_vivo ? 'EN VIVO ahora' : (tx.descripcion ? tx.descripcion.substring(0, 40) + '…' : tx.tipo);
-        sub.style.cssText = `margin:0;font-size:11px;color:${tx.en_vivo ? '#e74c3c' : '#888'};font-weight:${tx.en_vivo ? '700' : '400'};`;
+        sub.style.cssText = `margin:0;font-size:11px;color:${tx.en_vivo ? 'rgba(255,255,255,0.85)' : '#888'};font-weight:${tx.en_vivo ? '700' : '400'};`;
 
         item.appendChild(titulo);
         item.appendChild(sub);
@@ -6263,34 +6376,125 @@ function mostrarTransmisionesWidget(transmisiones) {
 }
 
 function abrirTransmisionModal(tx) {
-    const modal   = document.createElement('div');
-    modal.style.cssText = 'position:fixed;inset:0;z-index:5000;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;';
-    modal.onclick = (e) => { if (e.target === modal) modal.remove(); };
+    const tipos  = { youtube_live: 'YouTube Live', radio_stream: 'Radio Online', audio_stream: 'Audio Stream', video_stream: 'Video Stream' };
+    const isYT   = tx.tipo === 'youtube_live' && tx.stream_url;
+    let ytEmbed  = '';
+    if (isYT) {
+        ytEmbed = tx.stream_url
+            .replace('youtu.be/', 'www.youtube.com/embed/')
+            .replace('watch?v=', 'embed/');
+        if (!ytEmbed.includes('youtube.com/embed/')) ytEmbed = tx.stream_url;
+    }
 
-    const tipos   = { youtube_live: 'YouTube Live', radio_stream: 'Radio Online', audio_stream: 'Audio Stream', video_stream: 'Video Stream' };
-    const isYT    = tx.tipo === 'youtube_live' && tx.stream_url;
-    const ytEmbed = isYT ? tx.stream_url.replace('youtu.be/', 'www.youtube.com/embed/').replace('watch?v=', 'embed/') : '';
+    // Create panel once, reuse afterwards
+    let panel = document.getElementById('tx-float-panel');
+    if (!panel) {
+        panel = document.createElement('div');
+        panel.id = 'tx-float-panel';
+        panel.setAttribute('role', 'dialog');
+        panel.setAttribute('aria-modal', 'false');
+        panel.setAttribute('aria-label', 'Panel de transmisión');
+        panel.tabIndex = -1;
+        panel.innerHTML = `
+            <div id="tx-float-panel-header">
+                <span id="tx-float-panel-title"></span>
+                <button class="tx-panel-btn" id="tx-panel-min-btn" aria-label="Minimizar" title="Minimizar">&#8212;</button>
+                <button class="tx-panel-btn" id="tx-panel-close-btn" aria-label="Cerrar" title="Cerrar">&#x2715;</button>
+            </div>
+            <div class="tx-panel-body" id="tx-panel-body"></div>
+        `;
+        document.body.appendChild(panel);
 
-    modal.innerHTML = `
-        <div style="background:white;border-radius:12px;padding:0;max-width:540px;width:95%;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.3);">
-            <div style="background:linear-gradient(135deg,#c0392b,#922b21);padding:20px 24px;display:flex;justify-content:space-between;align-items:center;">
-                <div>
-                    <h2 style="margin:0;color:white;font-size:1.15em;">📡 ${tx.titulo}</h2>
-                    <p style="margin:4px 0 0;color:rgba(255,255,255,.7);font-size:.8em;">${tipos[tx.tipo] || tx.tipo}${tx.en_vivo ? ' · <strong style="color:#ff6b6b;">🔴 EN VIVO</strong>' : ''}</p>
-                </div>
-                <button onclick="this.closest('div').parentElement.parentElement.remove()" style="background:rgba(255,255,255,.15);border:none;color:white;font-size:20px;cursor:pointer;border-radius:50%;width:32px;height:32px;line-height:1;">✕</button>
-            </div>
-            <div style="padding:20px 24px;">
-                ${tx.descripcion ? `<p style="color:#555;margin:0 0 16px;line-height:1.5;">${tx.descripcion}</p>` : ''}
-                ${isYT ? `<div style="aspect-ratio:16/9;border-radius:8px;overflow:hidden;margin-bottom:16px;">
-                    <iframe src="${ytEmbed}?autoplay=1" width="100%" height="100%" frameborder="0" allow="autoplay;encrypted-media" allowfullscreen style="display:block;"></iframe>
-                </div>` : ''}
-                ${!isYT && tx.stream_url ? `<a href="${tx.stream_url}" target="_blank" style="display:block;padding:14px;background:linear-gradient(135deg,#c0392b,#922b21);color:white;text-decoration:none;text-align:center;border-radius:8px;font-weight:700;margin-bottom:12px;">🎧 Abrir transmisión</a>` : ''}
-                <button onclick="this.closest('div').parentElement.parentElement.remove()" style="width:100%;padding:10px;background:#f0f0f0;border:none;border-radius:8px;cursor:pointer;font-weight:600;">Cerrar</button>
-            </div>
+        // Minimize / restore
+        const minBtn = panel.querySelector('#tx-panel-min-btn');
+        minBtn.addEventListener('click', function() {
+            const minimized = panel.classList.toggle('is-minimized');
+            minBtn.setAttribute('aria-label', minimized ? 'Restaurar' : 'Minimizar');
+            minBtn.title = minimized ? 'Restaurar' : 'Minimizar';
+            minBtn.innerHTML = minimized ? '&#9633;' : '&#8212;';
+        });
+
+        // Close (also removes iframe to stop playback)
+        panel.querySelector('#tx-panel-close-btn').addEventListener('click', function() {
+            panel.style.display = 'none';
+            panel.querySelector('#tx-panel-body').innerHTML = '';
+        });
+
+        // Drag support
+        _initTxPanelDrag(panel, panel.querySelector('#tx-float-panel-header'));
+    }
+
+    // Populate title
+    const titleEl = panel.querySelector('#tx-float-panel-title');
+    titleEl.textContent = '\uD83D\uDCE1 ' + tx.titulo;
+
+    // Populate body
+    const body = panel.querySelector('#tx-panel-body');
+    let bodyHtml = '';
+
+    if (tx.descripcion) {
+        bodyHtml += `<p class="tx-panel-desc">${tx.descripcion}</p>`;
+    }
+
+    if (isYT) {
+        bodyHtml += `<div class="tx-panel-embed">
+            <iframe src="${ytEmbed}?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>
         </div>`;
+    } else if (tx.stream_url) {
+        // Try embedding non-YouTube streams (audio/video)
+        const tryEmbed = (tx.tipo === 'radio_stream' || tx.tipo === 'audio_stream' || tx.tipo === 'video_stream');
+        if (tryEmbed) {
+            bodyHtml += `<div class="tx-panel-embed">
+                <iframe src="${tx.stream_url}" allow="autoplay" allowfullscreen></iframe>
+            </div>`;
+        }
+        bodyHtml += `<a href="${tx.stream_url}" target="_blank" rel="noopener noreferrer"
+            class="tx-panel-ext-link" aria-label="Abrir transmisión en nueva pestaña">
+            \uD83C\uDFA7 Abrir en nueva pestaña
+        </a>`;
+        if (!tryEmbed) {
+            bodyHtml += `<p class="tx-panel-ext-hint">Abre el stream en una nueva pestaña del navegador.</p>`;
+        }
+    }
 
-    document.body.appendChild(modal);
+    body.innerHTML = bodyHtml;
+
+    // Show / restore
+    panel.classList.remove('is-minimized');
+    panel.style.display = 'flex';
+    const minBtn = panel.querySelector('#tx-panel-min-btn');
+    minBtn.innerHTML = '&#8212;';
+    minBtn.setAttribute('aria-label', 'Minimizar');
+    minBtn.title = 'Minimizar';
+    panel.focus();
+}
+
+function _initTxPanelDrag(panel, handle) {
+    handle.addEventListener('mousedown', function(e) {
+        if (e.target.closest('.tx-panel-btn')) return; // don't drag on buttons
+        e.preventDefault();
+        const rect = panel.getBoundingClientRect();
+        const startX = e.clientX;
+        const startY = e.clientY;
+        const startRight  = window.innerWidth  - rect.right;
+        const startBottom = window.innerHeight - rect.bottom;
+
+        function onMove(ev) {
+            const dx = ev.clientX - startX;
+            const dy = ev.clientY - startY;
+            // Clamp so at least 80px width and 40px height remain on-screen
+            let newRight  = Math.max(0, Math.min(startRight  - dx, window.innerWidth  - 80));
+            let newBottom = Math.max(0, Math.min(startBottom - dy, window.innerHeight - 40));
+            panel.style.right  = newRight  + 'px';
+            panel.style.bottom = newBottom + 'px';
+        }
+        function onUp() {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup',   onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup',   onUp);
+    });
 }
 
 // ─── MARCADORES DE TRANSMISIONES ───────────────────────────────────────────────
