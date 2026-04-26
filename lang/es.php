@@ -66,4 +66,166 @@ return [
     'msg_deleted'            => 'Eliminado correctamente',
     // ── Selector de idioma de interfaz ──────────────────────────────────────────
     'ui_language_selector'   => 'Idioma de interfaz',
+
+    // ── Módulo Avanzado — General ────────────────────────────────────────────────
+    // Para agregar una nueva clave: añadirla aquí y en cada archivo lang/XX.php.
+    // Para agregar un nuevo idioma: crear lang/XX.php copiando este archivo como plantilla.
+    'translate_option'       => 'Idioma / Traducir',
+    'adv_back_map'           => '← Volver al mapa',
+    'adv_subtitle'           => 'Módulo avanzado — Argentina: legal, fiscal, inversión, compliance y expansión.',
+    'adv_nav_panel'          => 'Panel avanzado',
+    'adv_contact_external'   => '🔗 Contacto externo',
+    'adv_see_all_modules'    => 'Ver todos los módulos',
+    'adv_back_map_main'      => '← Volver al mapa principal',
+    'adv_see_more'           => 'Ver más',
+    'adv_consult_team'       => '📩 Consultar con nuestro equipo',
+
+    // ── Módulo Avanzado — Oferta de asesoramiento (requeridos) ──────────────────
+    'advice_offer'           => 'Oferta de Asesoramiento',
+    'consult_industries'     => 'Asesoramiento para Industrias',
+    'consult_chambers'       => 'Asesoramiento para Cámaras',
+    'brand_services'         => 'Servicios de Marcas',
+
+    // ── Módulo Avanzado — Nombres de módulos ────────────────────────────────────
+    'adv_mod_juridico'       => '⚖️ Jurídico',
+    'adv_mod_fiscal'         => '🧾 Fiscal',
+    'adv_mod_inversion'      => '📈 Inversión',
+    'adv_mod_compliance'     => '🛡️ Compliance',
+    'adv_mod_marca'          => '🚀 Marca y Expansión',
+    'adv_mod_tasacion'       => '💎 Tasación',
+    'adv_mod_contact'        => '📩 Contacto',
+
+    // ── Módulo Avanzado — Descripciones cortas (hub) ────────────────────────────
+    'adv_juridico_short'     => 'Arquitectura legal, tipo societario, separación patrimonial, fideicomisos y protección frente a acreedores.',
+    'adv_fiscal_short'       => 'Régimen impositivo, optimización tributaria, riesgos fiscales y planificación contable.',
+    'adv_inversion_short'    => 'Capital propio, inversores, fideicomisos, capital extranjero y regulación cambiaria.',
+    'adv_compliance_short'   => 'Programas internos, debida diligencia, prevención de lavado y responsabilidad penal empresaria.',
+    'adv_marca_short'        => 'Escalabilidad, diversificación, expansión a nuevos mercados y valor de marca.',
+    'adv_tasacion_short'     => 'Valuación de activos intangibles, incremento de capital social, franquicias y negocios asociativos.',
+
+    // ── Panel Hub (avanzado.php) ─────────────────────────────────────────────────
+    'adv_hub_title'          => '¿Qué hace este panel?',
+    'adv_hub_desc'           => 'Te guía para transformar un negocio, marca o industria en una unidad optimizable: estructura legal, fiscal, financiera, compliance, inversión y expansión de marca. Este panel es el punto de entrada desde "Avanzado →" en el mapa.',
+    'adv_hub_action_title'   => 'Acción recomendada',
+    'adv_hub_action_desc'    => '¿Querés profundizar en la estructura de tu negocio? Nuestro equipo te ayuda a diagnosticar riesgos y potencial.',
+    'adv_hub_contact_btn'    => '📩 Contactar / Agendar consulta',
+
+    // ── Panel Jurídico ───────────────────────────────────────────────────────────
+    'juridico_page_title'    => 'Jurídico — Arquitectura Legal y Patrimonial',
+    'juridico_title'         => 'Arquitectura Legal y Patrimonial',
+    'juridico_desc'          => 'Una estructura jurídica sólida es la base de cualquier negocio sustentable. Este módulo analiza los aspectos legales clave para proteger el patrimonio, minimizar riesgos y facilitar el crecimiento.',
+    'juridico_cta_title'     => '¿Necesitás asesoramiento jurídico?',
+    'juridico_cta_desc'      => 'Nuestro equipo analiza la estructura legal de tu negocio y propone soluciones concretas.',
+    'juridico_cta_btn'       => '📩 Consultar con un abogado',
+
+    // ── Panel Fiscal ─────────────────────────────────────────────────────────────
+    'fiscal_page_title'      => 'Fiscal — Estructura Fiscal y Contable',
+    'fiscal_title'           => 'Estructura Fiscal y Contable',
+    'fiscal_desc'            => 'Una correcta estructura impositiva puede marcar la diferencia entre la rentabilidad y la pérdida. Este módulo analiza el régimen fiscal óptimo, identifica riesgos tributarios y propone estrategias de planificación impositiva.',
+    'fiscal_cta_title'       => '¿Querés optimizar tu estructura fiscal?',
+    'fiscal_cta_desc'        => 'Nuestro equipo te ayuda a reducir la carga impositiva de forma legal y a ordenar tu contabilidad.',
+    'fiscal_cta_btn'         => '📩 Consultar con un asesor fiscal',
+
+    // ── Panel Inversión ──────────────────────────────────────────────────────────
+    'inversion_page_title'   => 'Inversión — Estructuración Financiera',
+    'inversion_title'        => 'Inversiones y Financiamiento',
+    'inversion_desc'         => 'Estructurar correctamente las fuentes de inversión y financiamiento es clave para el crecimiento sostenible. Este módulo analiza las opciones disponibles a nivel nacional e internacional.',
+    'inversion_cta_title'    => '¿Buscás financiamiento o inversores?',
+    'inversion_cta_desc'     => 'Nuestro equipo te ayuda a estructurar la estrategia financiera más adecuada para tu negocio.',
+    'inversion_cta_btn'      => '📩 Consultar sobre inversión',
+
+    // ── Panel Compliance ─────────────────────────────────────────────────────────
+    'compliance_page_title'  => 'Compliance — Prevención y Gobierno Corporativo',
+    'compliance_title'       => 'Compliance y Prevención',
+    'compliance_desc'        => 'Un programa de compliance sólido protege a la empresa de sanciones legales, penales y reputacionales. Este módulo abarca desde la prevención de lavado de activos hasta la responsabilidad penal empresaria.',
+    'compliance_cta_title'   => '¿Tu empresa está protegida?',
+    'compliance_cta_desc'    => 'Te ayudamos a diseñar e implementar un programa de compliance a medida para tu negocio.',
+    'compliance_cta_btn'     => '📩 Consultar sobre compliance',
+
+    // ── Panel Marca y Expansión ──────────────────────────────────────────────────
+    'marca_page_title'       => 'Marca y Expansión — Estrategia y Escalabilidad',
+    'marca_title'            => 'Marca y Expansión Estratégica',
+    'marca_desc'             => 'Construir y proteger una marca sólida es la base para escalar. Este módulo analiza el valor de marca, las oportunidades de expansión y las estrategias para internacionalizar el negocio.',
+    'marca_cta_title'        => '¿Querés hacer crecer tu marca?',
+    'marca_cta_desc'         => 'Nuestro equipo te ayuda a diseñar una estrategia de expansión realista y ejecutable para tu negocio.',
+    'marca_cta_btn'          => '📩 Consultar sobre expansión y marca',
+
+    // ── Panel Tasación ───────────────────────────────────────────────────────────
+    'tasacion_page_title'    => 'Tasación de Marcas — Valor Patrimonial e Intangible',
+    'tasacion_title'         => '💎 Las Marcas como Activo Intangible',
+    'tasacion_desc'          => 'Una marca registrada no es solo un nombre o un logo: es un activo intangible de tu empresa con valor económico real y cuantificable. Al igual que un inmueble o una maquinaria, la marca puede —y debe— ser valuada, protegida e incorporada al patrimonio de la organización.',
+    'tasacion_cta_title'     => '📌 TASACIÓN DE MARCAS — Asesoramiento Profesional',
+    'tasacion_cta_desc'      => 'Para obtener una valuación profesional, certificada y con respaldo legal de tu marca, consultá a la especialista:',
+    'tasacion_specialist'    => '🔗 TASACIÓN DE MARCAS — mariacelesteortiz.com.ar',
+    'tasacion_cta_btn'       => '💎 Ver servicio de tasación',
+    'tasacion_consult_btn'   => '📩 Consultar con nuestro equipo',
+
+    // ── Feature list items — Panel Jurídico ─────────────────────────────────────
+    // Para agregar nuevas claves: replicar en todos los archivos lang/XX.php.
+    'juridico_li1_title' => 'Tipo societario recomendado',
+    'juridico_li1_desc'  => 'SRL, SA, SAS u otras formas según el negocio.',
+    'juridico_li2_title' => 'Separación patrimonial',
+    'juridico_li2_desc'  => 'Blindar el patrimonio personal del empresarial.',
+    'juridico_li3_title' => 'Fideicomisos',
+    'juridico_li3_desc'  => 'Protección, inversión y planificación sucesoria.',
+    'juridico_li4_title' => 'Protección frente a acreedores',
+    'juridico_li4_desc'  => 'Estrategias legales preventivas.',
+    'juridico_li5_title' => 'Riesgos legales',
+    'juridico_li5_desc'  => 'Identificación y mitigación de contingencias.',
+
+    // ── Feature list items — Panel Fiscal ───────────────────────────────────────
+    'fiscal_li1_title'   => 'Régimen impositivo',
+    'fiscal_li1_desc'    => 'Monotributo, Responsable Inscripto, IVA, Ingresos Brutos.',
+    'fiscal_li2_title'   => 'Optimización tributaria',
+    'fiscal_li2_desc'    => 'Reducción legal de la carga impositiva.',
+    'fiscal_li3_title'   => 'Riesgos fiscales',
+    'fiscal_li3_desc'    => 'Inconsistencias, determinaciones de oficio, multas.',
+    'fiscal_li4_title'   => 'Planificación impositiva',
+    'fiscal_li4_desc'    => 'Estrategias a corto y largo plazo.',
+
+    // ── Feature list items — Panel Inversión ────────────────────────────────────
+    'inversion_li1_title' => 'Capital propio',
+    'inversion_li1_desc'  => 'Reinversión de utilidades y estrategia de autofinanciamiento.',
+    'inversion_li2_title' => 'Inversores',
+    'inversion_li2_desc'  => 'Estructuración de acuerdos de inversión, equity y deuda.',
+    'inversion_li3_title' => 'Fideicomisos',
+    'inversion_li3_desc'  => 'Vehículos de inversión y protección patrimonial.',
+    'inversion_li4_title' => 'Ingreso de capital extranjero',
+    'inversion_li4_desc'  => 'Regulación cambiaria y BCRA.',
+    'inversion_li5_title' => 'Repatriación de utilidades',
+    'inversion_li5_desc'  => 'Marco legal y condiciones vigentes.',
+
+    // ── Feature list items — Panel Compliance ───────────────────────────────────
+    'compliance_li1_title' => 'Programas internos de compliance',
+    'compliance_li1_desc'  => 'Diseño e implementación de políticas.',
+    'compliance_li2_title' => 'Debida diligencia',
+    'compliance_li2_desc'  => 'Know Your Customer (KYC) y verificación de contrapartes.',
+    'compliance_li3_title' => 'Prevención de lavado (UIF)',
+    'compliance_li3_desc'  => 'Obligaciones, reportes y sujetos obligados.',
+    'compliance_li4_title' => 'Responsabilidad penal empresaria',
+    'compliance_li4_desc'  => 'Ley 27.401 y sus implicancias.',
+
+    // ── Feature list items — Panel Marca y Expansión ────────────────────────────
+    'marca_li1_title' => 'Valor económico y de marca',
+    'marca_li1_desc'  => 'Cuantificación del activo intangible.',
+    'marca_li2_title' => 'Escalabilidad',
+    'marca_li2_desc'  => 'Identificación de modelos replicables y crecimiento.',
+    'marca_li3_title' => 'Diversificación',
+    'marca_li3_desc'  => 'Nuevas líneas de negocio y unidades de ingreso.',
+    'marca_li4_title' => 'Expansión internacional',
+    'marca_li4_desc'  => 'Estrategia, estructura y marco legal.',
+    'marca_li5_title' => 'Potencial de mercado',
+    'marca_li5_desc'  => 'Análisis competitivo y posicionamiento.',
+
+    // ── Feature list items — Panel Tasación ─────────────────────────────────────
+    'tasacion_li1_title' => 'Activo intangible reconocido',
+    'tasacion_li1_desc'  => 'La marca figura en el balance como un activo con valor propio.',
+    'tasacion_li2_title' => 'Incremento del capital social',
+    'tasacion_li2_desc'  => 'La tasación aumenta significativamente el capital social de la empresa.',
+    'tasacion_li3_title' => 'Disponibilidad patrimonial',
+    'tasacion_li3_desc'  => 'Puede cederse, licenciarse, hipotecarse o disponerse cuando sea necesario.',
+    'tasacion_li4_title' => 'Valor comercial',
+    'tasacion_li4_desc'  => 'Genera confianza en la clientela y fortalece la posición competitiva.',
+    'tasacion_li5_title' => 'Negocios asociativos',
+    'tasacion_li5_desc'  => 'Habilita modelos como franquicias, licencias de uso y joint ventures.',
 ];

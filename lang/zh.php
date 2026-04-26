@@ -60,4 +60,163 @@ return [
     'msg_saved'              => '保存成功',
     'msg_deleted'            => '删除成功',
     'ui_language_selector'   => '界面语言',
+
+    // ── 高级模块 — 通用 ──────────────────────────────────────────────────────────
+    'translate_option'       => '语言 / 翻译',
+    'adv_back_map'           => '← 返回地图',
+    'adv_subtitle'           => '高级模块 — 阿根廷：法律、税务、投资、合规与品牌扩张',
+    'adv_nav_panel'          => '高级面板',
+    'adv_contact_external'   => '🔗 外部联系',
+    'adv_see_all_modules'    => '查看所有模块',
+    'adv_back_map_main'      => '← 返回主地图',
+    'adv_see_more'           => '查看更多',
+    'adv_consult_team'       => '📩 咨询我们的团队',
+
+    // ── 咨询服务方案 ─────────────────────────────────────────────────────────────
+    'advice_offer'           => '咨询服务方案',
+    'consult_industries'     => '工业咨询',
+    'consult_chambers'       => '商会咨询',
+    'brand_services'         => '品牌服务',
+
+    // ── 模块名称 ─────────────────────────────────────────────────────────────────
+    'adv_mod_juridico'       => '⚖️ 法律',
+    'adv_mod_fiscal'         => '🧾 税务',
+    'adv_mod_inversion'      => '📈 投资',
+    'adv_mod_compliance'     => '🛡️ 合规',
+    'adv_mod_marca'          => '🚀 品牌与扩张',
+    'adv_mod_tasacion'       => '💎 品牌估值',
+    'adv_mod_contact'        => '📩 联系',
+
+    // ── 模块简短描述 ─────────────────────────────────────────────────────────────
+    'adv_juridico_short'     => '法律架构、公司类型、资产分离、信托基金及债权人保护。',
+    'adv_fiscal_short'       => '税收制度、税务优化、税务风险和会计规划。',
+    'adv_inversion_short'    => '自有资本、投资者、信托基金、外国资本和外汇监管。',
+    'adv_compliance_short'   => '内部合规程序、尽职调查、反洗钱及企业刑事责任。',
+    'adv_marca_short'        => '可扩展性、多元化、拓展新市场及品牌价值。',
+    'adv_tasacion_short'     => '无形资产估值、注册资本增加、特许经营及合作商业模式。',
+
+    // ── 中心面板 ─────────────────────────────────────────────────────────────────
+    'adv_hub_title'          => '本面板功能介绍',
+    'adv_hub_desc'           => '指导您将企业、品牌或行业转变为可优化单元：法律、税务、财务、合规、投资和品牌扩张结构。本面板是地图上"高级 →"的入口。',
+    'adv_hub_action_title'   => '建议行动',
+    'adv_hub_action_desc'    => '希望深入了解您的企业结构？我们的团队帮助您诊断风险和潜力。',
+    'adv_hub_contact_btn'    => '📩 联系我们 / 预约咨询',
+
+    // ── 法律面板 ─────────────────────────────────────────────────────────────────
+    'juridico_page_title'    => '法律 — 法律与资产架构',
+    'juridico_title'         => '法律与资产架构',
+    'juridico_desc'          => '坚实的法律结构是任何可持续企业的基础。本模块分析保护资产、降低风险、促进增长的关键法律方面。',
+    'juridico_cta_title'     => '需要法律咨询？',
+    'juridico_cta_desc'      => '我们的团队分析您企业的法律结构并提出具体解决方案。',
+    'juridico_cta_btn'       => '📩 咨询律师',
+
+    // ── 税务面板 ─────────────────────────────────────────────────────────────────
+    'fiscal_page_title'      => '税务 — 税务与会计结构',
+    'fiscal_title'           => '税务与会计结构',
+    'fiscal_desc'            => '正确的税务结构可以决定盈利与亏损的差距。本模块分析最优税收制度，识别税务风险并提出税务规划策略。',
+    'fiscal_cta_title'       => '希望优化税务结构？',
+    'fiscal_cta_desc'        => '我们的团队帮助您合法降低税负，整理财务账目。',
+    'fiscal_cta_btn'         => '📩 咨询税务顾问',
+
+    // ── 投资面板 ─────────────────────────────────────────────────────────────────
+    'inversion_page_title'   => '投资 — 融资结构',
+    'inversion_title'        => '投资与融资',
+    'inversion_desc'         => '正确构建投资和融资来源是可持续增长的关键。本模块分析国内外可用的各种选择。',
+    'inversion_cta_title'    => '寻求融资或投资者？',
+    'inversion_cta_desc'     => '我们的团队帮助您为企业构建最合适的财务策略。',
+    'inversion_cta_btn'      => '📩 咨询投资事宜',
+
+    // ── 合规面板 ─────────────────────────────────────────────────────────────────
+    'compliance_page_title'  => '合规 — 预防与公司治理',
+    'compliance_title'       => '合规与预防',
+    'compliance_desc'        => '完善的合规计划保护企业免受法律、刑事和声誉制裁。本模块涵盖从反洗钱到企业刑事责任的全面内容。',
+    'compliance_cta_title'   => '您的企业受到保护了吗？',
+    'compliance_cta_desc'    => '我们帮助您为企业设计和实施量身定制的合规计划。',
+    'compliance_cta_btn'     => '📩 咨询合规事宜',
+
+    // ── 品牌与扩张面板 ──────────────────────────────────────────────────────────
+    'marca_page_title'       => '品牌与扩张 — 战略与可扩展性',
+    'marca_title'            => '品牌与战略扩张',
+    'marca_desc'             => '打造并保护强大品牌是规模化的基础。本模块分析品牌价值、扩张机会及国际化策略。',
+    'marca_cta_title'        => '希望发展您的品牌？',
+    'marca_cta_desc'         => '我们的团队帮助您为企业设计切实可行的扩张战略。',
+    'marca_cta_btn'          => '📩 咨询品牌与扩张',
+
+    // ── 品牌估值面板 ─────────────────────────────────────────────────────────────
+    'tasacion_page_title'    => '品牌估值 — 资产与无形价值',
+    'tasacion_title'         => '💎 品牌作为无形资产',
+    'tasacion_desc'          => '注册商标不仅仅是名称或标志：它是企业具有实际、可量化经济价值的无形资产。与不动产或机械一样，品牌可以——也应该——被估值并纳入企业资产。',
+    'tasacion_cta_title'     => '📌 品牌估值 — 专业咨询',
+    'tasacion_cta_desc'      => '如需获得专业、经认证且具法律支持的品牌估值，请咨询专家：',
+    'tasacion_specialist'    => '🔗 品牌估值 — mariacelesteortiz.com.ar',
+    'tasacion_cta_btn'       => '💎 查看估值服务',
+    'tasacion_consult_btn'   => '📩 咨询我们的团队',
+
+    // ── 列表项 — 法律面板 ───────────────────────────────────────────────────────
+    'juridico_li1_title' => '推荐的公司形式',
+    'juridico_li1_desc'  => '有限责任公司、股份公司、简化股份公司或其他适合业务的形式。',
+    'juridico_li2_title' => '资产分离',
+    'juridico_li2_desc'  => '将个人资产与企业负债分隔开来。',
+    'juridico_li3_title' => '信托',
+    'juridico_li3_desc'  => '保护、投资和继承规划。',
+    'juridico_li4_title' => '债权人保护',
+    'juridico_li4_desc'  => '预防性法律策略。',
+    'juridico_li5_title' => '法律风险',
+    'juridico_li5_desc'  => '识别和降低法律风险。',
+
+    // ── 列表项 — 税务面板 ───────────────────────────────────────────────────────
+    'fiscal_li1_title'   => '税收制度',
+    'fiscal_li1_desc'    => '小企业税制、标准注册、增值税、地方商业税。',
+    'fiscal_li2_title'   => '税务优化',
+    'fiscal_li2_desc'    => '合法减轻税负。',
+    'fiscal_li3_title'   => '税务风险',
+    'fiscal_li3_desc'    => '不一致性、推计征税、罚款。',
+    'fiscal_li4_title'   => '税务规划',
+    'fiscal_li4_desc'    => '短期和长期策略。',
+
+    // ── 列表项 — 投资面板 ───────────────────────────────────────────────────────
+    'inversion_li1_title' => '自有资本',
+    'inversion_li1_desc'  => '利润再投资和自筹资金策略。',
+    'inversion_li2_title' => '投资者',
+    'inversion_li2_desc'  => '构建投资协议、股权和债务结构。',
+    'inversion_li3_title' => '信托',
+    'inversion_li3_desc'  => '投资载体和资产保护。',
+    'inversion_li4_title' => '外资流入',
+    'inversion_li4_desc'  => '外汇监管（BCRA）。',
+    'inversion_li5_title' => '利润汇回',
+    'inversion_li5_desc'  => '法律框架及现行条件。',
+
+    // ── 列表项 — 合规面板 ───────────────────────────────────────────────────────
+    'compliance_li1_title' => '内部合规计划',
+    'compliance_li1_desc'  => '政策设计与实施。',
+    'compliance_li2_title' => '尽职调查',
+    'compliance_li2_desc'  => '了解你的客户（KYC）及交易对手核查。',
+    'compliance_li3_title' => '反洗钱（UIF）',
+    'compliance_li3_desc'  => '义务、可疑交易报告及义务主体。',
+    'compliance_li4_title' => '企业刑事责任',
+    'compliance_li4_desc'  => '阿根廷第27.401号法律及其影响。',
+
+    // ── 列表项 — 品牌与扩张面板 ─────────────────────────────────────────────────
+    'marca_li1_title' => '经济价值和品牌价值',
+    'marca_li1_desc'  => '无形资产的量化评估。',
+    'marca_li2_title' => '可扩展性',
+    'marca_li2_desc'  => '识别可复制模型和增长路径。',
+    'marca_li3_title' => '多元化',
+    'marca_li3_desc'  => '新的业务线和收入单元。',
+    'marca_li4_title' => '国际扩张',
+    'marca_li4_desc'  => '策略、结构和法律框架。',
+    'marca_li5_title' => '市场潜力',
+    'marca_li5_desc'  => '竞争分析和定位。',
+
+    // ── 列表项 — 品牌估值面板 ───────────────────────────────────────────────────
+    'tasacion_li1_title' => '已确认的无形资产',
+    'tasacion_li1_desc'  => '品牌作为具有独立价值的资产出现在资产负债表上。',
+    'tasacion_li2_title' => '注册资本增加',
+    'tasacion_li2_desc'  => '估值显著增加公司注册资本。',
+    'tasacion_li3_title' => '资产可用性',
+    'tasacion_li3_desc'  => '可在需要时转让、许可、抵押或处置。',
+    'tasacion_li4_title' => '商业价值',
+    'tasacion_li4_desc'  => '建立客户信任并强化竞争地位。',
+    'tasacion_li5_title' => '合作商业模式',
+    'tasacion_li5_desc'  => '支持特许经营、使用许可和合资企业等模式。',
 ];

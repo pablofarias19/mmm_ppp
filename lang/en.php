@@ -60,4 +60,163 @@ return [
     'msg_saved'              => 'Saved successfully',
     'msg_deleted'            => 'Deleted successfully',
     'ui_language_selector'   => 'Interface language',
+
+    // ── Advanced Module — General ────────────────────────────────────────────────
+    'translate_option'       => 'Language / Translate',
+    'adv_back_map'           => '← Back to map',
+    'adv_subtitle'           => 'Advanced module — Argentina: legal, tax, investment, compliance & brand expansion.',
+    'adv_nav_panel'          => 'Advanced panel',
+    'adv_contact_external'   => '🔗 External contact',
+    'adv_see_all_modules'    => 'View all modules',
+    'adv_back_map_main'      => '← Back to main map',
+    'adv_see_more'           => 'View more',
+    'adv_consult_team'       => '📩 Consult our team',
+
+    // ── Advisory offer ───────────────────────────────────────────────────────────
+    'advice_offer'           => 'Advisory Services Offer',
+    'consult_industries'     => 'Consulting for Industries',
+    'consult_chambers'       => 'Consulting for Chambers',
+    'brand_services'         => 'Brand Services',
+
+    // ── Module names ─────────────────────────────────────────────────────────────
+    'adv_mod_juridico'       => '⚖️ Legal',
+    'adv_mod_fiscal'         => '🧾 Tax',
+    'adv_mod_inversion'      => '📈 Investment',
+    'adv_mod_compliance'     => '🛡️ Compliance',
+    'adv_mod_marca'          => '🚀 Brand & Expansion',
+    'adv_mod_tasacion'       => '💎 Brand Valuation',
+    'adv_mod_contact'        => '📩 Contact',
+
+    // ── Module short descriptions ────────────────────────────────────────────────
+    'adv_juridico_short'     => 'Legal architecture, corporate structure, asset separation, trusts and protection from creditors.',
+    'adv_fiscal_short'       => 'Tax regime, tax optimisation, fiscal risks and accounting planning.',
+    'adv_inversion_short'    => 'Own capital, investors, trusts, foreign capital and exchange regulations.',
+    'adv_compliance_short'   => 'Internal programmes, due diligence, anti-money laundering and corporate criminal liability.',
+    'adv_marca_short'        => 'Scalability, diversification, expansion into new markets and brand value.',
+    'adv_tasacion_short'     => 'Intangible asset valuation, share capital increase, franchises and associative business models.',
+
+    // ── Hub panel ────────────────────────────────────────────────────────────────
+    'adv_hub_title'          => 'What does this panel do?',
+    'adv_hub_desc'           => 'Guides you to transform a business, brand or industry into an optimisable unit: legal, tax, financial, compliance, investment and brand expansion structure. This panel is the entry point from "Advanced →" on the map.',
+    'adv_hub_action_title'   => 'Recommended action',
+    'adv_hub_action_desc'    => 'Would you like to go deeper into your business structure? Our team helps you diagnose risks and potential.',
+    'adv_hub_contact_btn'    => '📩 Contact / Schedule a consultation',
+
+    // ── Legal panel ──────────────────────────────────────────────────────────────
+    'juridico_page_title'    => 'Legal — Legal and Asset Architecture',
+    'juridico_title'         => 'Legal and Asset Architecture',
+    'juridico_desc'          => 'A solid legal structure is the foundation of any sustainable business. This module analyses key legal aspects to protect assets, minimise risks and facilitate growth.',
+    'juridico_cta_title'     => 'Do you need legal advice?',
+    'juridico_cta_desc'      => 'Our team analyses your business legal structure and proposes concrete solutions.',
+    'juridico_cta_btn'       => '📩 Consult a lawyer',
+
+    // ── Tax panel ────────────────────────────────────────────────────────────────
+    'fiscal_page_title'      => 'Tax — Tax and Accounting Structure',
+    'fiscal_title'           => 'Tax and Accounting Structure',
+    'fiscal_desc'            => 'The right tax structure can make the difference between profitability and loss. This module analyses the optimal tax regime, identifies tax risks and proposes tax planning strategies.',
+    'fiscal_cta_title'       => 'Do you want to optimise your tax structure?',
+    'fiscal_cta_desc'        => 'Our team helps you legally reduce your tax burden and organise your accounting.',
+    'fiscal_cta_btn'         => '📩 Consult a tax adviser',
+
+    // ── Investment panel ─────────────────────────────────────────────────────────
+    'inversion_page_title'   => 'Investment — Financial Structuring',
+    'inversion_title'        => 'Investment and Financing',
+    'inversion_desc'         => 'Correctly structuring investment and financing sources is key to sustainable growth. This module analyses the options available at national and international level.',
+    'inversion_cta_title'    => 'Are you looking for financing or investors?',
+    'inversion_cta_desc'     => 'Our team helps you structure the most suitable financial strategy for your business.',
+    'inversion_cta_btn'      => '📩 Consult about investment',
+
+    // ── Compliance panel ─────────────────────────────────────────────────────────
+    'compliance_page_title'  => 'Compliance — Prevention and Corporate Governance',
+    'compliance_title'       => 'Compliance and Prevention',
+    'compliance_desc'        => 'A solid compliance programme protects the company from legal, criminal and reputational sanctions. This module covers everything from anti-money laundering to corporate criminal liability.',
+    'compliance_cta_title'   => 'Is your company protected?',
+    'compliance_cta_desc'    => 'We help you design and implement a tailor-made compliance programme for your business.',
+    'compliance_cta_btn'     => '📩 Consult about compliance',
+
+    // ── Brand & Expansion panel ──────────────────────────────────────────────────
+    'marca_page_title'       => 'Brand & Expansion — Strategy and Scalability',
+    'marca_title'            => 'Brand and Strategic Expansion',
+    'marca_desc'             => 'Building and protecting a strong brand is the foundation for scaling. This module analyses brand value, expansion opportunities and strategies to internationalise the business.',
+    'marca_cta_title'        => 'Do you want to grow your brand?',
+    'marca_cta_desc'         => 'Our team helps you design a realistic and executable expansion strategy for your business.',
+    'marca_cta_btn'          => '📩 Consult about brand & expansion',
+
+    // ── Brand Valuation panel ────────────────────────────────────────────────────
+    'tasacion_page_title'    => 'Brand Valuation — Asset and Intangible Value',
+    'tasacion_title'         => '💎 Brands as Intangible Assets',
+    'tasacion_desc'          => 'A registered trademark is not just a name or logo: it is an intangible asset of your company with real, quantifiable economic value. Like real estate or machinery, a brand can — and should — be valued, protected and incorporated into the organisation\'s assets.',
+    'tasacion_cta_title'     => '📌 BRAND VALUATION — Professional Advisory',
+    'tasacion_cta_desc'      => 'For a professional, certified and legally supported valuation of your brand, consult the specialist:',
+    'tasacion_specialist'    => '🔗 BRAND VALUATION — mariacelesteortiz.com.ar',
+    'tasacion_cta_btn'       => '💎 View valuation service',
+    'tasacion_consult_btn'   => '📩 Consult our team',
+
+    // ── Feature list items — Legal panel ────────────────────────────────────────
+    'juridico_li1_title' => 'Recommended corporate structure',
+    'juridico_li1_desc'  => 'LLC, corporation, simplified corporation or other forms suited to the business.',
+    'juridico_li2_title' => 'Asset separation',
+    'juridico_li2_desc'  => 'Shield personal assets from business liabilities.',
+    'juridico_li3_title' => 'Trusts',
+    'juridico_li3_desc'  => 'Protection, investment and succession planning.',
+    'juridico_li4_title' => 'Protection from creditors',
+    'juridico_li4_desc'  => 'Preventive legal strategies.',
+    'juridico_li5_title' => 'Legal risks',
+    'juridico_li5_desc'  => 'Identification and mitigation of legal contingencies.',
+
+    // ── Feature list items — Tax panel ──────────────────────────────────────────
+    'fiscal_li1_title'   => 'Tax regime',
+    'fiscal_li1_desc'    => 'Small business scheme, standard registration, VAT, local business tax.',
+    'fiscal_li2_title'   => 'Tax optimisation',
+    'fiscal_li2_desc'    => 'Legal reduction of the tax burden.',
+    'fiscal_li3_title'   => 'Tax risks',
+    'fiscal_li3_desc'    => 'Inconsistencies, ex officio assessments, penalties.',
+    'fiscal_li4_title'   => 'Tax planning',
+    'fiscal_li4_desc'    => 'Short and long-term strategies.',
+
+    // ── Feature list items — Investment panel ────────────────────────────────────
+    'inversion_li1_title' => 'Own capital',
+    'inversion_li1_desc'  => 'Profit reinvestment and self-financing strategy.',
+    'inversion_li2_title' => 'Investors',
+    'inversion_li2_desc'  => 'Structuring investment agreements, equity and debt.',
+    'inversion_li3_title' => 'Trusts',
+    'inversion_li3_desc'  => 'Investment vehicles and asset protection.',
+    'inversion_li4_title' => 'Foreign capital inflow',
+    'inversion_li4_desc'  => 'Foreign exchange regulation (BCRA).',
+    'inversion_li5_title' => 'Profit repatriation',
+    'inversion_li5_desc'  => 'Legal framework and current conditions.',
+
+    // ── Feature list items — Compliance panel ────────────────────────────────────
+    'compliance_li1_title' => 'Internal compliance programmes',
+    'compliance_li1_desc'  => 'Design and implementation of policies.',
+    'compliance_li2_title' => 'Due diligence',
+    'compliance_li2_desc'  => 'Know Your Customer (KYC) and counterparty verification.',
+    'compliance_li3_title' => 'Anti-money laundering (UIF)',
+    'compliance_li3_desc'  => 'Obligations, suspicious activity reports and obligated subjects.',
+    'compliance_li4_title' => 'Corporate criminal liability',
+    'compliance_li4_desc'  => 'Law 27.401 (Argentina) and its implications.',
+
+    // ── Feature list items — Brand & Expansion panel ─────────────────────────────
+    'marca_li1_title' => 'Economic and brand value',
+    'marca_li1_desc'  => 'Quantification of the intangible asset.',
+    'marca_li2_title' => 'Scalability',
+    'marca_li2_desc'  => 'Identification of replicable models and growth paths.',
+    'marca_li3_title' => 'Diversification',
+    'marca_li3_desc'  => 'New business lines and income units.',
+    'marca_li4_title' => 'International expansion',
+    'marca_li4_desc'  => 'Strategy, structure and legal framework.',
+    'marca_li5_title' => 'Market potential',
+    'marca_li5_desc'  => 'Competitive analysis and positioning.',
+
+    // ── Feature list items — Brand Valuation panel ───────────────────────────────
+    'tasacion_li1_title' => 'Recognised intangible asset',
+    'tasacion_li1_desc'  => 'The brand appears on the balance sheet as an asset with its own value.',
+    'tasacion_li2_title' => 'Increase in share capital',
+    'tasacion_li2_desc'  => 'Valuation significantly increases the company\'s share capital.',
+    'tasacion_li3_title' => 'Asset availability',
+    'tasacion_li3_desc'  => 'Can be assigned, licensed, mortgaged or disposed of when needed.',
+    'tasacion_li4_title' => 'Commercial value',
+    'tasacion_li4_desc'  => 'Builds customer confidence and strengthens the competitive position.',
+    'tasacion_li5_title' => 'Associative business models',
+    'tasacion_li5_desc'  => 'Enables models such as franchises, usage licences and joint ventures.',
 ];

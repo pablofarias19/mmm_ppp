@@ -60,4 +60,163 @@ return [
     'msg_saved'              => 'Enregistré avec succès',
     'msg_deleted'            => 'Supprimé avec succès',
     'ui_language_selector'   => 'Langue de l\'interface',
+
+    // ── Module avancé — Général ──────────────────────────────────────────────────
+    'translate_option'       => 'Langue / Traduire',
+    'adv_back_map'           => '← Retour à la carte',
+    'adv_subtitle'           => 'Module avancé — Argentine: juridique, fiscal, investissement, conformité et expansion de marque.',
+    'adv_nav_panel'          => 'Panneau avancé',
+    'adv_contact_external'   => '🔗 Contact externe',
+    'adv_see_all_modules'    => 'Voir tous les modules',
+    'adv_back_map_main'      => '← Retour à la carte principale',
+    'adv_see_more'           => 'Voir plus',
+    'adv_consult_team'       => '📩 Consulter notre équipe',
+
+    // ── Offre de conseil ─────────────────────────────────────────────────────────
+    'advice_offer'           => 'Offre de Conseil',
+    'consult_industries'     => 'Conseil aux Industries',
+    'consult_chambers'       => 'Conseil aux Chambres',
+    'brand_services'         => 'Services de Marques',
+
+    // ── Noms des modules ─────────────────────────────────────────────────────────
+    'adv_mod_juridico'       => '⚖️ Juridique',
+    'adv_mod_fiscal'         => '🧾 Fiscal',
+    'adv_mod_inversion'      => '📈 Investissement',
+    'adv_mod_compliance'     => '🛡️ Conformité',
+    'adv_mod_marca'          => '🚀 Marque & Expansion',
+    'adv_mod_tasacion'       => '💎 Évaluation de Marques',
+    'adv_mod_contact'        => '📩 Contact',
+
+    // ── Descriptions courtes des modules ─────────────────────────────────────────
+    'adv_juridico_short'     => 'Architecture juridique, forme sociétaire, séparation patrimoniale, fiducies et protection contre les créanciers.',
+    'adv_fiscal_short'       => 'Régime fiscal, optimisation fiscale, risques fiscaux et planification comptable.',
+    'adv_inversion_short'    => 'Capital propre, investisseurs, fiducies, capital étranger et réglementation des changes.',
+    'adv_compliance_short'   => 'Programmes internes, diligence raisonnable, lutte contre le blanchiment et responsabilité pénale des entreprises.',
+    'adv_marca_short'        => 'Évolutivité, diversification, expansion vers de nouveaux marchés et valeur de marque.',
+    'adv_tasacion_short'     => 'Évaluation des actifs incorporels, augmentation du capital social, franchises et modèles d\'affaires associatifs.',
+
+    // ── Panneau hub ──────────────────────────────────────────────────────────────
+    'adv_hub_title'          => 'Que fait ce panneau ?',
+    'adv_hub_desc'           => 'Vous guide pour transformer une entreprise, une marque ou une industrie en une unité optimisable : structure juridique, fiscale, financière, de conformité, d\'investissement et d\'expansion de marque. Ce panneau est le point d\'entrée depuis « Avancé → » sur la carte.',
+    'adv_hub_action_title'   => 'Action recommandée',
+    'adv_hub_action_desc'    => 'Souhaitez-vous approfondir la structure de votre entreprise ? Notre équipe vous aide à diagnostiquer les risques et les potentiels.',
+    'adv_hub_contact_btn'    => '📩 Contacter / Planifier une consultation',
+
+    // ── Panneau Juridique ────────────────────────────────────────────────────────
+    'juridico_page_title'    => 'Juridique — Architecture Juridique et Patrimoniale',
+    'juridico_title'         => 'Architecture Juridique et Patrimoniale',
+    'juridico_desc'          => 'Une structure juridique solide est la base de toute entreprise durable. Ce module analyse les aspects juridiques clés pour protéger le patrimoine, minimiser les risques et faciliter la croissance.',
+    'juridico_cta_title'     => 'Avez-vous besoin de conseils juridiques ?',
+    'juridico_cta_desc'      => 'Notre équipe analyse la structure juridique de votre entreprise et propose des solutions concrètes.',
+    'juridico_cta_btn'       => '📩 Consulter un avocat',
+
+    // ── Panneau Fiscal ───────────────────────────────────────────────────────────
+    'fiscal_page_title'      => 'Fiscal — Structure Fiscale et Comptable',
+    'fiscal_title'           => 'Structure Fiscale et Comptable',
+    'fiscal_desc'            => 'Une structure fiscale correcte peut faire la différence entre la rentabilité et la perte. Ce module analyse le régime fiscal optimal et identifie les risques fiscaux.',
+    'fiscal_cta_title'       => 'Souhaitez-vous optimiser votre structure fiscale ?',
+    'fiscal_cta_desc'        => 'Notre équipe vous aide à réduire légalement votre charge fiscale et à organiser votre comptabilité.',
+    'fiscal_cta_btn'         => '📩 Consulter un conseiller fiscal',
+
+    // ── Panneau Investissement ───────────────────────────────────────────────────
+    'inversion_page_title'   => 'Investissement — Structuration Financière',
+    'inversion_title'        => 'Investissements et Financement',
+    'inversion_desc'         => 'La bonne structuration des sources d\'investissement et de financement est la clé d\'une croissance durable. Ce module analyse les options disponibles au niveau national et international.',
+    'inversion_cta_title'    => 'Recherchez-vous un financement ou des investisseurs ?',
+    'inversion_cta_desc'     => 'Notre équipe vous aide à structurer la stratégie financière la plus adaptée à votre entreprise.',
+    'inversion_cta_btn'      => '📩 Consulter sur l\'investissement',
+
+    // ── Panneau Conformité ───────────────────────────────────────────────────────
+    'compliance_page_title'  => 'Conformité — Prévention et Gouvernance d\'Entreprise',
+    'compliance_title'       => 'Conformité et Prévention',
+    'compliance_desc'        => 'Un programme de conformité solide protège l\'entreprise des sanctions juridiques, pénales et réputationnelles. Ce module couvre tout, de la prévention du blanchiment à la responsabilité pénale des entreprises.',
+    'compliance_cta_title'   => 'Votre entreprise est-elle protégée ?',
+    'compliance_cta_desc'    => 'Nous vous aidons à concevoir et à mettre en œuvre un programme de conformité sur mesure pour votre entreprise.',
+    'compliance_cta_btn'     => '📩 Consulter sur la conformité',
+
+    // ── Panneau Marque & Expansion ───────────────────────────────────────────────
+    'marca_page_title'       => 'Marque & Expansion — Stratégie et Évolutivité',
+    'marca_title'            => 'Marque et Expansion Stratégique',
+    'marca_desc'             => 'Construire et protéger une marque forte est la base pour évoluer. Ce module analyse la valeur de la marque, les opportunités d\'expansion et les stratégies d\'internationalisation.',
+    'marca_cta_title'        => 'Souhaitez-vous développer votre marque ?',
+    'marca_cta_desc'         => 'Notre équipe vous aide à concevoir une stratégie d\'expansion réaliste et exécutable pour votre entreprise.',
+    'marca_cta_btn'          => '📩 Consulter sur la marque & l\'expansion',
+
+    // ── Panneau Évaluation de Marques ────────────────────────────────────────────
+    'tasacion_page_title'    => 'Évaluation de Marques — Valeur Patrimoniale et Incorporelle',
+    'tasacion_title'         => '💎 Les Marques comme Actifs Incorporels',
+    'tasacion_desc'          => 'Une marque déposée n\'est pas seulement un nom ou un logo : c\'est un actif incorporel de votre entreprise avec une valeur économique réelle et quantifiable. Comme un bien immobilier ou une machine, la marque peut — et doit — être évaluée et intégrée au patrimoine.',
+    'tasacion_cta_title'     => '📌 ÉVALUATION DE MARQUES — Conseil Professionnel',
+    'tasacion_cta_desc'      => 'Pour obtenir une évaluation professionnelle, certifiée et légalement supportée de votre marque, consultez la spécialiste :',
+    'tasacion_specialist'    => '🔗 ÉVALUATION DE MARQUES — mariacelesteortiz.com.ar',
+    'tasacion_cta_btn'       => '💎 Voir le service d\'évaluation',
+    'tasacion_consult_btn'   => '📩 Consulter notre équipe',
+
+    // ── Éléments de liste — Panneau Juridique ────────────────────────────────────
+    'juridico_li1_title' => 'Forme sociétaire recommandée',
+    'juridico_li1_desc'  => 'SARL, SA, SAS ou autres formes adaptées à l\'entreprise.',
+    'juridico_li2_title' => 'Séparation patrimoniale',
+    'juridico_li2_desc'  => 'Protéger le patrimoine personnel du patrimoine professionnel.',
+    'juridico_li3_title' => 'Fiducies',
+    'juridico_li3_desc'  => 'Protection, investissement et planification successorale.',
+    'juridico_li4_title' => 'Protection contre les créanciers',
+    'juridico_li4_desc'  => 'Stratégies juridiques préventives.',
+    'juridico_li5_title' => 'Risques juridiques',
+    'juridico_li5_desc'  => 'Identification et atténuation des risques légaux.',
+
+    // ── Éléments de liste — Panneau Fiscal ──────────────────────────────────────
+    'fiscal_li1_title'   => 'Régime fiscal',
+    'fiscal_li1_desc'    => 'Régime de petite entreprise, inscription standard, TVA, taxe locale.',
+    'fiscal_li2_title'   => 'Optimisation fiscale',
+    'fiscal_li2_desc'    => 'Réduction légale de la charge fiscale.',
+    'fiscal_li3_title'   => 'Risques fiscaux',
+    'fiscal_li3_desc'    => 'Incohérences, redressements d\'office, pénalités.',
+    'fiscal_li4_title'   => 'Planification fiscale',
+    'fiscal_li4_desc'    => 'Stratégies à court et long terme.',
+
+    // ── Éléments de liste — Panneau Investissement ───────────────────────────────
+    'inversion_li1_title' => 'Capital propre',
+    'inversion_li1_desc'  => 'Réinvestissement des bénéfices et stratégie d\'autofinancement.',
+    'inversion_li2_title' => 'Investisseurs',
+    'inversion_li2_desc'  => 'Structuration d\'accords d\'investissement, capital et dette.',
+    'inversion_li3_title' => 'Fiducies',
+    'inversion_li3_desc'  => 'Véhicules d\'investissement et protection patrimoniale.',
+    'inversion_li4_title' => 'Entrée de capitaux étrangers',
+    'inversion_li4_desc'  => 'Réglementation des changes (BCRA).',
+    'inversion_li5_title' => 'Rapatriement des bénéfices',
+    'inversion_li5_desc'  => 'Cadre juridique et conditions en vigueur.',
+
+    // ── Éléments de liste — Panneau Conformité ───────────────────────────────────
+    'compliance_li1_title' => 'Programmes de conformité internes',
+    'compliance_li1_desc'  => 'Conception et mise en œuvre de politiques.',
+    'compliance_li2_title' => 'Diligence raisonnable',
+    'compliance_li2_desc'  => 'Know Your Customer (KYC) et vérification des contreparties.',
+    'compliance_li3_title' => 'Lutte contre le blanchiment (UIF)',
+    'compliance_li3_desc'  => 'Obligations, déclarations et personnes assujetties.',
+    'compliance_li4_title' => 'Responsabilité pénale des entreprises',
+    'compliance_li4_desc'  => 'Loi 27.401 (Argentine) et ses implications.',
+
+    // ── Éléments de liste — Panneau Marque & Expansion ───────────────────────────
+    'marca_li1_title' => 'Valeur économique et de marque',
+    'marca_li1_desc'  => 'Quantification de l\'actif incorporel.',
+    'marca_li2_title' => 'Évolutivité',
+    'marca_li2_desc'  => 'Identification de modèles reproductibles et pistes de croissance.',
+    'marca_li3_title' => 'Diversification',
+    'marca_li3_desc'  => 'Nouvelles lignes de produits et unités de revenus.',
+    'marca_li4_title' => 'Expansion internationale',
+    'marca_li4_desc'  => 'Stratégie, structure et cadre juridique.',
+    'marca_li5_title' => 'Potentiel de marché',
+    'marca_li5_desc'  => 'Analyse concurrentielle et positionnement.',
+
+    // ── Éléments de liste — Panneau Évaluation de Marques ───────────────────────
+    'tasacion_li1_title' => 'Actif incorporel reconnu',
+    'tasacion_li1_desc'  => 'La marque figure au bilan comme un actif avec sa propre valeur.',
+    'tasacion_li2_title' => 'Augmentation du capital social',
+    'tasacion_li2_desc'  => 'L\'évaluation augmente significativement le capital social de l\'entreprise.',
+    'tasacion_li3_title' => 'Disponibilité patrimoniale',
+    'tasacion_li3_desc'  => 'Peut être cédée, licenciée, hypothéquée ou disposée en cas de besoin.',
+    'tasacion_li4_title' => 'Valeur commerciale',
+    'tasacion_li4_desc'  => 'Renforce la confiance des clients et la position concurrentielle.',
+    'tasacion_li5_title' => 'Modèles d\'affaires associatifs',
+    'tasacion_li5_desc'  => 'Permet des modèles tels que franchises, licences d\'utilisation et joint ventures.',
 ];

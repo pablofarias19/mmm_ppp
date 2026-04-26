@@ -293,7 +293,7 @@ function getRegistryByCountry(string $cc): string {
 // ─── UI translation helpers ───────────────────────────────────────────────────
 
 /** Idiomas soportados y sus archivos de traducción. */
-const MAPITA_SUPPORTED_LANGS = ['es', 'en', 'pt', 'fr', 'de', 'no', 'zh', 'ar', 'it', 'ru', 'el', 'tr', 'ja', 'ko'];
+const MAPITA_SUPPORTED_LANGS = ['es', 'en', 'pt', 'fr', 'de', 'no', 'zh', 'ar', 'it', 'ru', 'el', 'tr', 'ja', 'ko', 'hi'];
 
 /** Caché en memoria para los arrays de strings cargados. */
 $_mapitaLangCache = [];

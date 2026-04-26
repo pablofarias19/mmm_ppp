@@ -4,20 +4,17 @@
  * Módulo Avanzado — Compliance y Prevención.
  */
 require_once __DIR__ . '/_layout.php';
-siteHeader('Compliance — Prevención y Gobierno Corporativo', 'compliance');
+siteHeader(t('compliance_page_title'), 'compliance');
 ?>
 
 <div class="card">
-    <h2>Compliance y Prevención</h2>
-    <p>
-        Un programa de compliance sólido protege a la empresa de sanciones legales, penales y reputacionales.
-        Este módulo abarca desde la prevención de lavado de activos hasta la responsabilidad penal empresaria.
-    </p>
+    <h2><?= htmlspecialchars(t('compliance_title'), ENT_QUOTES, 'UTF-8') ?></h2>
+    <p><?= htmlspecialchars(t('compliance_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <ul class="feature-list">
-        <li><strong>Programas internos de compliance</strong> — Diseño e implementación de políticas.</li>
-        <li><strong>Debida diligencia</strong> — Know Your Customer (KYC) y verificación de contrapartes.</li>
-        <li><strong>Prevención de lavado (UIF)</strong> — Obligaciones, reportes y sujetos obligados.</li>
-        <li><strong>Responsabilidad penal empresaria</strong> — Ley 27.401 y sus implicancias.</li>
+        <li><strong><?= htmlspecialchars(t('compliance_li1_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('compliance_li1_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('compliance_li2_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('compliance_li2_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('compliance_li3_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('compliance_li3_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('compliance_li4_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('compliance_li4_desc'), ENT_QUOTES, 'UTF-8') ?></li>
     </ul>
 </div>
 
@@ -60,12 +57,12 @@ siteHeader('Compliance — Prevención y Gobierno Corporativo', 'compliance');
 </div>
 
 <div class="card">
-    <h2>¿Tu empresa está protegida?</h2>
-    <p class="muted">Te ayudamos a diseñar e implementar un programa de compliance a medida para tu negocio.</p>
+    <h2><?= htmlspecialchars(t('compliance_cta_title'), ENT_QUOTES, 'UTF-8') ?></h2>
+    <p class="muted"><?= htmlspecialchars(t('compliance_cta_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <div class="cta-row">
-        <a class="btn btn-primary" href="/contacto?tema=compliance">📩 Consultar sobre compliance</a>
-        <a class="btn btn-secondary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">🔗 Contacto externo</a>
-        <a class="btn btn-secondary" href="/avanzado">Ver todos los módulos</a>
+        <a class="btn btn-primary" href="/contacto?tema=compliance"><?= htmlspecialchars(t('compliance_cta_btn'), ENT_QUOTES, 'UTF-8') ?></a>
+        <a class="btn btn-secondary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars(t('adv_contact_external'), ENT_QUOTES, 'UTF-8') ?></a>
+        <a class="btn btn-secondary" href="/avanzado"><?= htmlspecialchars(t('adv_see_all_modules'), ENT_QUOTES, 'UTF-8') ?></a>
     </div>
 </div>
 

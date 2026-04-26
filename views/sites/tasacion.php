@@ -4,23 +4,18 @@
  * Módulo Avanzado — Tasación de Marcas y Valor Patrimonial.
  */
 require_once __DIR__ . '/_layout.php';
-siteHeader('Tasación de Marcas — Valor Patrimonial e Intangible', 'tasacion');
+siteHeader(t('tasacion_page_title'), 'tasacion');
 ?>
 
 <div class="card">
-    <h2>💎 Las Marcas como Activo Intangible</h2>
-    <p>
-        Una marca registrada no es solo un nombre o un logo: es un <strong>activo intangible</strong>
-        de tu empresa con valor económico real y cuantificable. Al igual que un inmueble o una
-        maquinaria, la marca puede —y debe— ser valuada, protegida e incorporada al patrimonio
-        de la organización.
-    </p>
+    <h2><?= htmlspecialchars(t('tasacion_title'), ENT_QUOTES, 'UTF-8') ?></h2>
+    <p><?= htmlspecialchars(t('tasacion_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <ul class="feature-list">
-        <li><strong>Activo intangible reconocido</strong> — La marca figura en el balance como un activo con valor propio.</li>
-        <li><strong>Incremento del capital social</strong> — La tasación aumenta significativamente el capital social de la empresa.</li>
-        <li><strong>Disponibilidad patrimonial</strong> — Puede cederse, licenciarse, hipotecarse o disponerse cuando sea necesario.</li>
-        <li><strong>Valor comercial</strong> — Genera confianza en la clientela y fortalece la posición competitiva.</li>
-        <li><strong>Negocios asociativos</strong> — Habilita modelos como <em>franquicias</em>, licencias de uso y joint ventures.</li>
+        <li><strong><?= htmlspecialchars(t('tasacion_li1_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('tasacion_li1_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('tasacion_li2_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('tasacion_li2_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('tasacion_li3_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('tasacion_li3_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('tasacion_li4_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('tasacion_li4_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('tasacion_li5_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('tasacion_li5_desc'), ENT_QUOTES, 'UTF-8') ?></li>
     </ul>
 </div>
 
@@ -59,15 +54,12 @@ siteHeader('Tasación de Marcas — Valor Patrimonial e Intangible', 'tasacion')
 </div>
 
 <div class="card" style="border-left: 4px solid #1B3B6F;">
-    <h2>📌 TASACIÓN DE MARCAS — Asesoramiento Profesional</h2>
-    <p>
-        Para obtener una valuación profesional, certificada y con respaldo legal de tu marca,
-        consultá a la especialista:
-    </p>
+    <h2><?= htmlspecialchars(t('tasacion_cta_title'), ENT_QUOTES, 'UTF-8') ?></h2>
+    <p><?= htmlspecialchars(t('tasacion_cta_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <p>
         <a href="https://www.mariacelesteortiz.com.ar" target="_blank" rel="noopener noreferrer"
            style="font-weight:800;font-size:1.05em;color:#1B3B6F;text-decoration:underline;">
-            🔗 TASACIÓN DE MARCAS — mariacelesteortiz.com.ar
+            <?= htmlspecialchars(t('tasacion_specialist'), ENT_QUOTES, 'UTF-8') ?>
         </a>
     </p>
     <p class="muted">
@@ -77,10 +69,10 @@ siteHeader('Tasación de Marcas — Valor Patrimonial e Intangible', 'tasacion')
     <div class="cta-row">
         <a class="btn btn-primary"
            href="https://www.mariacelesteortiz.com.ar" target="_blank" rel="noopener noreferrer">
-            💎 Ver servicio de tasación
+            <?= htmlspecialchars(t('tasacion_cta_btn'), ENT_QUOTES, 'UTF-8') ?>
         </a>
         <a class="btn btn-secondary" href="/contacto?tema=tasacion">
-            📩 Consultar con nuestro equipo
+            <?= htmlspecialchars(t('tasacion_consult_btn'), ENT_QUOTES, 'UTF-8') ?>
         </a>
     </div>
 </div>
