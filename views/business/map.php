@@ -6848,7 +6848,6 @@ async function _cargarInmueblesCerca() {
         if (_cercaLayer) { mapa.removeLayer(_cercaLayer); _cercaLayer = null; }
 
         if (!rows || !rows.length) {
-            if (btn) {}
             return;
         }
 

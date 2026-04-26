@@ -4,6 +4,7 @@
 -- ============================================================
 
 -- ── 1. Columnas adicionales en inmuebles ────────────────────────────────────
+-- IMPORTANTE: los valores del ENUM deben coincidir con INM_TIPOS en api/inmuebles.php
 ALTER TABLE inmuebles
     ADD COLUMN IF NOT EXISTS tipo            ENUM('casa','departamento','lote','proyecto','local','oficina')
                                              NOT NULL DEFAULT 'casa'

@@ -2890,10 +2890,7 @@ function onCountryChange(cc) {
                 adjMsg('✅ Adjunto subido', true);
                 fileEl.value = '';
                 document.getElementById('adj-nombre').value = '';
-                // Reload adjuntos
-                const rr = await fetch('/api/inmuebles.php?id=' + inmId);
-                const dd = await rr.json();
-                if (dd.success && dd.data) renderAdjuntos(dd.data.adjuntos || []);
+                await reloadAdjuntos(inmId);
             } else {
                 adjMsg('❌ ' + (d.message || 'Error'), false);
             }
@@ -2908,16 +2905,20 @@ function onCountryChange(cc) {
             const d = await r.json();
             if (d.success) {
                 adjMsg('✅ Eliminado', true);
-                if (inmId) {
-                    const rr = await fetch('/api/inmuebles.php?id=' + inmId);
-                    const dd = await rr.json();
-                    if (dd.success && dd.data) renderAdjuntos(dd.data.adjuntos || []);
-                }
+                if (inmId) await reloadAdjuntos(inmId);
             } else {
                 adjMsg('❌ ' + (d.message || 'Error'), false);
             }
         } catch (e) { adjMsg('Error.', false); }
     };
+
+    async function reloadAdjuntos(inmId) {
+        try {
+            const rr = await fetch('/api/inmuebles.php?id=' + inmId);
+            const dd = await rr.json();
+            if (dd.success && dd.data) renderAdjuntos(dd.data.adjuntos || []);
+        } catch (_) { /* silent */ }
+    }
 
     document.addEventListener('DOMContentLoaded', cargarInmuebles);
 })();

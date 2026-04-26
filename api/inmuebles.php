@@ -82,7 +82,7 @@ if ($method === 'GET') {
                                JOIN businesses b ON b.id = i.business_id
                                WHERE i.activo = 1
                                ORDER BY b.inmuebles_destacado DESC, i.created_at DESC
-                               LIMIT 2000");
+                               LIMIT 500");
         // fallback if inmuebles_destacado col doesn't exist yet
         try {
             $stmt->execute();
@@ -93,7 +93,7 @@ if ($method === 'GET') {
                                    JOIN businesses b ON b.id = i.business_id
                                    WHERE i.activo = 1
                                    ORDER BY i.created_at DESC
-                                   LIMIT 2000");
+                                   LIMIT 500");
             $stmt->execute();
         }
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);

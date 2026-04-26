@@ -31,6 +31,8 @@ function adj_err($msg, $code = 400) {
 $userId = (int)($_SESSION['user_id'] ?? 0);
 if ($userId <= 0) adj_err('Sesión requerida', 401);
 
+const ADJ_MAX_FILE_BYTES = 10 * 1024 * 1024; // 10 MB
+
 $db = getDbConnection();
 if (!$db) adj_err('Sin conexión', 500);
 
@@ -91,8 +93,7 @@ if (empty($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
     adj_err($errMap[$errCode] ?? 'Error en la subida');
 }
 
-$maxBytes = 10 * 1024 * 1024; // 10 MB
-if ($_FILES['file']['size'] > $maxBytes) adj_err('El archivo supera 10 MB');
+if ($_FILES['file']['size'] > ADJ_MAX_FILE_BYTES) adj_err('El archivo supera 10 MB');
 
 // Validar MIME type
 $allowedMimes = [
