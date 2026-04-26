@@ -131,8 +131,16 @@ try {
     // Tabla WT aún no creada, ignorar
 }
 
-// Listar usuarios
-$users = $db->query("SELECT id, username, is_admin, created_at FROM users ORDER BY created_at DESC")->fetchAll();
+// Listar usuarios con email, nombre de titular y sus negocios
+$users = $db->query("
+    SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.is_admin, u.created_at,
+           GROUP_CONCAT(b.id ORDER BY b.id SEPARATOR ',')   AS business_ids,
+           GROUP_CONCAT(b.name ORDER BY b.id SEPARATOR '||') AS business_names
+    FROM users u
+    LEFT JOIN businesses b ON b.user_id = u.id
+    GROUP BY u.id
+    ORDER BY u.created_at DESC
+")->fetchAll();
 
 // Listar negocios con propietario
 $businesses = $db->query("
@@ -246,6 +254,8 @@ $businesses = $db->query("
         &nbsp;|&nbsp;
         <a href="/admin/transmisiones/dashboard.php">📡 En Vivo</a>
         &nbsp;|&nbsp;
+        <a href="/admin/limits/dashboard.php">⚙️ Límites</a>
+        &nbsp;|&nbsp;
         <a href="/logout">🚪 Salir</a>
     </div>
 </header>
@@ -281,11 +291,14 @@ $businesses = $db->query("
 
     <!-- Usuarios -->
     <div class="section">
-        <div class="section-header">👥 Usuarios</div>
+        <div class="section-header" style="display:flex;justify-content:space-between;align-items:center;">
+            <span>👥 Usuarios (<?php echo $totalUsers; ?>)</span>
+            <a href="/admin/api/search_ui.php?q=" style="font-size:12px;color:#aec6ff;text-decoration:none;">🔍 Búsqueda global anti-fraude</a>
+        </div>
         <table>
             <thead>
                 <tr>
-                    <th>ID</th><th>Usuario</th><th>Rol</th><th>Registrado</th><th>Acciones</th>
+                    <th>ID</th><th>Usuario</th><th>Titular</th><th>Email</th><th>Negocios</th><th>Rol</th><th>Registrado</th><th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -293,6 +306,28 @@ $businesses = $db->query("
                 <tr>
                     <td><?php echo $u['id']; ?></td>
                     <td><?php echo htmlspecialchars($u['username']); ?></td>
+                    <td>
+                        <?php
+                        $titular = trim(($u['first_name'] ?? '') . ' ' . ($u['last_name'] ?? ''));
+                        echo $titular !== '' ? htmlspecialchars($titular) : '<span style="color:#bbb">—</span>';
+                        ?>
+                    </td>
+                    <td><?php echo $u['email'] ? htmlspecialchars($u['email']) : '<span style="color:#bbb">—</span>'; ?></td>
+                    <td>
+                        <?php
+                        if (!empty($u['business_ids'])) {
+                            $bids   = explode(',', $u['business_ids']);
+                            $bnames = explode('||', $u['business_names']);
+                            foreach ($bids as $i => $bid) {
+                                $bname = $bnames[$i] ?? 'Negocio #' . $bid;
+                                echo '<a href="../business/view_business.php?id=' . (int)$bid . '" target="_blank" style="font-size:12px;display:block;">'
+                                     . htmlspecialchars($bname) . '</a>';
+                            }
+                        } else {
+                            echo '<span style="color:#bbb">—</span>';
+                        }
+                        ?>
+                    </td>
                     <td>
                         <span class="badge <?php echo $u['is_admin'] ? 'badge-admin' : 'badge-user'; ?>">
                             <?php echo $u['is_admin'] ? 'Admin' : 'Usuario'; ?>
