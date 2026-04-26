@@ -75,6 +75,83 @@ if ($method === 'GET') {
             respond_success($s->fetchAll(\PDO::FETCH_ASSOC), 'Transmisiones en vivo');
         }
 
+        // Search with optional type/text/location filters + pagination
+        if ($action === 'search') {
+            $tipo   = $_GET['tipo']   ?? '';
+            $q      = trim($_GET['q'] ?? '');
+            $lat    = (float)($_GET['lat']   ?? 0);
+            $lng    = (float)($_GET['lng']   ?? 0);
+            $radio  = (float)($_GET['radio'] ?? 100);
+            $limit  = min(max((int)($_GET['limit']  ?? 2), 1), 50);
+            $offset = max((int)($_GET['offset'] ?? 0), 0);
+
+            $where  = ['activo = 1'];
+            $params = [];
+
+            // Type filter
+            if ($tipo === 'youtube') {
+                $where[] = "tipo IN ('youtube_live', 'youtube_video')";
+            } elseif ($tipo === 'en_vivo') {
+                $where[] = 'en_vivo = 1';
+            }
+
+            // Text search
+            if ($q !== '') {
+                $where[] = "(titulo LIKE ? OR descripcion LIKE ?)";
+                $params[] = '%' . $q . '%';
+                $params[] = '%' . $q . '%';
+            }
+
+            $useLocation = ($lat != 0 && $lng != 0 && $radio > 0);
+
+            if ($useLocation) {
+                // Bounding-box pre-filter for performance (rough rectangle check before Haversine).
+                // Rows without coordinates (lat IS NULL or lat = 0) bypass the bounding box so they
+                // still appear in results; the HAVING clause later keeps them unconditionally.
+                $dlat = $radio / 111.0;
+                $dlng = $radio / (111.0 * cos(deg2rad($lat)));
+                $where[] = "(lat IS NULL OR lat = 0 OR (lat BETWEEN ? AND ? AND lng BETWEEN ? AND ?))";
+                $params[] = $lat - $dlat;
+                $params[] = $lat + $dlat;
+                $params[] = $lng - $dlng;
+                $params[] = $lng + $dlng;
+            }
+
+            $wStr = implode(' AND ', $where);
+
+            if ($useLocation) {
+                // Haversine great-circle distance formula.
+                // Parameters in $distExpr: ? = $lat (COS outer), ? = $lng (COS inner), ? = $lat (SIN).
+                // Rows with no coordinates (lat IS NULL / lat = 0) get dist_km = NULL and are
+                // intentionally included by "HAVING dist_km IS NULL OR dist_km <= ?" so that
+                // global content (no specific location) always surfaces alongside nearby items.
+                $distExpr = "IF(lat IS NOT NULL AND lat != 0,
+                    6371 * ACOS(GREATEST(-1, LEAST(1,
+                        COS(RADIANS(?)) * COS(RADIANS(lat)) *
+                        COS(RADIANS(lng) - RADIANS(?)) +
+                        SIN(RADIANS(?)) * SIN(RADIANS(lat))
+                    ))),
+                    NULL) AS dist_km";
+                $sql = "SELECT *, $distExpr
+                        FROM transmisiones
+                        WHERE $wStr
+                        HAVING dist_km IS NULL OR dist_km <= ?
+                        ORDER BY en_vivo DESC, IFNULL(dist_km, 999999) ASC
+                        LIMIT ? OFFSET ?";
+                $allParams = array_merge([$lat, $lng, $lat], $params, [$radio, $limit, $offset]);
+            } else {
+                $sql = "SELECT * FROM transmisiones
+                        WHERE $wStr
+                        ORDER BY en_vivo DESC, created_at DESC
+                        LIMIT ? OFFSET ?";
+                $allParams = array_merge($params, [$limit, $offset]);
+            }
+
+            $s = $db->prepare($sql);
+            $s->execute($allParams);
+            respond_success($s->fetchAll(\PDO::FETCH_ASSOC), 'Búsqueda de transmisiones');
+        }
+
         // Default: todas activas
         $s = $db->prepare("SELECT * FROM transmisiones WHERE activo = 1 ORDER BY en_vivo DESC, created_at DESC");
         $s->execute();

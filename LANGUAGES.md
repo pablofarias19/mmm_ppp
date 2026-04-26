@@ -25,7 +25,21 @@ El módulo avanzado del sistema utiliza un sistema de internacionalización (i18
 
 ## Cómo funciona el selector de idioma
 
-El selector de idioma está integrado en `views/sites/_layout.php` y aparece en **todos los paneles avanzados**.
+### Panel principal del mapa (`/map`)
+
+El mapa principal tiene un **botón 🌐** en la barra superior del panel lateral (id `lang-globe-btn`).
+
+1. Al hacer clic en el botón 🌐 se abre un menú desplegable con todos los idiomas disponibles.
+2. Al elegir un idioma se llama `setMapUILang(code)`, que:
+   - Guarda el código en `localStorage` (`mapita_ui_lang`).
+   - Recarga la página añadiendo `?lang=XX` a la URL.
+3. `views/business/map.php` detecta `$_GET['lang']` y llama a `setUILanguage()`, guardando la preferencia en `$_SESSION['ui_lang']`.
+4. En el lado del cliente, `MAPITA_UI_LANG` se inicializa con la siguiente prioridad: **sesión PHP → localStorage → idioma del navegador**.
+5. `uiStr(key)` (JS) y `t(key)` (PHP) usan el mismo idioma activo para etiquetar la interfaz.
+
+> **Nota:** El parámetro `?lang=XX` en la URL del mapa también establece el idioma para los Módulos Avanzados, porque ambos guardan la preferencia en la misma clave de sesión (`$_SESSION['ui_lang']`).
+
+### Módulo Avanzado (`/avanzado`, `/juridico`, `/fiscal`, etc.)
 
 1. El usuario elige un idioma en el selector (`<select>` con banderas y nombres).
 2. El formulario navega a la misma URL añadiendo `?lang=XX` (p.ej. `?lang=en`).
