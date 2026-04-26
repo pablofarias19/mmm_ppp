@@ -7462,7 +7462,24 @@ async function verInmueblesDe(bizId, bizName) {
 
     try {
         const r = await fetch('/api/inmuebles.php?business_id=' + bizId);
-        const d = await r.json();
+
+        if (!r.ok) {
+            const txt = await r.text();
+            console.error('verInmueblesDe HTTP error', r.status, txt.trim().slice(0, 500));
+            alert('Error interno al cargar inmuebles (HTTP ' + r.status + '). Intente nuevamente más tarde.');
+            return;
+        }
+
+        let d;
+        const bodyText = await r.text();
+        try {
+            d = JSON.parse(bodyText);
+        } catch (parseErr) {
+            console.error('verInmueblesDe JSON parse error', parseErr, 'body:', bodyText.trim().slice(0, 500));
+            alert('Respuesta inesperada del servidor al cargar inmuebles.');
+            return;
+        }
+
         if (!d.success || !d.data || !d.data.length) {
             alert('Esta inmobiliaria no tiene inmuebles publicados aún.');
             return;
@@ -7504,8 +7521,8 @@ async function verInmueblesDe(bizId, bizName) {
         _showVerInmBanner(bizName || 'Inmobiliaria', d.data.length);
 
     } catch (e) {
-        console.error('verInmueblesDe error:', e);
-        alert('Error al cargar inmuebles.');
+        console.error('verInmueblesDe error de red:', e);
+        alert('No se pudo conectar con el servidor para cargar los inmuebles.');
     }
 }
 
