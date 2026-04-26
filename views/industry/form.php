@@ -144,6 +144,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $industrial_sector_id = !empty($_POST['industrial_sector_id']) ? (int)$_POST['industrial_sector_id'] : null;
         $business_id       = !empty($_POST['business_id'])   ? (int)$_POST['business_id']   : null;
         $brand_id          = !empty($_POST['brand_id'])       ? (int)$_POST['brand_id']       : null;
+        $lat_raw           = trim($_POST['lat'] ?? '');
+        $lng_raw           = trim($_POST['lng'] ?? '');
+        $lat               = ($lat_raw !== '' && is_numeric($lat_raw)) ? (float)$lat_raw : null;
+        $lng               = ($lng_raw !== '' && is_numeric($lng_raw)) ? (float)$lng_raw : null;
         // Permiso de encuestas (solo admin puede cambiar esto)
         $encuestas_permitidas = ($isAdmin && isset($_POST['encuestas_permitidas'])) ? 1 : 0;
 
@@ -183,6 +187,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'isic_code'            => $isic_code ?: null,
                     'nace_code'            => $nace_code ?: null,
                     'ciiu_code'            => $ciiu_code ?: null,
+                    'lat'                  => $lat,
+                    'lng'                  => $lng,
                     'status'               => $status,
                     'encuestas_permitidas' => $encuestas_permitidas,
                 ];
@@ -209,10 +215,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                            ->execute($params);
                     } catch (PDOException $e) {
                         if ($e->getCode() !== '42S22' && (int)($e->errorInfo[1] ?? 0) !== 1054) throw $e;
-                        // Column not yet migrated — retry without it
+                        // Column not yet migrated — retry without optional new columns
                         $fieldsFb = []; $paramsFb = [];
                         foreach ($data as $col => $val) {
-                            if ($col === 'encuestas_permitidas') continue;
+                            if (in_array($col, ['encuestas_permitidas','lat','lng'], true)) continue;
                             $fieldsFb[] = "$col = ?"; $paramsFb[] = $val;
                         }
                         $paramsFb[] = $industryId;
@@ -241,8 +247,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $stmt->execute(array_values($data));
                     } catch (PDOException $e) {
                         if ($e->getCode() !== '42S22' && (int)($e->errorInfo[1] ?? 0) !== 1054) throw $e;
-                        // Column not yet migrated — retry without encuestas_permitidas
-                        $dataFb = array_filter($data, fn($k) => $k !== 'encuestas_permitidas', ARRAY_FILTER_USE_KEY);
+                        // Column not yet migrated — retry without optional new columns
+                        $dataFb = array_filter($data, fn($k) => !in_array($k, ['encuestas_permitidas','lat','lng'], true), ARRAY_FILTER_USE_KEY);
                         $fieldsFb = array_keys($dataFb);
                         $phFb = array_fill(0, count($fieldsFb), '?');
                         $db->prepare('INSERT INTO industries (' . implode(',', $fieldsFb) . ') VALUES (' . implode(',', $phFb) . ')')
@@ -280,6 +286,9 @@ function fieldVal(string $key, ?array $row, $default = ''): string {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><?php echo $editing ? 'Editar Industria' : 'Nueva Industria'; ?> — Mapita</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/geo-search.js"></script>
 
     <style>
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -483,6 +492,19 @@ function fieldVal(string $key, ?array $row, $default = ''): string {
             transition: background .15s; margin-top: 2px;
         }
         .web-help-cta:hover { background: #0d2247; }
+        /* ── Mapa de ubicación ──────────────────────────────── */
+        #industry-map-section { margin-top: 4px; }
+        #map-picker { height: 300px; border-radius: 8px; border: 1.5px solid #d1d5db; margin-bottom: 12px; isolation: isolate; }
+        .geo-search-wrap { display: flex; gap: 8px; margin-bottom: 10px; }
+        .geo-search-wrap input { flex: 1; padding: 9px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: .88em; outline: none; transition: border-color .2s; background: #f9fafb; color: #1a202c; }
+        .geo-search-wrap input:focus { border-color: #1B3B6F; background: white; box-shadow: 0 0 0 3px rgba(27,59,111,.1); }
+        .geo-search-wrap button { padding: 9px 15px; background: #1B3B6F; color: white; border: none; border-radius: 8px; font-size: .88em; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .15s; }
+        .geo-search-wrap button:hover { background: #0d2247; }
+        .geo-search-results { background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.1); display: none; max-height: 220px; overflow-y: auto; margin-bottom: 10px; }
+        .map-tip { font-size: .8em; color: #6b7280; display: flex; align-items: flex-start; gap: 6px; margin-bottom: 10px; }
+        .coords-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 8px; }
+        .coords-row input[type=number] { padding: 10px 13px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: .9em; color: #1a202c; background: #f9fafb; width: 100%; outline: none; transition: border-color .2s; }
+        .coords-row input[type=number]:focus { border-color: #1B3B6F; background: white; box-shadow: 0 0 0 3px rgba(27,59,111,.1); }
     </style>
 </head>
 
@@ -633,6 +655,35 @@ function fieldVal(string $key, ?array $row, $default = ''): string {
                                     ✉️ Consultar por email
                                 </a>
                             </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── SECCIÓN 2b: Ubicación en el mapa ──────── -->
+                <div class="section-title" id="industry-map-section">📍 Ubicación en el mapa</div>
+                <div>
+                    <div class="map-tip">
+                        <span>💡</span>
+                        Buscá una dirección o hacé clic en el mapa para fijar la posición exacta de la industria. El marcador se puede reubicar.
+                    </div>
+                    <div class="geo-search-wrap">
+                        <input type="text" id="geo-search-input" placeholder="Buscar dirección (calle, número, localidad)…" autocomplete="off">
+                        <button type="button" id="geo-search-btn">🔍 Buscar</button>
+                    </div>
+                    <div id="geo-search-results" class="geo-search-results"></div>
+                    <div id="map-picker"></div>
+                    <div class="coords-row">
+                        <div class="form-group">
+                            <label for="lat">Latitud</label>
+                            <input type="number" id="lat" name="lat" step="any"
+                                   placeholder="-34.6037"
+                                   value="<?php echo fieldVal('lat', $industry); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label for="lng">Longitud</label>
+                            <input type="number" id="lng" name="lng" step="any"
+                                   placeholder="-58.3816"
+                                   value="<?php echo fieldVal('lng', $industry); ?>">
                         </div>
                     </div>
                 </div>
@@ -835,6 +886,38 @@ function toggleWebHelp(id) {
         }, 50);
     }
 }
+
+// ── Mapa de ubicación (Leaflet + Nominatim) ───────────────────────────────────
+(function() {
+    var INIT_LAT = <?php echo ($industry && !empty($industry['lat'])) ? (float)$industry['lat'] : -34.6037; ?>;
+    var INIT_LNG = <?php echo ($industry && !empty($industry['lng'])) ? (float)$industry['lng'] : -58.3816; ?>;
+    var HAS_COORDS = <?php echo ($industry && !empty($industry['lat'])) ? 'true' : 'false'; ?>;
+
+    var mapPicker = L.map('map-picker').setView([INIT_LAT, INIT_LNG], HAS_COORDS ? 14 : 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors', maxZoom: 19
+    }).addTo(mapPicker);
+
+    var mapMarker = HAS_COORDS ? L.marker([INIT_LAT, INIT_LNG]).addTo(mapPicker) : null;
+
+    mapPicker.on('click', function(e) {
+        document.getElementById('lat').value = e.latlng.lat.toFixed(7);
+        document.getElementById('lng').value = e.latlng.lng.toFixed(7);
+        if (mapMarker) mapPicker.removeLayer(mapMarker);
+        mapMarker = L.marker(e.latlng).addTo(mapPicker);
+    });
+
+    initGeoSearch({
+        map: mapPicker,
+        getMarker: function() { return mapMarker; },
+        setMarker: function(m) { mapMarker = m; },
+        latInputId:    'lat',
+        lngInputId:    'lng',
+        searchInputId: 'geo-search-input',
+        searchBtnId:   'geo-search-btn',
+        resultsDivId:  'geo-search-results'
+    });
+})();
 </script>
 </body>
 </html>

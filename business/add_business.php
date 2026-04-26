@@ -341,6 +341,7 @@ $descriptionPlaceholders = [
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/geo-search.js"></script>
     <link rel="stylesheet" href="/css/variables-luxury.css">
     <style>
         *, *::before, *::after { box-sizing: border-box; }
@@ -522,6 +523,12 @@ $descriptionPlaceholders = [
         #map { width: 100%; height: 100%; }
         .map-tip { font-size: .8em; color: #6b7280; display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
         .coords-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .geo-search-wrap { display: flex; gap: 8px; margin-bottom: 10px; }
+        .geo-search-wrap input { flex: 1; padding: 9px 12px; border: 1.5px solid #d1d5db; border-radius: 8px; font-size: .88em; outline: none; transition: border-color .2s; }
+        .geo-search-wrap input:focus { border-color: #1B3B6F; box-shadow: 0 0 0 3px rgba(27,59,111,.1); }
+        .geo-search-wrap button { padding: 9px 15px; background: #1B3B6F; color: white; border: none; border-radius: 8px; font-size: .88em; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .15s; }
+        .geo-search-wrap button:hover { background: #0d2247; }
+        .geo-search-results { background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.1); display: none; max-height: 220px; overflow-y: auto; margin-bottom: 10px; }
 
         /* ── TAGS ────────────────────────────────────────── */
         .tags-input-wrap {
@@ -1382,6 +1389,11 @@ $descriptionPlaceholders = [
                 <div class="map-tip">
                     <span>💡</span> Podés hacer zoom y mover el mapa antes de hacer clic. El marcador se puede reubicar.
                 </div>
+                <div class="geo-search-wrap">
+                    <input type="text" id="geo-search-input" placeholder="Buscar dirección (calle, número, localidad)…" autocomplete="off">
+                    <button type="button" id="geo-search-btn">🔍 Buscar</button>
+                </div>
+                <div id="geo-search-results" class="geo-search-results"></div>
                 <div id="map-container"><div id="map"></div></div>
                 <div class="coords-row">
                     <div class="field">
@@ -1712,6 +1724,26 @@ if (!EDITING && navigator.geolocation) {
         mapa.setView([pos.coords.latitude, pos.coords.longitude], 15);
     }, () => {});
 }
+
+// ── Buscador de dirección (Nominatim) ─────────────────────────────────────────
+var geoMarkerIcon = L.divIcon({
+    html: '<div style="background:#1B3B6F;width:16px;height:16px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.4);"></div>',
+    className: '', iconSize: [16,16], iconAnchor: [8,8]
+});
+initGeoSearch({
+    map: mapa,
+    getMarker: function() { return mapPin; },
+    setMarker: function(m) {
+        mapPin = m;
+        m.setIcon(geoMarkerIcon);
+        m.bindTooltip('📍 Ubicación seleccionada', {direction:'top', offset:[0,-10]}).openTooltip();
+    },
+    latInputId:    'lat',
+    lngInputId:    'lng',
+    searchInputId: 'geo-search-input',
+    searchBtnId:   'geo-search-btn',
+    resultsDivId:  'geo-search-results'
+});
 
 // ── Business type handler ─────────────────────────────────────────────────────
 const subtypeHints = <?php echo json_encode($subtypeLabels); ?>;

@@ -136,6 +136,7 @@ function estaProximo($fecha) {
     <link rel="stylesheet" href="/css/map-styles.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/geo-search.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -354,6 +355,12 @@ function estaProximo($fecha) {
             border: 1px solid #d0d5dd;
             margin-bottom: 15px;
         }
+        .geo-search-wrap { display: flex; gap: 8px; margin-bottom: 10px; }
+        .geo-search-wrap input { flex: 1; padding: 9px 12px; border: 1px solid #d0d5dd; border-radius: 6px; font-size: .88em; outline: none; }
+        .geo-search-wrap input:focus { border-color: #e74c3c; box-shadow: 0 0 0 3px rgba(231,76,60,.1); }
+        .geo-search-wrap button { padding: 9px 14px; background: #e74c3c; color: white; border: none; border-radius: 6px; font-size: .88em; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .geo-search-wrap button:hover { background: #c0392b; }
+        .geo-search-results { background: white; border: 1px solid #d0d5dd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.1); display: none; max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
         .form-actions {
             display: flex;
             gap: 10px;
@@ -525,6 +532,11 @@ function estaProximo($fecha) {
 
                     <div class="form-group">
                         <label>📍 Ubicación en el Mapa</label>
+                        <div class="geo-search-wrap">
+                            <input type="text" id="geo-search-input" placeholder="Buscar dirección (calle, número, localidad)…" autocomplete="off">
+                            <button type="button" id="geo-search-btn">🔍 Buscar</button>
+                        </div>
+                        <div id="geo-search-results" class="geo-search-results"></div>
                         <div id="map-picker"></div>
                         <div class="coords-row">
                             <div>
@@ -592,6 +604,17 @@ function estaProximo($fecha) {
                 document.getElementById('lng').value = e.latlng.lng.toFixed(6);
                 if (marker) map.removeLayer(marker);
                 marker = L.marker(e.latlng).addTo(map);
+            });
+
+            initGeoSearch({
+                map: map,
+                getMarker: function() { return marker; },
+                setMarker: function(m) { marker = m; },
+                latInputId:    'lat',
+                lngInputId:    'lng',
+                searchInputId: 'geo-search-input',
+                searchBtnId:   'geo-search-btn',
+                resultsDivId:  'geo-search-results'
             });
         }
     </script>

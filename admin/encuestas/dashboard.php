@@ -168,6 +168,7 @@ unset($_SESSION['mensaje']);
     <link rel="stylesheet" href="/css/map-styles.css">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/geo-search.js"></script>
     <!-- Chart.js para gráficos estadísticos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
@@ -243,6 +244,12 @@ unset($_SESSION['mensaje']);
         .form-group textarea { resize: vertical; min-height: 100px; }
         .coords-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
         #map-picker { height: 300px; width: 100%; border-radius: 6px; border: 1px solid #d0d5dd; margin-bottom: 15px; }
+        .geo-search-wrap { display: flex; gap: 8px; margin-bottom: 10px; }
+        .geo-search-wrap input { flex: 1; padding: 9px 12px; border: 1px solid #d0d5dd; border-radius: 6px; font-size: .88em; outline: none; }
+        .geo-search-wrap input:focus { border-color: #667eea; box-shadow: 0 0 0 3px rgba(102,126,234,.1); }
+        .geo-search-wrap button { padding: 9px 14px; background: #667eea; color: white; border: none; border-radius: 6px; font-size: .88em; font-weight: 600; cursor: pointer; white-space: nowrap; }
+        .geo-search-wrap button:hover { background: #5a67d8; }
+        .geo-search-results { background: white; border: 1px solid #d0d5dd; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,.1); display: none; max-height: 200px; overflow-y: auto; margin-bottom: 10px; }
         .form-actions { display: flex; gap: 10px; margin-top: 30px; }
         .form-actions .btn { flex: 1; padding: 12px; text-align: center; }
 
@@ -447,6 +454,11 @@ unset($_SESSION['mensaje']);
 
                     <div class="form-group">
                         <label>📍 Ubicación en el Mapa</label>
+                        <div class="geo-search-wrap">
+                            <input type="text" id="geo-search-input" placeholder="Buscar dirección (calle, número, localidad)…" autocomplete="off">
+                            <button type="button" id="geo-search-btn">🔍 Buscar</button>
+                        </div>
+                        <div id="geo-search-results" class="geo-search-results"></div>
                         <div id="map-picker"></div>
                         <div class="coords-row">
                             <div>
@@ -895,6 +907,16 @@ unset($_SESSION['mensaje']);
             document.getElementById('lng').value = e.latlng.lng.toFixed(6);
             if (marker) map.removeLayer(marker);
             marker = L.marker(e.latlng).addTo(map);
+        });
+        initGeoSearch({
+            map: map,
+            getMarker: function() { return marker; },
+            setMarker: function(m) { marker = m; },
+            latInputId:    'lat',
+            lngInputId:    'lng',
+            searchInputId: 'geo-search-input',
+            searchBtnId:   'geo-search-btn',
+            resultsDivId:  'geo-search-results'
         });
     }
 
