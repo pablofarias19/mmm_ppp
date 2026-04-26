@@ -9,11 +9,12 @@ CREATE TABLE IF NOT EXISTS `transmisiones` (
   `descripcion`  TEXT            DEFAULT NULL,
   `tipo`         ENUM(
                    'youtube_live',
+                   'youtube_video',
                    'radio_stream',
                    'audio_stream',
                    'video_stream'
                  )               NOT NULL DEFAULT 'youtube_live'
-                 COMMENT 'youtube_live=YouTube en vivo, radio_stream=radio online (Icecast/Shoutcast), audio_stream=audio generico, video_stream=HLS/RTMP',
+                 COMMENT 'youtube_live=YouTube en vivo, youtube_video=YouTube grabado, radio_stream=radio online (Icecast/Shoutcast), audio_stream=audio generico, video_stream=HLS/RTMP',
   `stream_url`   VARCHAR(500)    NOT NULL
                  COMMENT 'URL completa: https://youtu.be/LIVE_ID o https://stream.radio.ejemplo.com/live',
   `lat`          DECIMAL(10,8)   DEFAULT NULL COMMENT 'Latitud de origen de la transmision',

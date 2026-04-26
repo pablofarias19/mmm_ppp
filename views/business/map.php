@@ -3031,7 +3031,7 @@ function buildOfertaMetadata(o) {
 
 function buildTransmisionMetadata(tx) {
     return buildSelectionMetadata({
-        'Tipo': tx.tipo,
+        'Tipo': TX_TIPOS_LABEL[tx.tipo] || tx.tipo,
         'En vivo': tx.en_vivo ? 'Sí' : 'No',
         'Mapita ID': tx.mapita_id
     });
@@ -6339,21 +6339,24 @@ function mostrarTransmisionesWidget(transmisiones) {
     container.style.display = 'block';
     lista.innerHTML = '';
 
-    const iconTipo = { youtube_live: '▶', radio_stream: '📻', audio_stream: '🎵', video_stream: '🎬' };
+    const iconTipo = { youtube_live: '▶', youtube_video: '📼', radio_stream: '📻', audio_stream: '🎵', video_stream: '🎬' };
 
     transmisiones.forEach(tx => {
+        const isVideo = tx.tipo === 'youtube_video';
+        const itemBorder = isVideo ? TX_COLOR_VIDEO : TX_COLOR_DEFAULT;
+        const itemBg = isVideo ? 'linear-gradient(135deg, #f9f0ff 0%, #f0e0ff 100%)' : 'linear-gradient(135deg, #fff2f2 0%, #ffe5e5 100%)';
         const item = document.createElement('div');
         item.style.cssText = `
             padding: 10px 12px;
-            background: linear-gradient(135deg, #fff2f2 0%, #ffe5e5 100%);
+            background: ${itemBg};
             border-radius: 6px;
             margin-bottom: 8px;
             cursor: pointer;
             transition: all 0.2s ease;
-            border: 1px solid #c0392b;
+            border: 1px solid ${itemBorder};
         `;
         if (tx.en_vivo) item.classList.add('tx-widget-item-live');
-        item.onmouseover = () => { item.style.transform = 'translateY(-2px)'; item.style.boxShadow = tx.en_vivo ? '0 4px 12px rgba(114,26,14,0.45)' : '0 4px 12px rgba(192,57,43,0.2)'; };
+        item.onmouseover = () => { item.style.transform = 'translateY(-2px)'; item.style.boxShadow = tx.en_vivo ? '0 4px 12px rgba(114,26,14,0.45)' : (isVideo ? '0 4px 12px rgba(142,68,173,0.3)' : '0 4px 12px rgba(192,57,43,0.2)'); };
         item.onmouseout  = () => { item.style.transform = 'translateY(0)'; item.style.boxShadow = 'none'; };
         item.onclick     = () => abrirTransmisionModal(tx);
 
@@ -6361,12 +6364,12 @@ function mostrarTransmisionesWidget(transmisiones) {
         const liveDot = tx.en_vivo
             ? '<span style="display:inline-block;width:7px;height:7px;background:#fff;border-radius:50%;animation:blink 1s infinite;vertical-align:middle;margin-right:4px;"></span>'
             : '';
-        const titleColor = tx.en_vivo ? '#ffffff' : '#c0392b';
+        const titleColor = tx.en_vivo ? '#ffffff' : (isVideo ? TX_COLOR_VIDEO : TX_COLOR_DEFAULT);
         titulo.innerHTML = liveDot + `<strong style="font-size:13px;color:${titleColor};">${(iconTipo[tx.tipo] || '📡')} ${tx.titulo.substring(0, 32) + (tx.titulo.length > 32 ? '…' : '')}</strong>`;
         titulo.style.margin = '0 0 3px 0';
 
         const sub = document.createElement('p');
-        sub.textContent = tx.en_vivo ? 'EN VIVO ahora' : (tx.descripcion ? tx.descripcion.substring(0, 40) + '…' : tx.tipo);
+        sub.textContent = tx.en_vivo ? 'EN VIVO ahora' : (tx.descripcion ? tx.descripcion.substring(0, 40) + '…' : (TX_TIPOS_LABEL[tx.tipo] || tx.tipo));
         sub.style.cssText = `margin:0;font-size:11px;color:${tx.en_vivo ? 'rgba(255,255,255,0.85)' : '#888'};font-weight:${tx.en_vivo ? '700' : '400'};`;
 
         item.appendChild(titulo);
@@ -6376,8 +6379,8 @@ function mostrarTransmisionesWidget(transmisiones) {
 }
 
 function abrirTransmisionModal(tx) {
-    const tipos  = { youtube_live: 'YouTube Live', radio_stream: 'Radio Online', audio_stream: 'Audio Stream', video_stream: 'Video Stream' };
-    const isYT   = tx.tipo === 'youtube_live' && tx.stream_url;
+    const tipos  = TX_TIPOS_LABEL;
+    const isYT   = (tx.tipo === 'youtube_live' || tx.tipo === 'youtube_video') && tx.stream_url;
     let ytEmbed  = '';
     if (isYT) {
         ytEmbed = tx.stream_url
@@ -6501,6 +6504,12 @@ function _initTxPanelDrag(panel, handle) {
 // Cache para acceder al objeto completo desde el onclick del popup sin serializar en HTML
 const _txCache = new Map();
 
+// Constantes compartidas para tipos de transmisión
+const TX_TIPOS_LABEL = { youtube_live: 'YouTube Live', youtube_video: 'Video (YouTube)', radio_stream: 'Radio Online', audio_stream: 'Audio Stream', video_stream: 'Video Stream' };
+const TX_COLOR_VIDEO = '#8e44ad';
+const TX_COLOR_LIVE  = '#e74c3c';
+const TX_COLOR_DEFAULT = '#c0392b';
+
 let transmisionMarkers = [];
 function mostrarMarcadoresTransmisiones(transmisiones) {
     transmisionesLayer.clearLayers();
@@ -6509,16 +6518,18 @@ function mostrarMarcadoresTransmisiones(transmisiones) {
     transmisiones.forEach(function(tx) {
         if (!tx.lat || !tx.lng || parseFloat(tx.lat) === 0) return;
         _txCache.set(tx.id, tx);   // guardar referencia por ID
-        var color = tx.en_vivo ? '#e74c3c' : '#c0392b';
-        var label = tx.en_vivo ? '🔴' : '📡';
+        var color = tx.en_vivo ? TX_COLOR_LIVE : (tx.tipo === 'youtube_video' ? TX_COLOR_VIDEO : TX_COLOR_DEFAULT);
+        var label = tx.en_vivo ? '🔴' : (tx.tipo === 'youtube_video' ? '📼' : '📡');
         var svg   = make3dPin(label, color, 30, 42, tx.en_vivo ? 'icon-glow' : '');
         var icon  = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
         var m    = L.marker([parseFloat(tx.lat), parseFloat(tx.lng)], { icon: icon });
         m._mapitaMeta = { entity_type: 'transmision', entity_id: tx.id || null, mapita_id: tx.mapita_id || null };
+        var popIconLabel = tx.tipo === 'youtube_video' ? '📼' : '📡';
+        var gradEnd = tx.tipo === 'youtube_video' ? '#6c3483' : '#922b21';
         var popHtml = '<div style="font-family:inherit;min-width:200px">'
-            + '<div style="background:linear-gradient(135deg,' + color + ',#922b21);color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
-            + (tx.en_vivo ? '<span style="background:rgba(255,255,255,.25);padding:2px 6px;border-radius:8px;font-size:11px;margin-right:6px;">🔴 EN VIVO</span>' : '')
-            + '<strong style="font-size:14px;">📡 ' + tx.titulo + '</strong></div>'
+            + '<div style="background:linear-gradient(135deg,' + color + ',' + gradEnd + ');color:white;padding:12px;margin:-1px -1px 12px;border-radius:4px 4px 0 0">'
+            + (tx.en_vivo ? '<span style="background:rgba(255,255,255,.25);padding:2px 6px;border-radius:8px;font-size:11px;margin-right:6px;">🔴 EN VIVO</span>' : (tx.tipo === 'youtube_video' ? '<span style="background:rgba(255,255,255,.20);padding:2px 6px;border-radius:8px;font-size:11px;margin-right:6px;">📼 Video</span>' : ''))
+            + '<strong style="font-size:14px;">' + popIconLabel + ' ' + tx.titulo + '</strong></div>'
             + '<div style="padding:0 4px 8px">';
         if (tx.descripcion) popHtml += '<p style="margin:4px 0;font-size:12px;color:#555">' + tx.descripcion.substring(0, 80) + '…</p>';
         if (tx.stream_url) {

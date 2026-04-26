@@ -102,6 +102,7 @@ $stats         = Transmision::getStats();
 
 $tiposLabel = [
     'youtube_live'  => '▶ YouTube Live',
+    'youtube_video' => '📼 Video (YouTube)',
     'radio_stream'  => '📻 Radio Online',
     'audio_stream'  => '🎵 Audio Stream',
     'video_stream'  => '🎬 Video Stream',
@@ -235,6 +236,7 @@ $tiposLabel = [
                     <label>Tipo de transmisión</label>
                     <select name="tipo">
                         <option value="youtube_live">▶ YouTube Live</option>
+                        <option value="youtube_video">📼 Video (YouTube)</option>
                         <option value="radio_stream">📻 Radio Online (Icecast/Shoutcast)</option>
                         <option value="audio_stream">🎵 Audio Stream</option>
                         <option value="video_stream">🎬 Video Stream (HLS/RTMP)</option>
@@ -242,7 +244,7 @@ $tiposLabel = [
                 </div>
                 <div class="form-group">
                     <label>URL del stream *</label>
-                    <input type="url" name="stream_url" placeholder="https://youtu.be/LIVE_ID o https://stream.radio.com/live">
+                    <input type="url" name="stream_url" placeholder="https://youtu.be/VIDEO_ID o https://stream.radio.com/live">
                 </div>
             </div>
 

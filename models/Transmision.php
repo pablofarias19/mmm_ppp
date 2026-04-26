@@ -10,7 +10,7 @@ use PDO;
 
 class Transmision
 {
-    const TIPOS = ['youtube_live', 'radio_stream', 'audio_stream', 'video_stream'];
+    const TIPOS = ['youtube_live', 'youtube_video', 'radio_stream', 'audio_stream', 'video_stream'];
 
     // ── Lectura ───────────────────────────────────────────────────────────────
 
