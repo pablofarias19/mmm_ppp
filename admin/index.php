@@ -280,6 +280,7 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
             <p>Gestiona noticias, eventos, trivias, encuestas, ofertas y transmisiones en vivo</p>
         </div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <a href="/admin/analytics/dashboard.php" style="background:rgba(255,255,255,.25);color:white;padding:9px 18px;border-radius:8px;font-size:.85em;font-weight:700;text-decoration:none;border:2px solid rgba(255,255,255,.5);">📊 Analytics</a>
             <a href="/" style="background:rgba(255,255,255,.2);color:white;padding:9px 18px;border-radius:8px;font-size:.85em;font-weight:700;text-decoration:none;border:2px solid rgba(255,255,255,.4);">🗺️ Ir al Mapa</a>
             <a href="/mis-negocios" style="background:rgba(255,255,255,.15);color:white;padding:9px 18px;border-radius:8px;font-size:.85em;font-weight:700;text-decoration:none;border:2px solid rgba(255,255,255,.3);">📋 Mis Negocios</a>
         </div>
