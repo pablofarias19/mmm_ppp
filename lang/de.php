@@ -60,4 +60,95 @@ return [
     'msg_saved'              => 'Erfolgreich gespeichert',
     'msg_deleted'            => 'Erfolgreich gelöscht',
     'ui_language_selector'   => 'Anzeigesprache',
+
+    // ── Erweitertes Modul — Allgemein ────────────────────────────────────────────
+    'translate_option'       => 'Sprache / Übersetzen',
+    'adv_back_map'           => '← Zurück zur Karte',
+    'adv_subtitle'           => 'Erweitertes Modul — Argentinien: rechtlich, steuerlich, Investitionen, Compliance und Markenexpansion.',
+    'adv_nav_panel'          => 'Erweitertes Panel',
+    'adv_contact_external'   => '🔗 Externer Kontakt',
+    'adv_see_all_modules'    => 'Alle Module anzeigen',
+    'adv_back_map_main'      => '← Zurück zur Hauptkarte',
+    'adv_see_more'           => 'Mehr anzeigen',
+    'adv_consult_team'       => '📩 Unser Team konsultieren',
+
+    // ── Beratungsangebot ─────────────────────────────────────────────────────────
+    'advice_offer'           => 'Beratungsangebot',
+    'consult_industries'     => 'Beratung für Industrien',
+    'consult_chambers'       => 'Beratung für Kammern',
+    'brand_services'         => 'Markendienste',
+
+    // ── Modulnamen ───────────────────────────────────────────────────────────────
+    'adv_mod_juridico'       => '⚖️ Rechtlich',
+    'adv_mod_fiscal'         => '🧾 Steuerlich',
+    'adv_mod_inversion'      => '📈 Investitionen',
+    'adv_mod_compliance'     => '🛡️ Compliance',
+    'adv_mod_marca'          => '🚀 Marke & Expansion',
+    'adv_mod_tasacion'       => '💎 Markenbewertung',
+    'adv_mod_contact'        => '📩 Kontakt',
+
+    // ── Kurzbeschreibungen der Module ────────────────────────────────────────────
+    'adv_juridico_short'     => 'Rechtsarchitektur, Gesellschaftsform, Vermögenstrennung, Treuhandvermögen und Gläubigerschutz.',
+    'adv_fiscal_short'       => 'Steuerregime, Steueroptimierung, steuerliche Risiken und Buchhaltungsplanung.',
+    'adv_inversion_short'    => 'Eigenkapital, Investoren, Treuhandvermögen, ausländisches Kapital und Devisenregulierung.',
+    'adv_compliance_short'   => 'Interne Programme, Due Diligence, Geldwäscheprävention und strafrechtliche Unternehmenshaftung.',
+    'adv_marca_short'        => 'Skalierbarkeit, Diversifizierung, Expansion in neue Märkte und Markenwert.',
+    'adv_tasacion_short'     => 'Bewertung immaterieller Vermögenswerte, Erhöhung des Grundkapitals, Franchising und assoziative Geschäftsmodelle.',
+
+    // ── Hub-Panel ────────────────────────────────────────────────────────────────
+    'adv_hub_title'          => 'Was macht dieses Panel?',
+    'adv_hub_desc'           => 'Führt Sie dabei, ein Unternehmen, eine Marke oder eine Industrie in eine optimierbare Einheit umzuwandeln: rechtliche, steuerliche, finanzielle, Compliance-, Investitions- und Markenexpansionsstruktur. Dieses Panel ist der Einstiegspunkt über „Erweitert →" in der Karte.',
+    'adv_hub_action_title'   => 'Empfohlene Maßnahme',
+    'adv_hub_action_desc'    => 'Möchten Sie tiefer in die Struktur Ihres Unternehmens eintauchen? Unser Team hilft Ihnen, Risiken und Potenziale zu diagnostizieren.',
+    'adv_hub_contact_btn'    => '📩 Kontakt / Beratungstermin',
+
+    // ── Rechtlich-Panel ──────────────────────────────────────────────────────────
+    'juridico_page_title'    => 'Rechtlich — Rechts- und Vermögensarchitektur',
+    'juridico_title'         => 'Rechts- und Vermögensarchitektur',
+    'juridico_desc'          => 'Eine solide Rechtsstruktur ist die Grundlage jedes nachhaltigen Unternehmens. Dieses Modul analysiert die wichtigsten rechtlichen Aspekte zum Schutz des Vermögens, zur Risikominimierung und zur Wachstumsförderung.',
+    'juridico_cta_title'     => 'Benötigen Sie rechtliche Beratung?',
+    'juridico_cta_desc'      => 'Unser Team analysiert die Rechtsstruktur Ihres Unternehmens und schlägt konkrete Lösungen vor.',
+    'juridico_cta_btn'       => '📩 Einen Anwalt konsultieren',
+
+    // ── Steuerlich-Panel ─────────────────────────────────────────────────────────
+    'fiscal_page_title'      => 'Steuerlich — Steuer- und Buchführungsstruktur',
+    'fiscal_title'           => 'Steuer- und Buchführungsstruktur',
+    'fiscal_desc'            => 'Eine korrekte Steuerstruktur kann den Unterschied zwischen Rentabilität und Verlust ausmachen. Dieses Modul analysiert das optimale Steuerregime und identifiziert steuerliche Risiken.',
+    'fiscal_cta_title'       => 'Möchten Sie Ihre Steuerstruktur optimieren?',
+    'fiscal_cta_desc'        => 'Unser Team hilft Ihnen, die Steuerlast legal zu senken und Ihre Buchhaltung zu ordnen.',
+    'fiscal_cta_btn'         => '📩 Einen Steuerberater konsultieren',
+
+    // ── Investitions-Panel ───────────────────────────────────────────────────────
+    'inversion_page_title'   => 'Investitionen — Finanzstrukturierung',
+    'inversion_title'        => 'Investitionen und Finanzierung',
+    'inversion_desc'         => 'Die korrekte Strukturierung von Investitions- und Finanzierungsquellen ist der Schlüssel zu nachhaltigem Wachstum. Dieses Modul analysiert die national und international verfügbaren Optionen.',
+    'inversion_cta_title'    => 'Suchen Sie Finanzierung oder Investoren?',
+    'inversion_cta_desc'     => 'Unser Team hilft Ihnen, die geeignetste Finanzstrategie für Ihr Unternehmen zu entwickeln.',
+    'inversion_cta_btn'      => '📩 Über Investitionen beraten',
+
+    // ── Compliance-Panel ─────────────────────────────────────────────────────────
+    'compliance_page_title'  => 'Compliance — Prävention und Corporate Governance',
+    'compliance_title'       => 'Compliance und Prävention',
+    'compliance_desc'        => 'Ein solides Compliance-Programm schützt das Unternehmen vor rechtlichen, strafrechtlichen und reputationsbezogenen Sanktionen. Dieses Modul umfasst alles von der Geldwäscheprävention bis zur strafrechtlichen Unternehmenshaftung.',
+    'compliance_cta_title'   => 'Ist Ihr Unternehmen geschützt?',
+    'compliance_cta_desc'    => 'Wir helfen Ihnen, ein maßgeschneidertes Compliance-Programm für Ihr Unternehmen zu entwerfen und umzusetzen.',
+    'compliance_cta_btn'     => '📩 Über Compliance beraten',
+
+    // ── Marke & Expansion-Panel ──────────────────────────────────────────────────
+    'marca_page_title'       => 'Marke & Expansion — Strategie und Skalierbarkeit',
+    'marca_title'            => 'Marke und strategische Expansion',
+    'marca_desc'             => 'Eine starke Marke aufzubauen und zu schützen ist die Grundlage für Skalierung. Dieses Modul analysiert den Markenwert, Expansionsmöglichkeiten und Internationalisierungsstrategien.',
+    'marca_cta_title'        => 'Möchten Sie Ihre Marke wachsen lassen?',
+    'marca_cta_desc'         => 'Unser Team hilft Ihnen, eine realistische und umsetzbare Expansionsstrategie für Ihr Unternehmen zu entwickeln.',
+    'marca_cta_btn'          => '📩 Über Marke & Expansion beraten',
+
+    // ── Markenbewertungs-Panel ───────────────────────────────────────────────────
+    'tasacion_page_title'    => 'Markenbewertung — Vermögens- und immaterieller Wert',
+    'tasacion_title'         => '💎 Marken als immaterielles Vermögen',
+    'tasacion_desc'          => 'Eine eingetragene Marke ist nicht nur ein Name oder ein Logo: Sie ist ein immaterieller Vermögenswert Ihres Unternehmens mit realem, quantifizierbarem wirtschaftlichem Wert. Wie eine Immobilie oder Maschine kann — und sollte — eine Marke bewertet und in das Unternehmensvermögen aufgenommen werden.',
+    'tasacion_cta_title'     => '📌 MARKENBEWERTUNG — Professionelle Beratung',
+    'tasacion_cta_desc'      => 'Für eine professionelle, zertifizierte und rechtlich gesicherte Bewertung Ihrer Marke wenden Sie sich an die Spezialistin:',
+    'tasacion_specialist'    => '🔗 MARKENBEWERTUNG — mariacelesteortiz.com.ar',
+    'tasacion_cta_btn'       => '💎 Bewertungsservice anzeigen',
+    'tasacion_consult_btn'   => '📩 Unser Team konsultieren',
 ];

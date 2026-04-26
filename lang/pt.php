@@ -60,4 +60,95 @@ return [
     'msg_saved'              => 'Salvo com sucesso',
     'msg_deleted'            => 'Excluído com sucesso',
     'ui_language_selector'   => 'Idioma da interface',
+
+    // ── Módulo avançado — Geral ──────────────────────────────────────────────────
+    'translate_option'       => 'Idioma / Traduzir',
+    'adv_back_map'           => '← Voltar ao mapa',
+    'adv_subtitle'           => 'Módulo avançado — Argentina: jurídico, fiscal, investimento, compliance e expansão de marca.',
+    'adv_nav_panel'          => 'Painel avançado',
+    'adv_contact_external'   => '🔗 Contato externo',
+    'adv_see_all_modules'    => 'Ver todos os módulos',
+    'adv_back_map_main'      => '← Voltar ao mapa principal',
+    'adv_see_more'           => 'Ver mais',
+    'adv_consult_team'       => '📩 Consultar nossa equipe',
+
+    // ── Oferta de assessoria ─────────────────────────────────────────────────────
+    'advice_offer'           => 'Oferta de Assessoria',
+    'consult_industries'     => 'Assessoria para Indústrias',
+    'consult_chambers'       => 'Assessoria para Câmaras',
+    'brand_services'         => 'Serviços de Marcas',
+
+    // ── Nomes dos módulos ────────────────────────────────────────────────────────
+    'adv_mod_juridico'       => '⚖️ Jurídico',
+    'adv_mod_fiscal'         => '🧾 Fiscal',
+    'adv_mod_inversion'      => '📈 Investimento',
+    'adv_mod_compliance'     => '🛡️ Compliance',
+    'adv_mod_marca'          => '🚀 Marca & Expansão',
+    'adv_mod_tasacion'       => '💎 Avaliação de Marcas',
+    'adv_mod_contact'        => '📩 Contato',
+
+    // ── Descrições curtas dos módulos ────────────────────────────────────────────
+    'adv_juridico_short'     => 'Arquitetura jurídica, tipo societário, separação patrimonial, fideicomissos e proteção contra credores.',
+    'adv_fiscal_short'       => 'Regime tributário, otimização fiscal, riscos fiscais e planejamento contábil.',
+    'adv_inversion_short'    => 'Capital próprio, investidores, fideicomissos, capital estrangeiro e regulação cambial.',
+    'adv_compliance_short'   => 'Programas internos, due diligence, prevenção de lavagem de dinheiro e responsabilidade penal empresarial.',
+    'adv_marca_short'        => 'Escalabilidade, diversificação, expansão para novos mercados e valor de marca.',
+    'adv_tasacion_short'     => 'Avaliação de ativos intangíveis, aumento de capital social, franquias e modelos de negócios associativos.',
+
+    // ── Painel hub ───────────────────────────────────────────────────────────────
+    'adv_hub_title'          => 'O que faz este painel?',
+    'adv_hub_desc'           => 'Orienta-o a transformar um negócio, marca ou indústria em uma unidade otimizável: estrutura jurídica, fiscal, financeira, compliance, investimento e expansão de marca. Este painel é o ponto de entrada a partir de "Avançado →" no mapa.',
+    'adv_hub_action_title'   => 'Ação recomendada',
+    'adv_hub_action_desc'    => 'Deseja aprofundar-se na estrutura do seu negócio? Nossa equipe ajuda a diagnosticar riscos e potencial.',
+    'adv_hub_contact_btn'    => '📩 Contatar / Agendar consulta',
+
+    // ── Painel Jurídico ──────────────────────────────────────────────────────────
+    'juridico_page_title'    => 'Jurídico — Arquitetura Jurídica e Patrimonial',
+    'juridico_title'         => 'Arquitetura Jurídica e Patrimonial',
+    'juridico_desc'          => 'Uma estrutura jurídica sólida é a base de qualquer negócio sustentável. Este módulo analisa os aspectos jurídicos essenciais para proteger o patrimônio, minimizar riscos e facilitar o crescimento.',
+    'juridico_cta_title'     => 'Precisa de assessoria jurídica?',
+    'juridico_cta_desc'      => 'Nossa equipe analisa a estrutura jurídica do seu negócio e propõe soluções concretas.',
+    'juridico_cta_btn'       => '📩 Consultar um advogado',
+
+    // ── Painel Fiscal ────────────────────────────────────────────────────────────
+    'fiscal_page_title'      => 'Fiscal — Estrutura Fiscal e Contábil',
+    'fiscal_title'           => 'Estrutura Fiscal e Contábil',
+    'fiscal_desc'            => 'Uma estrutura tributária correta pode fazer a diferença entre rentabilidade e prejuízo. Este módulo analisa o regime fiscal ideal e identifica riscos tributários.',
+    'fiscal_cta_title'       => 'Quer otimizar sua estrutura fiscal?',
+    'fiscal_cta_desc'        => 'Nossa equipe ajuda a reduzir legalmente a carga tributária e a organizar sua contabilidade.',
+    'fiscal_cta_btn'         => '📩 Consultar um assessor fiscal',
+
+    // ── Painel Investimento ──────────────────────────────────────────────────────
+    'inversion_page_title'   => 'Investimento — Estruturação Financeira',
+    'inversion_title'        => 'Investimentos e Financiamento',
+    'inversion_desc'         => 'Estruturar corretamente as fontes de investimento e financiamento é fundamental para o crescimento sustentável. Este módulo analisa as opções disponíveis a nível nacional e internacional.',
+    'inversion_cta_title'    => 'Busca financiamento ou investidores?',
+    'inversion_cta_desc'     => 'Nossa equipe ajuda a estruturar a estratégia financeira mais adequada para o seu negócio.',
+    'inversion_cta_btn'      => '📩 Consultar sobre investimento',
+
+    // ── Painel Compliance ────────────────────────────────────────────────────────
+    'compliance_page_title'  => 'Compliance — Prevenção e Governança Corporativa',
+    'compliance_title'       => 'Compliance e Prevenção',
+    'compliance_desc'        => 'Um programa de compliance sólido protege a empresa de sanções jurídicas, penais e reputacionais. Este módulo abrange desde a prevenção de lavagem de dinheiro até a responsabilidade penal empresarial.',
+    'compliance_cta_title'   => 'Sua empresa está protegida?',
+    'compliance_cta_desc'    => 'Ajudamos a conceber e implementar um programa de compliance sob medida para o seu negócio.',
+    'compliance_cta_btn'     => '📩 Consultar sobre compliance',
+
+    // ── Painel Marca & Expansão ──────────────────────────────────────────────────
+    'marca_page_title'       => 'Marca & Expansão — Estratégia e Escalabilidade',
+    'marca_title'            => 'Marca e Expansão Estratégica',
+    'marca_desc'             => 'Construir e proteger uma marca sólida é a base para escalar. Este módulo analisa o valor de marca, as oportunidades de expansão e as estratégias de internacionalização.',
+    'marca_cta_title'        => 'Quer fazer crescer a sua marca?',
+    'marca_cta_desc'         => 'Nossa equipe ajuda a criar uma estratégia de expansão realista e executável para o seu negócio.',
+    'marca_cta_btn'          => '📩 Consultar sobre marca & expansão',
+
+    // ── Painel Avaliação de Marcas ───────────────────────────────────────────────
+    'tasacion_page_title'    => 'Avaliação de Marcas — Valor Patrimonial e Intangível',
+    'tasacion_title'         => '💎 Marcas como Ativo Intangível',
+    'tasacion_desc'          => 'Uma marca registrada não é apenas um nome ou logotipo: é um ativo intangível da sua empresa com valor econômico real e quantificável. Como um imóvel ou maquinário, a marca pode — e deve — ser avaliada e incorporada ao patrimônio.',
+    'tasacion_cta_title'     => '📌 AVALIAÇÃO DE MARCAS — Assessoria Profissional',
+    'tasacion_cta_desc'      => 'Para obter uma avaliação profissional, certificada e com respaldo legal da sua marca, consulte a especialista:',
+    'tasacion_specialist'    => '🔗 AVALIAÇÃO DE MARCAS — mariacelesteortiz.com.ar',
+    'tasacion_cta_btn'       => '💎 Ver serviço de avaliação',
+    'tasacion_consult_btn'   => '📩 Consultar nossa equipe',
 ];

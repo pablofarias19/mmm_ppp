@@ -4,16 +4,12 @@
  * Módulo Avanzado — Estructura Fiscal y Contable.
  */
 require_once __DIR__ . '/_layout.php';
-siteHeader('Fiscal — Estructura Fiscal y Contable', 'fiscal');
+siteHeader(t('fiscal_page_title'), 'fiscal');
 ?>
 
 <div class="card">
-    <h2>Estructura Fiscal y Contable</h2>
-    <p>
-        Una correcta estructura impositiva puede marcar la diferencia entre la rentabilidad y la pérdida.
-        Este módulo analiza el régimen fiscal óptimo, identifica riesgos tributarios y propone
-        estrategias de planificación impositiva.
-    </p>
+    <h2><?= htmlspecialchars(t('fiscal_title'), ENT_QUOTES, 'UTF-8') ?></h2>
+    <p><?= htmlspecialchars(t('fiscal_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <ul class="feature-list">
         <li><strong>Régimen impositivo</strong> — Monotributo, Responsable Inscripto, IVA, Ingresos Brutos.</li>
         <li><strong>Optimización tributaria</strong> — Reducción legal de la carga impositiva.</li>
@@ -52,12 +48,12 @@ siteHeader('Fiscal — Estructura Fiscal y Contable', 'fiscal');
 </div>
 
 <div class="card">
-    <h2>¿Querés optimizar tu estructura fiscal?</h2>
-    <p class="muted">Nuestro equipo te ayuda a reducir la carga impositiva de forma legal y a ordenar tu contabilidad.</p>
+    <h2><?= htmlspecialchars(t('fiscal_cta_title'), ENT_QUOTES, 'UTF-8') ?></h2>
+    <p class="muted"><?= htmlspecialchars(t('fiscal_cta_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <div class="cta-row">
-        <a class="btn btn-primary" href="/contacto?tema=fiscal">📩 Consultar con un asesor fiscal</a>
-        <a class="btn btn-secondary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer">🔗 Contacto externo</a>
-        <a class="btn btn-secondary" href="/avanzado">Ver todos los módulos</a>
+        <a class="btn btn-primary" href="/contacto?tema=fiscal"><?= htmlspecialchars(t('fiscal_cta_btn'), ENT_QUOTES, 'UTF-8') ?></a>
+        <a class="btn btn-secondary" href="https://fariasortiz.com.ar/contact.html" target="_blank" rel="noopener noreferrer"><?= htmlspecialchars(t('adv_contact_external'), ENT_QUOTES, 'UTF-8') ?></a>
+        <a class="btn btn-secondary" href="/avanzado"><?= htmlspecialchars(t('adv_see_all_modules'), ENT_QUOTES, 'UTF-8') ?></a>
     </div>
 </div>
 
