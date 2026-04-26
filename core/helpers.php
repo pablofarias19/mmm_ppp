@@ -384,7 +384,7 @@ function setSecurityHeaders() {
          . "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com; "
          . "style-src 'self' 'unsafe-inline' https://unpkg.com; "
          . "img-src 'self' data: https://*.tile.openstreetmap.org; "
-         . "connect-src 'self'; "
+         . "connect-src 'self' https://nominatim.openstreetmap.org; "
          . "font-src 'self';");
 }
 

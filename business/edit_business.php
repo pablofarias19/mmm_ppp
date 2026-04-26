@@ -68,6 +68,7 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="/js/geo-search.js"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; }
         .container { max-width: 1200px; margin: 0 auto; background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
@@ -99,6 +100,11 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         .comercio-details { grid-column: 1 / -1; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-top: 10px; display: none; }
         .comercio-details h3 { margin-top: 0; color: #333; }
         @media (max-width: 768px) { .form-grid { grid-template-columns: 1fr; } }
+        .geo-search-wrap { display: flex; gap: 8px; margin-bottom: 10px; grid-column: 1 / -1; }
+        .geo-search-wrap input[type=text] { flex: 1; padding: 10px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 15px; }
+        .geo-search-wrap button.geo-btn { background: #007bff; color: white; border: none; border-radius: 4px; padding: 10px 16px; font-size: 15px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+        .geo-search-wrap button.geo-btn:hover { background: #0056b3; }
+        .geo-search-results { background: white; border: 1px solid #ddd; border-radius: 4px; box-shadow: 0 4px 12px rgba(0,0,0,.1); display: none; max-height: 200px; overflow-y: auto; margin-bottom: 10px; grid-column: 1 / -1; }
     </style>
 </head>
 <body>
@@ -117,11 +123,19 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         <?php endif; ?>
 
         <div class="map-hint">
-            <strong>¡Importante!</strong> Haz clic en el mapa para actualizar la ubicación del negocio.
+            <strong>¡Importante!</strong> Buscá una dirección o hacé clic en el mapa para actualizar la ubicación del negocio.
         </div>
 
         <form method="post" action="">
             <?php echo csrfField(); ?>
+
+            <div class="form-grid" style="margin-bottom:0">
+                <div class="geo-search-wrap">
+                    <input type="text" id="geo-search-input" placeholder="Buscar dirección (calle, número, localidad)…" autocomplete="off">
+                    <button type="button" id="geo-search-btn" class="geo-btn">🔍 Buscar</button>
+                </div>
+                <div id="geo-search-results" class="geo-search-results"></div>
+            </div>
 
             <div class="map-container">
                 <div id="map"></div>
@@ -475,6 +489,17 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         marker = L.marker(e.latlng).addTo(map);
         latInput.value = e.latlng.lat.toFixed(6);
         lngInput.value = e.latlng.lng.toFixed(6);
+    });
+
+    initGeoSearch({
+        map: map,
+        getMarker: function() { return marker; },
+        setMarker: function(m) { marker = m; },
+        latInputId:    'lat',
+        lngInputId:    'lng',
+        searchInputId: 'geo-search-input',
+        searchBtnId:   'geo-search-btn',
+        resultsDivId:  'geo-search-results'
     });
 
     function resetCoords() {
