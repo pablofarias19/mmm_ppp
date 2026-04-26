@@ -2994,6 +2994,7 @@ function buildEventoMetadata(evt) {
 
 function buildEncuestaMetadata(enc) {
     return buildSelectionMetadata({
+        'Tipo': enc.render_mode === 'link' ? '🔗 Link externo (SIMPLE)' : (enc.render_mode === 'pro' ? '📋 PRO (con preguntas)' : '📋 Básica'),
         'Descripción': enc.descripcion,
         'Estado activa': Number(enc.activo) === 1 ? 'Sí' : 'No',
         'Creación': enc.fecha_creacion,
@@ -5231,6 +5232,7 @@ function mostrarEncuestasWidget(encuestas) {
     lista.innerHTML = '';
 
     encuestas.forEach(enc => {
+        const isLink = enc.render_mode === 'link' || (enc.link && enc.link !== '');
         const item = document.createElement('div');
         item.style.cssText = `
             padding: 12px;
@@ -5255,24 +5257,36 @@ function mostrarEncuestasWidget(encuestas) {
         };
 
         item.onclick = () => {
-            abrirEncuesta(enc.id, enc.titulo);
+            if (isLink) {
+                window.open(enc.link, '_blank', 'noopener,noreferrer');
+            } else {
+                abrirEncuesta(enc.id, enc.titulo);
+            }
         };
 
         const titulo = document.createElement('h4');
         titulo.textContent = enc.titulo;
-        titulo.style.cssText = 'margin: 0 0 6px 0; font-size: 13px; color: #f39c12; font-weight: 600;';
+        titulo.style.cssText = 'margin: 0 0 4px 0; font-size: 13px; color: #f39c12; font-weight: 600;';
+
+        const badge = document.createElement('span');
+        if (isLink) {
+            badge.textContent = '🔗 Link externo';
+            badge.style.cssText = 'display:inline-block;font-size:10px;padding:2px 6px;border-radius:10px;background:#e3f2fd;color:#1565c0;font-weight:600;margin-bottom:4px;';
+        } else {
+            badge.textContent = '📋 Encuesta PRO';
+            badge.style.cssText = 'display:inline-block;font-size:10px;padding:2px 6px;border-radius:10px;background:#fff3e0;color:#e65100;font-weight:600;margin-bottom:4px;';
+        }
 
         const desc = document.createElement('p');
         desc.textContent = (enc.descripcion || 'Sin descripción').substring(0, 60) + (enc.descripcion && enc.descripcion.length > 60 ? '...' : '');
         desc.style.cssText = 'margin: 0; font-size: 12px; color: #856404; line-height: 1.3;';
 
         item.appendChild(titulo);
+        item.appendChild(badge);
         item.appendChild(desc);
         lista.appendChild(item);
     });
 }
-
-function abrirEncuesta(encuestaId, titulo) {
     // Crear modal para responder encuesta
     const modal = document.createElement('div');
     modal.style.cssText = `

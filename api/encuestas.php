@@ -32,6 +32,7 @@ function parse_aggregate_ids($idsRaw) {
 
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/helpers.php';
+require_once __DIR__ . '/encuestas_render_helper.php';
 
 $encuestasDefault = [
     [
@@ -233,7 +234,31 @@ if ($method === 'GET') {
             $stmt = $db->prepare("SELECT * FROM encuestas WHERE id = ?");
             $stmt->execute([$id]);
             $enc = $stmt->fetch(\PDO::FETCH_ASSOC);
-            if ($enc) respond_success($enc, "Encuesta obtenida");
+            if ($enc) {
+                // Include preguntas (for PRO render mode)
+                try {
+                    $sPreg = $db->prepare(
+                        "SELECT * FROM preguntas_encuesta
+                         WHERE encuesta_id = ?
+                         ORDER BY orden ASC, id ASC"
+                    );
+                    $sPreg->execute([$id]);
+                    $preguntas = $sPreg->fetchAll(\PDO::FETCH_ASSOC);
+                    foreach ($preguntas as &$preg) {
+                        $preg['pregunta'] = $preg['texto_pregunta'] ?? ($preg['pregunta'] ?? '');
+                        $preg['opciones_array'] = !empty($preg['opciones'])
+                            ? array_values(array_filter(array_map('trim', explode(',', $preg['opciones'])), 'strlen'))
+                            : [];
+                    }
+                    unset($preg);
+                    $enc['preguntas'] = $preguntas;
+                } catch (\PDOException $e) {
+                    $enc['preguntas'] = [];
+                }
+                // Determine render_mode: link > pro > simple
+                $enc['render_mode'] = compute_encuesta_render_mode($enc['link'] ?? null, $enc['preguntas']);
+                respond_success($enc, "Encuesta obtenida");
+            }
             respond_error("Encuesta no encontrada", 404);
         }
 
@@ -244,14 +269,19 @@ if ($method === 'GET') {
             $radio = (float)($_GET['radio'] ?? 5);
             if (!$lat || !$lng) respond_error("Coordenadas requeridas", 400);
 
-            $sql = "SELECT *,
-                    (6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(lat)) *
-                     COS(RADIANS(lng) - RADIANS(?)) +
-                     SIN(RADIANS(?)) * SIN(RADIANS(lat)))) AS distancia_km
-                    FROM encuestas
-                    WHERE activo = 1
-                    AND (fecha_expiracion IS NULL OR fecha_expiracion >= CURDATE())
-                    AND lat IS NOT NULL
+            $sql = "SELECT e.*,
+                    (6371 * ACOS(COS(RADIANS(?)) * COS(RADIANS(e.lat)) *
+                     COS(RADIANS(e.lng) - RADIANS(?)) +
+                     SIN(RADIANS(?)) * SIN(RADIANS(e.lat)))) AS distancia_km,
+                    CASE
+                        WHEN (e.link IS NOT NULL AND e.link != '') THEN 'link'
+                        WHEN (SELECT COUNT(*) FROM preguntas_encuesta WHERE encuesta_id = e.id) > 0 THEN 'pro'
+                        ELSE 'simple'
+                    END AS render_mode
+                    FROM encuestas e
+                    WHERE e.activo = 1
+                    AND (e.fecha_expiracion IS NULL OR e.fecha_expiracion >= CURDATE())
+                    AND e.lat IS NOT NULL
                     HAVING distancia_km <= ?
                     ORDER BY distancia_km ASC";
             $stmt = $db->prepare($sql);
@@ -261,10 +291,16 @@ if ($method === 'GET') {
 
         // Todas las activas
         $stmt = $db->prepare("
-            SELECT * FROM encuestas
-            WHERE activo = 1
-            AND (fecha_expiracion IS NULL OR fecha_expiracion >= CURDATE())
-            ORDER BY fecha_creacion DESC
+            SELECT e.*,
+                CASE
+                    WHEN (e.link IS NOT NULL AND e.link != '') THEN 'link'
+                    WHEN (SELECT COUNT(*) FROM preguntas_encuesta WHERE encuesta_id = e.id) > 0 THEN 'pro'
+                    ELSE 'simple'
+                END AS render_mode
+            FROM encuestas e
+            WHERE e.activo = 1
+            AND (e.fecha_expiracion IS NULL OR e.fecha_expiracion >= CURDATE())
+            ORDER BY e.fecha_creacion DESC
         ");
         $stmt->execute();
         respond_success($stmt->fetchAll(\PDO::FETCH_ASSOC), "Encuestas obtenidas");
