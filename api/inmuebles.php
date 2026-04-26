@@ -126,7 +126,10 @@ if ($method === 'POST') {
     $biz = $stmt->fetch(\PDO::FETCH_ASSOC);
     if (!$biz) inm_err('Negocio no encontrado', 404);
     if ((int)$biz['user_id'] !== $userId && !isAdmin()) inm_err('Sin permisos', 403);
-    if ($biz['business_type'] !== 'inmobiliaria') inm_err('Solo inmobiliarias pueden publicar inmuebles', 403);
+    $allowedInmTypes = ['inmobiliaria', 'inmobiliaria_venta', 'inmobiliaria_alquiler'];
+    if (!in_array($biz['business_type'], $allowedInmTypes, true)) {
+        inm_err('Solo negocios inmobiliarios pueden publicar inmuebles', 403);
+    }
 
     // Verificar límite de inmuebles activos
     $maxInm = 10; // default global

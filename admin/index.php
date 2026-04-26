@@ -56,28 +56,42 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         /* ── Tabs ──────────────────────────────────── */
         .tabs {
             display: flex;
-            gap: var(--space-sm);
+            flex-wrap: wrap;
+            gap: var(--space-xs);
             margin-bottom: var(--space-xl);
             border-bottom: var(--border-width-normal) solid var(--color-gray-200);
-            overflow-x: auto;
-            padding-bottom: var(--space-xs);
+            padding-bottom: var(--space-sm);
         }
         .tab-btn {
-            padding: var(--space-md) var(--space-lg);
-            border: none;
-            background: none;
+            padding: var(--space-sm) var(--space-md);
+            border: var(--border-width-thin) solid var(--color-gray-200);
+            background: var(--bg-secondary, #f9fafb);
             color: var(--text-secondary);
             cursor: pointer;
             font-weight: var(--font-weight-semibold);
             font-size: var(--font-size-sm);
-            border-bottom: 3px solid transparent;
+            border-radius: var(--border-radius-sm);
             transition: all var(--transition-base);
             white-space: nowrap;
         }
-        .tab-btn.active       { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-btn.active {
+            color: var(--text-inverse);
+            background: var(--primary);
+            border-color: var(--primary);
+        }
         .tab-btn:hover:not(.active) {
-            color: var(--primary-light);
-            background: rgba(102,126,234,0.05);
+            color: var(--primary);
+            background: rgba(102,126,234,0.08);
+            border-color: var(--primary-light);
+        }
+        @media (max-width: 640px) {
+            .tabs {
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: thin;
+                padding-bottom: var(--space-xs);
+            }
         }
         .tab-content          { display: none; }
         .tab-content.active   { display: block; }

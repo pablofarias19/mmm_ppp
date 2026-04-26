@@ -5351,6 +5351,8 @@ function mostrarEncuestasWidget(encuestas) {
         lista.appendChild(item);
     });
 }
+
+function abrirEncuesta(encuestaId, titulo) {
     // Crear modal para responder encuesta
     const modal = document.createElement('div');
     modal.style.cssText = `
@@ -5390,7 +5392,7 @@ function mostrarEncuestasWidget(encuestas) {
 
     // Cargar datos de la encuesta
     fetch('/api/encuestas.php?id=' + encuestaId)
-        .then(r => r.json())
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(data => {
             if (data.success && data.data) {
                 const enc = data.data;
@@ -5619,7 +5621,7 @@ function abrirEvento(eventoId, titulo) {
 
     // Cargar datos del evento
     fetch('/api/eventos.php?id=' + eventoId)
-        .then(r => r.json())
+        .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
         .then(data => {
             if (data.success && data.data) {
                 const evt = data.data;
