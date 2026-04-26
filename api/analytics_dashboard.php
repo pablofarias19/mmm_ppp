@@ -213,6 +213,11 @@ if ($section === 'feed') {
 
         $whereStr = implode(' AND ', $where);
 
+        // LIMIT and OFFSET are cast to int by _int() above, so interpolation is safe;
+        // we still append them as literals to avoid PDO emulation issues with LIMIT params.
+        $limitInt  = (int)$limit;
+        $offsetInt = (int)$offset;
+
         $stmt = $db->prepare(
             "SELECT e.id, e.created_at, e.event_type, e.user_id, e.visitor_id,
                     e.business_id, e.meta_json, e.ip,
@@ -223,7 +228,7 @@ if ($section === 'feed') {
                LEFT JOIN businesses b ON b.id = e.business_id
               WHERE $whereStr
               ORDER BY e.created_at DESC
-              LIMIT $limit OFFSET $offset"
+              LIMIT $limitInt OFFSET $offsetInt"
         );
         $stmt->execute($params);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);

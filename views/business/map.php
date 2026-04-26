@@ -7664,7 +7664,7 @@ window.BUSINESS_TYPE_LABELS = window.BUSINESS_TYPE_LABELS || {
     function sendHeartbeat() {
         try {
             var now = Date.now();
-            if (now - _lastHeartbeat < 25000) return; // guard: min 25 s
+            if (now - _lastHeartbeat < 20000) return; // guard: min 20 s (matches backend threshold)
             _lastHeartbeat = now;
             _send({ action: 'heartbeat', path: window.location.pathname });
         } catch (_e) {}
@@ -7726,7 +7726,7 @@ window.BUSINESS_TYPE_LABELS = window.BUSINESS_TYPE_LABELS || {
             clearTimeout(_searchDebounce);
             _searchDebounce = setTimeout(function () {
                 _lastSearchVal = val;
-                window.mapitaTrack('search', null, JSON.stringify({ q: val.substring(0, 200) }));
+                window.mapitaTrack('search', null, { q: val.substring(0, 200) });
             }, 600);
         });
     }
@@ -7740,10 +7740,10 @@ window.BUSINESS_TYPE_LABELS = window.BUSINESS_TYPE_LABELS || {
                 try {
                     var tipo  = (document.getElementById('tipo') || {}).value || '';
                     var bq    = (document.getElementById('busqueda') || {}).value || '';
-                    window.mapitaTrack('filter_change', null, JSON.stringify({
+                    window.mapitaTrack('filter_change', null, {
                         tipo: tipo.substring(0, 60),
                         q:    bq.substring(0, 100)
-                    }));
+                    });
                 } catch (_e) {}
             }, 800);
         }

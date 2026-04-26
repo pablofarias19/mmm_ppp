@@ -280,8 +280,9 @@ async function apiFetch(section, params = {}) {
 /* ── Format helpers ────────────────────────────────────────────── */
 function fmtDate(dt) {
     if (!dt) return '—';
-    const d = new Date(dt.replace(' ', 'T') + 'Z');
-    return d.toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });
+    // Timestamps stored without timezone; parse as local server time (Argentina)
+    var d = new Date(dt.replace('T', ' ').replace(/-/g, '/'));
+    return d.toLocaleString('es-AR');
 }
 function fmtAgo(sec) {
     if (sec < 60) return sec + 's';
