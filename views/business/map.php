@@ -736,6 +736,10 @@ try {
             line-height: 1;
             padding: 0;
             flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
         }
         .mapita-home-panel__close:hover {
             background: #d9dffa;
@@ -759,6 +763,10 @@ try {
             line-height: 1;
             flex: 0 0 20px;
             margin-top: 1px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
         }
         .quickstart-help-btn:hover {
             background: #e2e8ff;
@@ -821,6 +829,51 @@ try {
         .quickstart-help-modal__close:focus-visible {
             outline: 2px solid #1B3B6F;
             outline-offset: 2px;
+        }
+
+        /* ── HOME PANEL responsive overrides ────────────────────────── */
+        @media (max-width: 480px) {
+            #mapita-home-panel {
+                width: calc(100vw - 28px);
+                max-height: min(54vh, 360px);
+                padding: 10px 10px 10px;
+                left: 14px;
+                bottom: 70px;
+            }
+            .mapita-home-panel__header {
+                margin-bottom: 5px;
+            }
+            /* Hide redundant overline label; the h3 already identifies the panel */
+            #mapita-home-panel .sidebar-card-label {
+                display: none;
+            }
+            .mapita-home-panel__close {
+                width: 34px;
+                height: 34px;
+                flex: 0 0 34px;
+                font-size: 14px;
+            }
+            .quickstart-panel__title {
+                font-size: 13px;
+            }
+            .quickstart-panel__intro {
+                font-size: 11px;
+                margin-bottom: 5px;
+            }
+            .quickstart-panel__list {
+                font-size: 11px;
+                padding-left: 14px;
+            }
+            #mapita-home-panel .quickstart-panel__list li {
+                gap: 8px;
+                padding: 3px 0;
+            }
+            .quickstart-help-btn {
+                width: 34px;
+                height: 34px;
+                flex: 0 0 34px;
+                font-size: 14px;
+            }
         }
 
         /* ── TRANSMISION FLOAT PANEL ────────────────────────────────── */
