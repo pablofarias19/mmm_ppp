@@ -1181,17 +1181,20 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         <div class="sb-section-body open">
     <div id="filters-accordion" style="padding:0;">
 
-        <!-- TIPO DE EMPRESA (MOVIDO AL INICIO - MÁS IMPORTANTE) -->
+        <!-- TIPO DE INDUSTRIA -->
         <div class="accordion-item">
             <button class="accordion-btn" onclick="toggleAccordion(this)">
-                🏢 Tipo de Empresa
+                🏭 Tipo de Industria
                 <span style="font-size:10px;">▼</span>
             </button>
             <div class="accordion-content">
-                <label><input type="checkbox" name="company-type" value="familiar" onchange="filtrar()"> 👨‍👩‍👧 Familiar</label>
-                <label><input type="checkbox" name="company-type" value="pyme" onchange="filtrar()"> 🏪 PYME/Mediana</label>
-                <label><input type="checkbox" name="company-type" value="grande" onchange="filtrar()"> 🏬 Gran empresa</label>
-                <label><input type="checkbox" name="company-type" value="multinacional" onchange="filtrar()"> 🌍 Multinacional</label>
+                <select id="filter-tipo-industria" onchange="filtrarPorSectorIndustrial()"
+                        style="width:100%;padding:8px 10px;border:1px solid #d0d5dd;border-radius:8px;
+                               font-size:12px;background:white;color:#374151;">
+                    <option value="">🏭 Todos los sectores</option>
+                </select>
+                <div id="industria-markers-count"
+                     style="font-size:11px;color:#667eea;margin-top:6px;font-weight:600;"></div>
             </div>
         </div>
 
@@ -1226,21 +1229,6 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 <label><input type="checkbox" name="filter-days" value="lunes" onchange="filtrar()"> Lunes a viernes</label>
                 <label><input type="checkbox" name="filter-days" value="sabado" onchange="filtrar()"> Abierto sábados</label>
                 <label><input type="checkbox" name="filter-days" value="domingo" onchange="filtrar()"> Abierto domingos</label>
-            </div>
-        </div>
-
-        <!-- PRECIO -->
-        <div class="accordion-item">
-            <button class="accordion-btn" onclick="toggleAccordion(this)">
-                💰 Precio
-                <span style="font-size:10px;">▼</span>
-            </button>
-            <div class="accordion-content">
-                <label><input type="checkbox" name="price-range" value="1" onchange="filtrar()"> 💵 $</label>
-                <label><input type="checkbox" name="price-range" value="2" onchange="filtrar()"> 💵💵 $$</label>
-                <label><input type="checkbox" name="price-range" value="3" onchange="filtrar()"> 💵💵💵 $$$</label>
-                <label><input type="checkbox" name="price-range" value="4" onchange="filtrar()"> 💵💵💵💵 $$$$</label>
-                <label><input type="checkbox" name="price-range" value="5" onchange="filtrar()"> 💵💵💵💵💵 $$$$$</label>
             </div>
         </div>
 
@@ -1946,6 +1934,7 @@ function setMapUILang(lang) {
 
 let negocios  = [];
 let marcas    = [];
+let industriaMarkers = [];
 let mapa, marcadores = [], miUbicacion = null;
 let currentVer = 'negocios';
 let followMe = false;
@@ -3529,10 +3518,8 @@ function filtrar() {
     const texto = document.getElementById('busqueda').value.toLowerCase();
     const locationFilter = getLocationFilter();
     const locationCity = getLocationCityFilter();
-    const priceFilter = getPriceFilter();
     const timeFilter = getTimeFilter();
     const daysFilter = getDaysFilter();
-    const companyTypeFilter = getCompanyTypeFilter();
     const protectionFilter = getProtectionFilter();
     const sectorFilter = getSectorFilter();
     const countryFilter = (document.getElementById('filter-country-code')?.value || '').trim();
@@ -3567,9 +3554,6 @@ function filtrar() {
             // Location city filter
             if (locationCity && !((n.address||'').toLowerCase().includes(locationCity))) return false;
 
-            // Price filter
-            if (priceFilter && !priceFilter.includes(n.price_range)) return false;
-
             // Time filter: only open now
             if (timeFilter) {
                 if (!pasaFiltroAbiertosAhora(n)) return false;
@@ -3584,9 +3568,6 @@ function filtrar() {
                     return false;
                 }
             }
-
-            // Company type filter
-            if (companyTypeFilter && !companyTypeFilter.includes(inferCompanyType(n))) return false;
 
             // Country filter
             if (countryFilter && n.country_code !== countryFilter) return false;
@@ -4883,12 +4864,6 @@ function getLocationCityFilter() {
     return city || null;
 }
 
-function getPriceFilter() {
-    const checks = Array.from(document.querySelectorAll('input[name="price-range"]:checked'));
-    if (checks.length === 0) return null;
-    return checks.map(c => parseInt(c.value));
-}
-
 function getTimeFilter() {
     return document.getElementById('filter-open-now')?.checked || false;
 }
@@ -4896,12 +4871,6 @@ function getTimeFilter() {
 function getDaysFilter() {
     const checks = Array.from(document.querySelectorAll('input[name="filter-days"]:checked'));
     return checks.length > 0 ? checks.map(c => c.value) : null;
-}
-
-function getCompanyTypeFilter() {
-    const checks = Array.from(document.querySelectorAll('input[name="company-type"]:checked'));
-    if (checks.length === 0) return null;
-    return checks.map(c => c.value);
 }
 
 function getProtectionFilter() {
@@ -4915,6 +4884,77 @@ function getSectorFilter() {
     const checks = Array.from(document.querySelectorAll('input[name="filter-sector"]:checked'));
     if (checks.length === 0 && !text) return null;
     return { text: text, selected: checks.map(c => c.value) };
+}
+
+// ─── Tipo de Industria filter ────────────────────────────────────────────────
+
+const _SECTOR_ICONS = { mineria:'⛏️', energia:'⚡', agro:'🌾', infraestructura:'🏗️', inmobiliario:'🏢', industrial:'🏭' };
+
+function _escHtml(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function loadIndustrialSectorsFilter() {
+    try {
+        const r = await fetch('/api/industrial_sectors.php');
+        const j = await r.json();
+        if (!j.success) return;
+        const sel = document.getElementById('filter-tipo-industria');
+        if (!sel) return;
+        (j.data || []).forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = (_SECTOR_ICONS[s.type] || '🏭') + ' ' + s.name;
+            sel.appendChild(opt);
+        });
+    } catch (e) { console.error('Error cargando sectores industriales:', e); }
+}
+
+async function filtrarPorSectorIndustrial() {
+    // Limpiar marcadores anteriores de industrias
+    industriaMarkers.forEach(m => mapa.removeLayer(m));
+    industriaMarkers = [];
+
+    const countEl = document.getElementById('industria-markers-count');
+    if (countEl) countEl.textContent = '';
+
+    const sectorId = document.getElementById('filter-tipo-industria')?.value;
+    if (!sectorId) return;
+
+    try {
+        const r = await fetch('/api/map_industries.php?sector_id=' + encodeURIComponent(sectorId));
+        const j = await r.json();
+        if (!j.success) return;
+        const lista = j.data || [];
+
+        lista.forEach(ind => {
+            if (!ind.lat || !ind.lng) return;
+            const icon = _SECTOR_ICONS[ind.sector_type] || '🏭';
+            const mk = L.circleMarker([ind.lat, ind.lng], {
+                radius: 9,
+                fillColor: '#6A5ACD',
+                color: '#fff',
+                weight: 2,
+                fillOpacity: 0.88
+            });
+            const popupHtml = '<b>' + icon + ' ' + _escHtml(ind.industry_name) + '</b>'
+                + (ind.sector_name ? '<br><small style="color:#6A5ACD;">🏭 ' + _escHtml(ind.sector_name) + '</small>' : '')
+                + (ind.business_name ? '<br>📍 ' + _escHtml(ind.business_name) : '')
+                + (ind.address ? '<br><span style="font-size:11px;color:#888;">' + _escHtml(ind.address) + '</span>' : '')
+                + (ind.description ? '<br><span style="font-size:11px;color:#555;">' + _escHtml(ind.description.substring(0, 120)) + '</span>' : '');
+            mk.bindPopup(popupHtml);
+            mk.addTo(mapa);
+            industriaMarkers.push(mk);
+        });
+
+        if (countEl) {
+            countEl.textContent = lista.length > 0
+                ? lista.length + ' industria(s) en el mapa'
+                : 'Sin industrias para este sector.';
+        }
+    } catch (e) {
+        console.error('Error cargando industrias por sector', e);
+    }
 }
 
 // ─── Update radius circle on map ────────────────────────────────────────────────
@@ -4948,32 +4988,6 @@ function updateRadiusCircle() {
 }
 
 // ─── Heuristics for company type ────────────────────────────────────────────────
-function inferCompanyType(negocio) {
-    if (!negocio) return 'pyme';
-    const name = (negocio.name || '').toLowerCase();
-    const desc = (negocio.description || '').toLowerCase();
-
-    // Detect multinational: company name contains international keywords or multiple locations
-    if (desc.includes('internacional') || desc.includes('global') ||
-        name.includes('global') || name.includes('international')) {
-        return 'multinacional';
-    }
-
-    // Detect large chain
-    const chainKeywords = ['cadena', 'sucursal', 'franquicia', 'grupo', 'empresa'];
-    if (chainKeywords.some(kw => desc.includes(kw))) {
-        return 'grande';
-    }
-
-    // Detect family business
-    if (desc.includes('familiar') || desc.includes('familia')) {
-        return 'familiar';
-    }
-
-    // Default: PYME
-    return 'pyme';
-}
-
 // ─── Boot ─────────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
     // Setup radius slider: update display and circle in real-time
@@ -5009,6 +5023,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (rm.success) marcas = rm.data;
         populateSectorFilter();
     } catch (e) { console.error('Error cargando marcas', e); }
+
+    // Cargar sectores industriales para el filtro Tipo de Industria
+    loadIndustrialSectorsFilter();
 
     // Dibujar negocios y marcas en el mapa al cargar la página
     filtrar();
@@ -7920,8 +7937,8 @@ window.BUSINESS_TYPE_LABELS = window.BUSINESS_TYPE_LABELS || {
         if (tipoEl) tipoEl.addEventListener('change', onFilterChange);
         // Also listen to any checkbox filter changes
         document.addEventListener('change', function (ev) {
-            if (ev.target && (ev.target.name === 'company-type' || ev.target.name === 'filter-days'
-                || ev.target.name === 'price-range' || ev.target.name === 'protection-level')) {
+            if (ev.target && (ev.target.name === 'filter-days'
+                || ev.target.name === 'protection-level')) {
                 onFilterChange();
             }
         });
