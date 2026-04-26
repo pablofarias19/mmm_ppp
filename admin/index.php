@@ -1207,6 +1207,7 @@ function getFormHTML(type, data) {
             <label>Tipo de Transmisión</label>
             <select name="tipo">
                 <option value="youtube_live"  ${v.tipo==='youtube_live'  ?'selected':''}>&#9654; YouTube Live</option>
+                <option value="youtube_video" ${v.tipo==='youtube_video' ?'selected':''}>&#128252; Video (YouTube)</option>
                 <option value="radio_stream"  ${v.tipo==='radio_stream'  ?'selected':''}>&#128251; Radio Online (Icecast/SHOUTcast)</option>
                 <option value="audio_stream"  ${v.tipo==='audio_stream'  ?'selected':''}>&#127909; Audio Stream genérico</option>
                 <option value="video_stream"  ${v.tipo==='video_stream'  ?'selected':''}>&#127897;&#65039; Video Stream (HLS/RTMP)</option>
@@ -1217,7 +1218,7 @@ function getFormHTML(type, data) {
             <input type="url" name="stream_url" required
                    placeholder="https://youtu.be/LIVE_ID ó https://stream.servidor.com/radio"
                    value="${v.stream_url||''}">
-            <p class="mini-map-hint">YouTube Live: pega la URL del video en vivo. Radio: URL del stream Icecast/MP3.</p>
+            <p class="mini-map-hint">YouTube Live: URL del video en vivo (https://youtu.be/LIVE_ID). Video (YouTube): URL de video grabado (https://youtu.be/VIDEO_ID). Radio: URL del stream Icecast/MP3.</p>
         </div>
         <div class="form-group">
             <label>Descripción</label>

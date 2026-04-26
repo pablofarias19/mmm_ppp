@@ -111,7 +111,7 @@ if ($method === 'POST') {
             $tipo   = $input['tipo'] ?? 'youtube_live';
             $url    = $input['stream_url'] ?? null;
             if (!$titulo) respond_error('Título requerido');
-            if (!in_array($tipo, ['youtube_live','radio_stream','audio_stream','video_stream'])) {
+            if (!in_array($tipo, ['youtube_live','youtube_video','radio_stream','audio_stream','video_stream'])) {
                 $tipo = 'youtube_live';
             }
             $s = $db->prepare("INSERT INTO transmisiones
