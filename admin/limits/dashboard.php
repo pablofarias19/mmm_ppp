@@ -37,20 +37,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $imgMax   = $_POST['images_max'] !== '' ? (int)$_POST['images_max'] : null;
         $minZoom  = $_POST['visibility_min_zoom'] !== '' ? (int)$_POST['visibility_min_zoom'] : null;
         $isPremium = (int)(bool)($_POST['is_premium'] ?? 0);
+        $inmMax    = isset($_POST['inmuebles_max']) && $_POST['inmuebles_max'] !== '' ? (int)$_POST['inmuebles_max'] : null;
+        $inmDest   = (int)(bool)($_POST['inmuebles_destacado'] ?? 0);
 
         if ($bid > 0) {
             // Validate ranges
             if ($imgMax !== null)  $imgMax  = max(0, min(50, $imgMax));
             if ($minZoom !== null) $minZoom = max(1, min(20, $minZoom));
+            if ($inmMax !== null)  $inmMax  = max(0, min(500, $inmMax));
 
-            $db->prepare("
-                UPDATE businesses
-                   SET images_max = ?,
-                       visibility_min_zoom = ?,
-                       is_premium = ?,
-                       updated_at = NOW()
-                 WHERE id = ?
-            ")->execute([$imgMax, $minZoom, $isPremium, $bid]);
+            // Build SET clause dynamically (supports tables without new columns yet)
+            $setClauses = ['images_max = ?', 'visibility_min_zoom = ?', 'is_premium = ?', 'updated_at = NOW()'];
+            $setParams  = [$imgMax, $minZoom, $isPremium];
+            if (mapitaColumnExists($db, 'businesses', 'inmuebles_max')) {
+                $setClauses[] = 'inmuebles_max = ?';
+                $setParams[]  = $inmMax;
+            }
+            if (mapitaColumnExists($db, 'businesses', 'inmuebles_destacado')) {
+                $setClauses[] = 'inmuebles_destacado = ?';
+                $setParams[]  = $inmDest;
+            }
+            $setParams[] = $bid;
+            $db->prepare("UPDATE businesses SET " . implode(', ', $setClauses) . " WHERE id = ?")
+               ->execute($setParams);
             $message     = 'Configuración del negocio actualizada.';
             $messageType = 'success';
         }
@@ -61,16 +70,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $btype   = trim($_POST['business_type'] ?? '');
         $imgMax  = max(0, min(50, (int)($_POST['images_max_default'] ?? 2)));
         $minZoom = max(1, min(20, (int)($_POST['visibility_min_zoom_default'] ?? 12)));
+        $inmMax  = max(0, min(500, (int)($_POST['inmuebles_max_default'] ?? 10)));
 
         if ($btype !== '') {
-            $db->prepare("
-                INSERT INTO business_type_limits
-                    (business_type, images_max_default, visibility_min_zoom_default)
-                VALUES (?, ?, ?)
-                ON DUPLICATE KEY UPDATE
-                    images_max_default = VALUES(images_max_default),
-                    visibility_min_zoom_default = VALUES(visibility_min_zoom_default)
-            ")->execute([$btype, $imgMax, $minZoom]);
+            $hasMigration = mapitaColumnExists($db, 'business_type_limits', 'inmuebles_max_default');
+            if ($hasMigration) {
+                $db->prepare("
+                    INSERT INTO business_type_limits
+                        (business_type, images_max_default, visibility_min_zoom_default, inmuebles_max_default)
+                    VALUES (?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        images_max_default = VALUES(images_max_default),
+                        visibility_min_zoom_default = VALUES(visibility_min_zoom_default),
+                        inmuebles_max_default = VALUES(inmuebles_max_default)
+                ")->execute([$btype, $imgMax, $minZoom, $inmMax]);
+            } else {
+                $db->prepare("
+                    INSERT INTO business_type_limits
+                        (business_type, images_max_default, visibility_min_zoom_default)
+                    VALUES (?, ?, ?)
+                    ON DUPLICATE KEY UPDATE
+                        images_max_default = VALUES(images_max_default),
+                        visibility_min_zoom_default = VALUES(visibility_min_zoom_default)
+                ")->execute([$btype, $imgMax, $minZoom]);
+            }
             $message     = 'Límites del tipo "' . htmlspecialchars($btype) . '" actualizados.';
             $messageType = 'success';
         }
@@ -100,6 +123,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // Tipos de negocio disponibles
 $allTypes = mapitaAllowedBusinessTypes();
 
+// Check if new columns exist (migration 029)
+$hasInmMax    = mapitaColumnExists($db, 'businesses', 'inmuebles_max');
+$hasInmDest   = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado');
+$hasInmMaxDef = mapitaColumnExists($db, 'business_type_limits', 'inmuebles_max_default');
+
 // Límites existentes por tipo (tabla business_type_limits)
 $typeLimits = [];
 try {
@@ -112,9 +140,12 @@ try {
 }
 
 // Negocios con overrides (últimos 200, mostramos los que tienen valores custom)
+$bizSelectExtra = '';
+if ($hasInmMax)  $bizSelectExtra .= ', b.inmuebles_max';
+if ($hasInmDest) $bizSelectExtra .= ', b.inmuebles_destacado';
 $businesses = $db->query("
     SELECT b.id, b.name, b.business_type, b.images_max,
-           b.visibility_min_zoom, b.is_premium, u.username AS owner
+           b.visibility_min_zoom, b.is_premium{$bizSelectExtra}, u.username AS owner
     FROM businesses b
     LEFT JOIN users u ON u.id = b.user_id
     ORDER BY b.name
@@ -122,7 +153,13 @@ $businesses = $db->query("
 ")->fetchAll();
 
 // Calcular estadísticas
-$premiumCount = (int)$db->query("SELECT COUNT(*) FROM businesses WHERE is_premium = 1")->fetchColumn();
+$premiumCount   = (int)$db->query("SELECT COUNT(*) FROM businesses WHERE is_premium = 1")->fetchColumn();
+$inmDestCount   = $hasInmDest
+    ? (int)$db->query("SELECT COUNT(*) FROM businesses WHERE inmuebles_destacado = 1 AND business_type = 'inmobiliaria'")->fetchColumn()
+    : 0;
+$inmTotalCount  = mapitaTableExists($db, 'inmuebles')
+    ? (int)$db->query("SELECT COUNT(*) FROM inmuebles WHERE activo = 1")->fetchColumn()
+    : 0;
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -184,6 +221,16 @@ $premiumCount = (int)$db->query("SELECT COUNT(*) FROM businesses WHERE is_premiu
             <div style="font-size:2rem;font-weight:700;color:#28a745;"><?php echo count($typeLimits); ?></div>
             <div style="font-size:12px;color:#888;">Tipos configurados</div>
         </div>
+        <?php if ($hasInmDest): ?>
+        <div class="section" style="flex:1;min-width:160px;padding:16px;text-align:center;">
+            <div style="font-size:2rem;font-weight:700;color:#0f766e;"><?php echo $inmDestCount; ?></div>
+            <div style="font-size:12px;color:#888;">Inmobiliarias Destacadas</div>
+        </div>
+        <?php endif; ?>
+        <div class="section" style="flex:1;min-width:160px;padding:16px;text-align:center;">
+            <div style="font-size:2rem;font-weight:700;color:#e67e22;"><?php echo $inmTotalCount; ?></div>
+            <div style="font-size:12px;color:#888;">Inmuebles Activos</div>
+        </div>
         <div class="section" style="flex:1;min-width:200px;padding:16px;">
             <div style="font-size:12px;font-weight:700;color:#333;margin-bottom:8px;">📖 Referencia de Zoom</div>
             <div style="font-size:11px;color:#555;line-height:1.6;">
@@ -217,13 +264,21 @@ $premiumCount = (int)$db->query("SELECT COUNT(*) FROM businesses WHERE is_premiu
                 <input type="number" name="images_max_default" value="2" min="0" max="50">
                 <label>Zoom mínimo</label>
                 <input type="number" name="visibility_min_zoom_default" value="12" min="1" max="20">
+                <?php if ($hasInmMaxDef): ?>
+                <label>Máx. inmuebles</label>
+                <input type="number" name="inmuebles_max_default" value="10" min="0" max="500" title="Máximo de inmuebles activos (solo inmobiliaria)">
+                <?php endif; ?>
                 <button class="btn btn-primary btn-sm" type="submit">Guardar</button>
             </div>
         </form>
         <?php if (!empty($typeLimits)): ?>
         <table>
             <thead>
-                <tr><th>Tipo</th><th>Máx. Imágenes</th><th>Zoom Mínimo</th><th>Actualizado</th><th>Acción masiva</th></tr>
+                <tr>
+                    <th>Tipo</th><th>Máx. Imágenes</th><th>Zoom Mínimo</th>
+                    <?php if ($hasInmMaxDef): ?><th>Máx. Inmuebles</th><?php endif; ?>
+                    <th>Actualizado</th><th>Acción masiva</th>
+                </tr>
             </thead>
             <tbody>
             <?php foreach ($typeLimits as $bt => $lim): ?>
@@ -231,6 +286,9 @@ $premiumCount = (int)$db->query("SELECT COUNT(*) FROM businesses WHERE is_premiu
                     <td><?php echo htmlspecialchars($bt); ?></td>
                     <td><?php echo (int)$lim['images_max_default']; ?></td>
                     <td><?php echo (int)$lim['visibility_min_zoom_default']; ?></td>
+                    <?php if ($hasInmMaxDef): ?>
+                    <td><?php echo isset($lim['inmuebles_max_default']) ? (int)$lim['inmuebles_max_default'] : '10'; ?></td>
+                    <?php endif; ?>
                     <td><?php echo htmlspecialchars(substr($lim['updated_at'] ?? '', 0, 10)); ?></td>
                     <td>
                         <form method="post" style="display:inline-flex;gap:6px;align-items:center;">
@@ -266,7 +324,13 @@ $premiumCount = (int)$db->query("SELECT COUNT(*) FROM businesses WHERE is_premiu
         </div>
         <table id="biz-table">
             <thead>
-                <tr><th>ID</th><th>Nombre</th><th>Tipo</th><th>Propietario</th><th>Imágenes máx</th><th>Zoom mínimo</th><th>Premium</th><th>Acción</th></tr>
+                <tr>
+                    <th>ID</th><th>Nombre</th><th>Tipo</th><th>Propietario</th>
+                    <th>Imágenes máx</th><th>Zoom mínimo</th><th>Premium</th>
+                    <?php if ($hasInmMax): ?><th>Máx. Inmuebles</th><?php endif; ?>
+                    <?php if ($hasInmDest): ?><th>Destacado</th><?php endif; ?>
+                    <th>Acción</th>
+                </tr>
             </thead>
             <tbody>
             <?php foreach ($businesses as $b): ?>
@@ -284,21 +348,44 @@ $premiumCount = (int)$db->query("SELECT COUNT(*) FROM businesses WHERE is_premiu
                             <span class="badge-std">Normal</span>
                         <?php endif; ?>
                     </td>
+                    <?php if ($hasInmMax): ?>
+                    <td><?php echo isset($b['inmuebles_max']) && $b['inmuebles_max'] !== null ? (int)$b['inmuebles_max'] : '<span style="color:#aaa">default</span>'; ?></td>
+                    <?php endif; ?>
+                    <?php if ($hasInmDest): ?>
                     <td>
-                        <form method="post" style="display:inline-flex;gap:6px;align-items:center;">
+                        <?php if (!empty($b['inmuebles_destacado'])): ?>
+                            <span class="badge-premium">🌟 Destacado</span>
+                        <?php else: ?>
+                            <span class="badge-std">Normal</span>
+                        <?php endif; ?>
+                    </td>
+                    <?php endif; ?>
+                    <td>
+                        <form method="post" style="display:inline-flex;gap:6px;align-items:center;flex-wrap:wrap;">
                             <?php echo csrfField(); ?>
                             <input type="hidden" name="action" value="update_business_limits">
                             <input type="hidden" name="business_id" value="<?php echo $b['id']; ?>">
                             <input type="number" name="images_max" placeholder="img"
                                    value="<?php echo $b['images_max'] !== null ? (int)$b['images_max'] : ''; ?>"
-                                   min="0" max="50" style="width:50px;" title="Máx imágenes (vacío=default)">
+                                   min="0" max="50" style="width:45px;" title="Máx imágenes (vacío=default)">
                             <input type="number" name="visibility_min_zoom" placeholder="zoom"
                                    value="<?php echo $b['visibility_min_zoom'] !== null ? (int)$b['visibility_min_zoom'] : ''; ?>"
-                                   min="1" max="20" style="width:50px;" title="Zoom mínimo (vacío=default)">
+                                   min="1" max="20" style="width:45px;" title="Zoom mínimo (vacío=default)">
                             <select name="is_premium" style="font-size:11px;">
                                 <option value="0" <?php echo !$b['is_premium'] ? 'selected' : ''; ?>>Normal</option>
                                 <option value="1" <?php echo  $b['is_premium'] ? 'selected' : ''; ?>>Premium</option>
                             </select>
+                            <?php if ($hasInmMax): ?>
+                            <input type="number" name="inmuebles_max" placeholder="inm"
+                                   value="<?php echo isset($b['inmuebles_max']) && $b['inmuebles_max'] !== null ? (int)$b['inmuebles_max'] : ''; ?>"
+                                   min="0" max="500" style="width:45px;" title="Máx inmuebles (vacío=default)">
+                            <?php endif; ?>
+                            <?php if ($hasInmDest): ?>
+                            <select name="inmuebles_destacado" style="font-size:11px;" title="Inmobiliaria destacada">
+                                <option value="0" <?php echo empty($b['inmuebles_destacado']) ? 'selected' : ''; ?>>Normal</option>
+                                <option value="1" <?php echo !empty($b['inmuebles_destacado']) ? 'selected' : ''; ?>>🌟 Dest.</option>
+                            </select>
+                            <?php endif; ?>
                             <button class="btn btn-sm btn-primary" type="submit">✓</button>
                         </form>
                     </td>
@@ -312,6 +399,8 @@ $premiumCount = (int)$db->query("SELECT COUNT(*) FROM businesses WHERE is_premiu
         💡 <strong>Tip:</strong> Los negocios <em>premium</em> se recomiendan con zoom mínimo 3–5 para visibilidad global.
         Los negocios normales usan 12 (zoom de ciudad) por defecto.
         El override de imágenes vacío significa usar el default del tipo o el global (2).
+        El campo "Máx. Inmuebles" aplica solo a negocios de tipo <em>inmobiliaria</em>.
+        Las inmobiliarias <em>destacadas</em> (🌟) aparecen primero en CERCA y tienen mayor visibilidad.
     </div>
 </div>
 

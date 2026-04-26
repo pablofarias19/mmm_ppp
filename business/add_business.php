@@ -1226,31 +1226,78 @@ $descriptionPlaceholders = [
                 </button>
                 <div id="inmueble-form" style="display:none;margin-top:14px;padding:14px;border:1px solid #d1fae5;border-radius:10px;background:#f0fdf4;">
                     <input type="hidden" id="inm-id">
-                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                    <!-- Fila 1: Tipo de inmueble -->
+                    <div style="margin-bottom:12px;">
+                        <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:6px;">Tipo de inmueble *</label>
+                        <div id="inm-tipo-btns" style="display:flex;flex-wrap:wrap;gap:6px;">
+                            <label class="inm-tipo-btn" title="Casa"><input type="radio" name="inm_tipo" id="inm-tipo-casa" value="casa" checked>🏠 Casa</label>
+                            <label class="inm-tipo-btn" title="Departamento"><input type="radio" name="inm_tipo" id="inm-tipo-departamento" value="departamento">🏢 Depto.</label>
+                            <label class="inm-tipo-btn" title="Lote"><input type="radio" name="inm_tipo" id="inm-tipo-lote" value="lote">🌳 Lote</label>
+                            <label class="inm-tipo-btn" title="Proyecto"><input type="radio" name="inm_tipo" id="inm-tipo-proyecto" value="proyecto">🏗️ Proyecto</label>
+                            <label class="inm-tipo-btn" title="Local"><input type="radio" name="inm_tipo" id="inm-tipo-local" value="local">🏪 Local</label>
+                            <label class="inm-tipo-btn" title="Oficina"><input type="radio" name="inm_tipo" id="inm-tipo-oficina" value="oficina">🖥️ Oficina</label>
+                        </div>
+                    </div>
+                    <!-- Fila 2: Operación + Financiado -->
+                    <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:10px;align-items:end;">
                         <div>
                             <label style="font-size:.82em;font-weight:600;">Operación *</label>
                             <select id="inm-operacion" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
-                                <option value="venta">Venta</option>
-                                <option value="alquiler">Alquiler</option>
+                                <option value="venta">🏠 Venta</option>
+                                <option value="alquiler">🔑 Alquiler</option>
                             </select>
                         </div>
+                        <div style="padding-bottom:4px;">
+                            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;font-size:.82em;font-weight:600;white-space:nowrap;">
+                                <input type="checkbox" id="inm-financiado" style="width:auto;">
+                                💰 Acepta financiación
+                            </label>
+                        </div>
+                    </div>
+                    <!-- Fila 3: Precio + Moneda -->
+                    <div style="display:grid;grid-template-columns:1fr auto;gap:10px;margin-bottom:10px;">
                         <div>
                             <label style="font-size:.82em;font-weight:600;">Precio</label>
                             <input type="number" id="inm-precio" min="0" step="0.01" placeholder="0.00" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
                         </div>
+                        <div>
+                            <label style="font-size:.82em;font-weight:600;">Moneda</label>
+                            <select id="inm-moneda" style="padding:8px;border:1px solid #d1d5db;border-radius:6px;min-width:80px;">
+                                <option value="ARS">🇦🇷 ARS</option>
+                                <option value="USD">🇺🇸 USD</option>
+                                <option value="EUR">🇪🇺 EUR</option>
+                                <option value="UYU">🇺🇾 UYU</option>
+                                <option value="BRL">🇧🇷 BRL</option>
+                            </select>
+                        </div>
                     </div>
+                    <!-- Fila 4: Ambientes + Superficie -->
+                    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+                        <div>
+                            <label style="font-size:.82em;font-weight:600;">Ambientes</label>
+                            <input type="number" id="inm-ambientes" min="1" max="20" placeholder="Ej: 3" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                        </div>
+                        <div>
+                            <label style="font-size:.82em;font-weight:600;">Superficie (m²)</label>
+                            <input type="number" id="inm-superficie" min="1" step="0.01" placeholder="Ej: 65.00" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                        </div>
+                    </div>
+                    <!-- Fila 5: Título -->
                     <div style="margin-bottom:10px;">
                         <label style="font-size:.82em;font-weight:600;">Título *</label>
-                        <input type="text" id="inm-titulo" maxlength="255" placeholder="Ej: Departamento 2 ambientes" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                        <input type="text" id="inm-titulo" maxlength="255" placeholder="Ej: Departamento 2 ambientes en palermo" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
                     </div>
+                    <!-- Fila 6: Descripción -->
                     <div style="margin-bottom:10px;">
                         <label style="font-size:.82em;font-weight:600;">Descripción</label>
                         <textarea id="inm-descripcion" rows="3" maxlength="2000" placeholder="Descripción del inmueble..." style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;resize:vertical;"></textarea>
                     </div>
+                    <!-- Fila 7: Dirección -->
                     <div style="margin-bottom:10px;">
                         <label style="font-size:.82em;font-weight:600;">Dirección</label>
                         <input type="text" id="inm-direccion" maxlength="500" placeholder="Dirección del inmueble" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
                     </div>
+                    <!-- Fila 8: Coordenadas -->
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
                         <div>
                             <label style="font-size:.82em;font-weight:600;">Latitud</label>
@@ -1261,7 +1308,8 @@ $descriptionPlaceholders = [
                             <input type="number" id="inm-lng" step="any" placeholder="-58.3816" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
                         </div>
                     </div>
-                    <div style="margin-bottom:10px;">
+                    <!-- Fila 9: Contacto -->
+                    <div style="margin-bottom:12px;">
                         <label style="font-size:.82em;font-weight:600;">Contacto (teléfono o email)</label>
                         <input type="text" id="inm-contacto" maxlength="255" placeholder="Teléfono o email de contacto" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
                     </div>
@@ -1271,9 +1319,48 @@ $descriptionPlaceholders = [
                         <button type="button" style="padding:8px 14px;border:1px solid #d1d5db;border-radius:6px;background:white;cursor:pointer;" onclick="cerrarFormInmueble()">Cancelar</button>
                     </div>
                 </div>
+
+                <!-- Adjuntos (planos / proyecto de inversión) – se muestra al editar un inmueble -->
+                <div id="inm-adjuntos-section" style="display:none;margin-top:16px;padding:14px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;">
+                    <div style="font-weight:700;font-size:.9em;margin-bottom:8px;color:#1e40af;">📎 Adjuntos del inmueble</div>
+                    <div id="inm-adjuntos-list" style="margin-bottom:10px;"></div>
+                    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+                        <div>
+                            <label style="font-size:.78em;font-weight:600;">Tipo</label>
+                            <select id="adj-tipo" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.85em;">
+                                <option value="plano">📐 Plano</option>
+                                <option value="proyecto">📊 Proyecto de inversión</option>
+                                <option value="foto">📷 Foto adicional</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label style="font-size:.78em;font-weight:600;">Nombre (opcional)</label>
+                            <input type="text" id="adj-nombre" maxlength="255" placeholder="Ej: Planta baja" style="padding:6px 8px;border:1px solid #d1d5db;border-radius:6px;font-size:.85em;width:180px;">
+                        </div>
+                        <div>
+                            <label style="font-size:.78em;font-weight:600;">Archivo (JPG/PNG/PDF, máx 10MB)</label>
+                            <input type="file" id="adj-file" accept=".jpg,.jpeg,.png,.webp,.pdf" style="font-size:.82em;">
+                        </div>
+                        <button type="button" onclick="subirAdjunto()" style="padding:7px 14px;background:#1d4ed8;color:white;border:none;border-radius:6px;cursor:pointer;font-size:.85em;">📤 Subir</button>
+                    </div>
+                    <div id="adj-msg" style="margin-top:6px;font-size:.78em;"></div>
+                </div>
+
                 <div id="inmuebles-msg" style="margin-top:8px;font-size:.82em;"></div>
             </div>
         </div>
+        <style>
+        .inm-tipo-btn {
+            display: inline-flex; align-items: center; gap: 4px;
+            padding: 6px 11px; border: 1.5px solid #d1d5db; border-radius: 20px;
+            cursor: pointer; font-size: .82em; background: white; transition: all .15s;
+            user-select: none;
+        }
+        .inm-tipo-btn:has(input:checked) {
+            border-color: #16a34a; background: #d1fae5; color: #065f46; font-weight: 700;
+        }
+        .inm-tipo-btn input[type=radio] { display: none; }
+        </style>
         <?php endif; ?>
         <!-- ══ FIN MÓDULO INMUEBLES ══════════════════════════════════════════════ -->
 
@@ -2584,6 +2671,11 @@ function onCountryChange(cc) {
 <?php if ($editing && $selectedType === 'inmobiliaria'): ?>
 (function() {
     const BIZ = <?php echo (int)$businessId; ?>;
+    const INM_TIPO_ICONS = {
+        casa:'🏠', departamento:'🏢', lote:'🌳', proyecto:'🏗️', local:'🏪', oficina:'🖥️'
+    };
+    const INM_MONEDA_SYM = { ARS:'$', USD:'US$', EUR:'€', UYU:'$U', BRL:'R$' };
+
     function inmMsg(text, ok) {
         const el = document.getElementById('inmueble-msg');
         if (!el) return;
@@ -2601,17 +2693,40 @@ function onCountryChange(cc) {
         el.style.color = ok ? '#065f46' : '#991b1b';
         el.style.display = text ? 'block' : 'none';
     }
+    function adjMsg(text, ok) {
+        const el = document.getElementById('adj-msg');
+        if (!el) return;
+        el.textContent = text;
+        el.style.color = ok ? '#065f46' : '#991b1b';
+        el.style.display = text ? 'block' : 'none';
+    }
+
+    let _currentInmId = null;
+
     window.abrirFormInmueble = function(id) {
+        _currentInmId = id || null;
         document.getElementById('inm-id').value = id || '';
         document.getElementById('inm-titulo').value = '';
         document.getElementById('inm-operacion').value = 'venta';
         document.getElementById('inm-precio').value = '';
+        document.getElementById('inm-moneda').value = 'ARS';
         document.getElementById('inm-descripcion').value = '';
         document.getElementById('inm-direccion').value = '';
         document.getElementById('inm-lat').value = '';
         document.getElementById('inm-lng').value = '';
         document.getElementById('inm-contacto').value = '';
+        document.getElementById('inm-financiado').checked = false;
+        document.getElementById('inm-ambientes').value = '';
+        document.getElementById('inm-superficie').value = '';
+        // Reset tipo
+        const tipoR = document.getElementById('inm-tipo-casa');
+        if (tipoR) tipoR.checked = true;
         inmMsg('', true);
+
+        // Adjuntos section
+        const adjSec = document.getElementById('inm-adjuntos-section');
+        if (adjSec) adjSec.style.display = id ? 'block' : 'none';
+
         if (id) {
             fetch('/api/inmuebles.php?id=' + id)
                 .then(r => r.json()).then(d => {
@@ -2621,33 +2736,52 @@ function onCountryChange(cc) {
                         document.getElementById('inm-titulo').value = n.titulo || '';
                         document.getElementById('inm-operacion').value = n.operacion || 'venta';
                         document.getElementById('inm-precio').value = n.precio || '';
+                        document.getElementById('inm-moneda').value = n.moneda || 'ARS';
                         document.getElementById('inm-descripcion').value = n.descripcion || '';
                         document.getElementById('inm-direccion').value = n.direccion || '';
                         document.getElementById('inm-lat').value = n.lat || '';
                         document.getElementById('inm-lng').value = n.lng || '';
                         document.getElementById('inm-contacto').value = n.contacto || '';
+                        document.getElementById('inm-financiado').checked = !!parseInt(n.financiado, 10);
+                        document.getElementById('inm-ambientes').value = n.ambientes || '';
+                        document.getElementById('inm-superficie').value = n.superficie_m2 || '';
+                        const tipoEl = document.getElementById('inm-tipo-' + (n.tipo || 'casa'));
+                        if (tipoEl) tipoEl.checked = true;
+                        // Cargar adjuntos
+                        renderAdjuntos(n.adjuntos || []);
                     }
                 }).catch(() => {});
+        } else {
+            renderAdjuntos([]);
         }
         document.getElementById('inmueble-form').style.display = 'block';
     };
     window.cerrarFormInmueble = function() {
         document.getElementById('inmueble-form').style.display = 'none';
+        const adjSec = document.getElementById('inm-adjuntos-section');
+        if (adjSec) adjSec.style.display = 'none';
+        _currentInmId = null;
     };
     window.guardarInmueble = async function() {
         const id      = document.getElementById('inm-id').value;
         const titulo  = document.getElementById('inm-titulo').value.trim();
         if (!titulo) { inmMsg('El título es obligatorio.', false); return; }
+        const tipoSel = document.querySelector('input[name="inm_tipo"]:checked');
         const payload = {
-            business_id: BIZ,
-            operacion:   document.getElementById('inm-operacion').value,
+            business_id:  BIZ,
+            operacion:    document.getElementById('inm-operacion').value,
             titulo,
-            descripcion: document.getElementById('inm-descripcion').value.trim(),
-            precio:      document.getElementById('inm-precio').value || null,
-            direccion:   document.getElementById('inm-direccion').value.trim(),
-            lat:         document.getElementById('inm-lat').value || null,
-            lng:         document.getElementById('inm-lng').value || null,
-            contacto:    document.getElementById('inm-contacto').value.trim(),
+            descripcion:  document.getElementById('inm-descripcion').value.trim(),
+            precio:       document.getElementById('inm-precio').value || null,
+            moneda:       document.getElementById('inm-moneda').value || 'ARS',
+            direccion:    document.getElementById('inm-direccion').value.trim(),
+            lat:          document.getElementById('inm-lat').value || null,
+            lng:          document.getElementById('inm-lng').value || null,
+            contacto:     document.getElementById('inm-contacto').value.trim(),
+            tipo:         tipoSel ? tipoSel.value : 'casa',
+            financiado:   document.getElementById('inm-financiado').checked ? 1 : 0,
+            ambientes:    document.getElementById('inm-ambientes').value || null,
+            superficie_m2: document.getElementById('inm-superficie').value || null,
         };
         if (id) payload.id = parseInt(id, 10);
         try {
@@ -2659,7 +2793,13 @@ function onCountryChange(cc) {
             const d = await r.json();
             if (d.success) {
                 inmMsg('✅ ' + (d.message || 'Guardado'), true);
-                cerrarFormInmueble();
+                // If new inmueble, update _currentInmId and show adjuntos section
+                if (!id && d.data && d.data.id) {
+                    _currentInmId = d.data.id;
+                    document.getElementById('inm-id').value = d.data.id;
+                    const adjSec = document.getElementById('inm-adjuntos-section');
+                    if (adjSec) adjSec.style.display = 'block';
+                }
                 cargarInmuebles();
             } else {
                 inmMsg('❌ ' + (d.message || 'Error'), false);
@@ -2687,20 +2827,98 @@ function onCountryChange(cc) {
                 cont.innerHTML = '<p style="font-size:.82em;color:#6b7280;">No hay inmuebles publicados aún.</p>';
                 return;
             }
-            cont.innerHTML = d.data.map(n => `
+            cont.innerHTML = d.data.map(n => {
+                const icon = INM_TIPO_ICONS[n.tipo] || '🏘️';
+                const monSym = INM_MONEDA_SYM[n.moneda] || '$';
+                const precioStr = n.precio ? ` — ${monSym}${Number(n.precio).toLocaleString()}` : '';
+                const finBadge = parseInt(n.financiado, 10) ? ' <span style="background:#fef3c7;color:#92400e;padding:1px 5px;border-radius:10px;font-size:.75em;">💰 Financiado</span>' : '';
+                const ambStr = n.ambientes ? ` · ${n.ambientes} amb.` : '';
+                const supStr = n.superficie_m2 ? ` · ${n.superficie_m2}m²` : '';
+                return `
                 <div style="border:1px solid #d1d5db;border-radius:8px;padding:10px;margin-bottom:8px;background:white;">
-                    <div style="font-weight:700;font-size:.9em;">${n.titulo || 'Sin título'}</div>
-                    <div style="font-size:.78em;color:#6b7280;">${n.operacion === 'alquiler' ? '🔑 Alquiler' : '🏠 Venta'} ${n.precio ? '— $' + Number(n.precio).toLocaleString() : ''}</div>
+                    <div style="font-weight:700;font-size:.9em;">${icon} ${n.titulo || 'Sin título'}${finBadge}</div>
+                    <div style="font-size:.78em;color:#6b7280;">${n.operacion === 'alquiler' ? '🔑 Alquiler' : '🏠 Venta'}${precioStr}${ambStr}${supStr}</div>
                     <div style="margin-top:6px;display:flex;gap:6px;">
                         <button type="button" onclick="abrirFormInmueble(${n.id})" style="font-size:.78em;padding:4px 10px;border:1px solid #d1d5db;border-radius:4px;cursor:pointer;background:white;">✏️ Editar</button>
                         <button type="button" onclick="eliminarInmueble(${n.id})" style="font-size:.78em;padding:4px 10px;border:1px solid #fca5a5;border-radius:4px;cursor:pointer;background:#fff5f5;color:#991b1b;">🗑️ Eliminar</button>
                     </div>
-                </div>
-            `).join('');
+                </div>`;
+            }).join('');
         } catch (e) {
             cont.innerHTML = '<p style="font-size:.82em;color:#991b1b;">Error al cargar inmuebles.</p>';
         }
     };
+
+    // ── Adjuntos ──────────────────────────────────────────────────────────────
+    function renderAdjuntos(adjuntos) {
+        const cont = document.getElementById('inm-adjuntos-list');
+        if (!cont) return;
+        const adjIcons = { plano:'📐', proyecto:'📊', foto:'📷' };
+        if (!adjuntos || !adjuntos.length) {
+            cont.innerHTML = '<p style="font-size:.78em;color:#6b7280;">Sin adjuntos aún.</p>';
+            return;
+        }
+        cont.innerHTML = adjuntos.map(a => {
+            const icon = adjIcons[a.tipo_adjunto] || '📎';
+            const isPdf = (a.mime_type || '').includes('pdf');
+            const preview = isPdf
+                ? `<a href="${a.url}" target="_blank" style="font-size:.78em;color:#1d4ed8;">📄 Ver PDF</a>`
+                : `<a href="${a.url}" target="_blank"><img src="${a.url}" style="height:40px;border-radius:4px;object-fit:cover;" alt="adjunto"></a>`;
+            return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #e5e7eb;font-size:.78em;">
+                ${preview}
+                <span>${icon} ${a.nombre || a.tipo_adjunto}</span>
+                <button type="button" onclick="eliminarAdjunto(${a.id})" style="margin-left:auto;padding:2px 8px;border:1px solid #fca5a5;border-radius:4px;background:#fff5f5;color:#991b1b;cursor:pointer;font-size:.78em;">🗑️</button>
+            </div>`;
+        }).join('');
+    }
+
+    window.subirAdjunto = async function() {
+        const inmId = document.getElementById('inm-id').value;
+        if (!inmId) { adjMsg('Primero guardá el inmueble.', false); return; }
+        const fileEl = document.getElementById('adj-file');
+        if (!fileEl || !fileEl.files || !fileEl.files[0]) { adjMsg('Seleccioná un archivo.', false); return; }
+        const fd = new FormData();
+        fd.append('inmueble_id', inmId);
+        fd.append('tipo_adjunto', document.getElementById('adj-tipo').value);
+        fd.append('nombre', document.getElementById('adj-nombre').value.trim());
+        fd.append('file', fileEl.files[0]);
+        adjMsg('⏳ Subiendo...', true);
+        try {
+            const r = await fetch('/api/upload_inmueble_adjunto.php', { method: 'POST', body: fd });
+            const d = await r.json();
+            if (d.success) {
+                adjMsg('✅ Adjunto subido', true);
+                fileEl.value = '';
+                document.getElementById('adj-nombre').value = '';
+                // Reload adjuntos
+                const rr = await fetch('/api/inmuebles.php?id=' + inmId);
+                const dd = await rr.json();
+                if (dd.success && dd.data) renderAdjuntos(dd.data.adjuntos || []);
+            } else {
+                adjMsg('❌ ' + (d.message || 'Error'), false);
+            }
+        } catch (e) { adjMsg('Error de conexión.', false); }
+    };
+
+    window.eliminarAdjunto = async function(adjId) {
+        if (!confirm('¿Eliminar este adjunto?')) return;
+        const inmId = document.getElementById('inm-id').value;
+        try {
+            const r = await fetch('/api/upload_inmueble_adjunto.php?id=' + adjId, { method: 'DELETE' });
+            const d = await r.json();
+            if (d.success) {
+                adjMsg('✅ Eliminado', true);
+                if (inmId) {
+                    const rr = await fetch('/api/inmuebles.php?id=' + inmId);
+                    const dd = await rr.json();
+                    if (dd.success && dd.data) renderAdjuntos(dd.data.adjuntos || []);
+                }
+            } else {
+                adjMsg('❌ ' + (d.message || 'Error'), false);
+            }
+        } catch (e) { adjMsg('Error.', false); }
+    };
+
     document.addEventListener('DOMContentLoaded', cargarInmuebles);
 })();
 <?php endif; ?>
