@@ -7170,7 +7170,13 @@ const INM_MONEDA_SYM = { ARS:'$', USD:'US$', EUR:'€', UYU:'$U', BRL:'R$' };
 /** Muestra el modal de ayuda del botón CERCA. */
 function mostrarAyudaCerca() {
     const m = document.getElementById('modal-cerca-ayuda');
-    if (m) m.style.display = 'flex';
+    if (!m) return;
+    m.style.display = 'flex';
+    // Cerrar con Escape
+    const _close = function(e) {
+        if (e.key === 'Escape') { m.style.display = 'none'; document.removeEventListener('keydown', _close); }
+    };
+    document.addEventListener('keydown', _close);
 }
 
 function toggleCerca() {

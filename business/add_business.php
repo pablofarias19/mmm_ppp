@@ -2848,19 +2848,15 @@ function onCountryChange(cc) {
         // Inicializar el mapa una vez que el div sea visible
         requestAnimationFrame(function() {
             _initInmMap();
-            // Si hay coordenadas cargadas (edición), mover el marcador al punto
             if (id) {
-                // Las coords se cargan de forma asíncrona; observar cambios en inm-lat
-                var _waitCoords = setInterval(function() {
-                    var latVal = document.getElementById('inm-lat').value;
-                    var lngVal = document.getElementById('inm-lng').value;
-                    if (latVal && lngVal) {
-                        clearInterval(_waitCoords);
-                        _setInmMapMarker(parseFloat(latVal), parseFloat(lngVal));
+                // Las coords se cargan async desde la API; esperar brevemente y luego actualizar el mapa
+                setTimeout(function() {
+                    var lat = document.getElementById('inm-lat').value;
+                    var lng = document.getElementById('inm-lng').value;
+                    if (lat && lng) {
+                        _setInmMapMarker(parseFloat(lat), parseFloat(lng));
                     }
-                }, 150);
-                // Timeout fallback
-                setTimeout(function() { clearInterval(_waitCoords); }, 5000);
+                }, 600);
             } else {
                 // Formulario nuevo: limpiar marcador
                 if (_inmMapMarker && _inmMap) {

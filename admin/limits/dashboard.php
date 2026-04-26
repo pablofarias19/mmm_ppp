@@ -271,11 +271,11 @@ $inmTotalCount  = mapitaTableExists($db, 'inmuebles')
                 <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
                     <input type="range" name="global_icon_boost" id="boost-slider"
                            min="0.5" max="3.0" step="0.1"
-                           value="<?php echo htmlspecialchars(number_format($globalIconBoost, 1)); ?>"
+                           value="<?php echo htmlspecialchars(number_format($globalIconBoost, 1, '.', '')); ?>"
                            oninput="document.getElementById('boost-val').textContent = parseFloat(this.value).toFixed(1) + '×'"
                            style="width:220px;cursor:pointer;">
                     <span id="boost-val" style="font-size:1.4rem;font-weight:700;color:#3d56c9;min-width:44px;">
-                        <?php echo number_format($globalIconBoost, 1); ?>×
+                        <?php echo number_format($globalIconBoost, 1, '.', ''); ?>×
                     </span>
                     <button class="btn btn-primary btn-sm" type="submit">💾 Guardar</button>
                 </div>
