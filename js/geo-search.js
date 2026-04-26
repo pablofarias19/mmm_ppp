@@ -13,7 +13,24 @@
  *     searchBtnId,   // id del botón Buscar
  *     resultsDivId,  // id del div donde se muestran sugerencias
  *   });
+ *
+ * Nota CSP: las llamadas a Nominatim requieren que connect-src incluya
+ *   https://nominatim.openstreetmap.org en la Content-Security-Policy.
+ * Nota User-Agent: el navegador envía automáticamente su User-Agent al
+ *   realizar fetch desde el cliente; no es posible sobreescribirlo desde JS.
+ *   Si se desea personalizar el User-Agent usar un proxy server-side.
  */
+
+/** Escapa caracteres HTML para prevenir XSS al insertar en innerHTML. */
+function _geoEscHtml(str) {
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
 function initGeoSearch(opts) {
     var searchInput  = document.getElementById(opts.searchInputId);
     var searchBtn    = document.getElementById(opts.searchBtnId);
@@ -49,7 +66,7 @@ function initGeoSearch(opts) {
     function showError(msg) {
         resultsDiv.innerHTML =
             '<div style="padding:10px 12px;color:#b91c1c;font-size:.85em;">' +
-            '⚠️ ' + msg + '</div>';
+            '&#9888; ' + _geoEscHtml(msg) + '</div>';
         resultsDiv.style.display = 'block';
     }
 
@@ -65,9 +82,10 @@ function initGeoSearch(opts) {
                   encodeURIComponent(q);
 
         var controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+        var timeoutMs = opts.timeoutMs || 8000;
         var timer = setTimeout(function() {
             if (controller) controller.abort();
-        }, 8000);
+        }, timeoutMs);
 
         fetch(url, {
             headers: { 'Accept-Language': 'es' },
@@ -94,24 +112,23 @@ function initGeoSearch(opts) {
 
             // Mostrar lista de resultados
             resultsDiv.style.display = 'block';
-            var html = '<ul style="list-style:none;margin:0;padding:0;">';
-            data.forEach(function(item) {
-                html += '<li data-lat="' + item.lat + '" data-lon="' + item.lon +
-                        '" data-name="' + item.display_name.replace(/"/g, '&quot;') + '"' +
-                        ' style="padding:9px 12px;cursor:pointer;font-size:.84em;border-bottom:1px solid #f3f4f6;' +
-                        'line-height:1.4;transition:background .15s;"' +
-                        ' onmouseover="this.style.background=\'#f0f4ff\'"' +
-                        ' onmouseout="this.style.background=\'\'">' +
-                        '📍 ' + item.display_name + '</li>';
-            });
-            html += '</ul>';
-            resultsDiv.innerHTML = html;
+            var ul = document.createElement('ul');
+            ul.style.cssText = 'list-style:none;margin:0;padding:0;';
 
-            resultsDiv.querySelectorAll('li').forEach(function(li) {
+            data.forEach(function(item) {
+                var li = document.createElement('li');
+                li.style.cssText = 'padding:9px 12px;cursor:pointer;font-size:.84em;border-bottom:1px solid #f3f4f6;line-height:1.4;transition:background .15s;';
+                li.textContent = '📍 ' + item.display_name;
+                li.addEventListener('mouseover', function() { li.style.background = '#f0f4ff'; });
+                li.addEventListener('mouseout',  function() { li.style.background = ''; });
                 li.addEventListener('click', function() {
-                    setLocation(li.dataset.lat, li.dataset.lon, li.dataset.name);
+                    setLocation(item.lat, item.lon, item.display_name);
                 });
+                ul.appendChild(li);
             });
+
+            resultsDiv.innerHTML = '';
+            resultsDiv.appendChild(ul);
         })
         .catch(function(err) {
             clearTimeout(timer);
