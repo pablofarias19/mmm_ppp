@@ -28,7 +28,10 @@ if ($_sessionUserId > 0) {
 if (isset($_GET['lang'])) {
     setUILanguage($_GET['lang']);
 }
-$_html_lang = getUILanguage();
+$_html_lang     = getUILanguage();
+// True when the user has explicitly chosen a language (session set), used by JS
+// to decide whether to fall back to browser-language auto-detection.
+$_lang_explicit = isset($_SESSION['ui_lang']);
 
 // ── Open Graph ────────────────────────────────────────────────────────────────
 $og_title       = 'MAPITA - Mapa de Marcas y Negocios';
@@ -1049,9 +1052,10 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             <div id="lang-picker" style="display:none;position:absolute;right:0;top:calc(100% + 6px);
                  background:white;border:1.5px solid #e2e8f0;border-radius:10px;
                  box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:170px;z-index:9999;overflow:hidden;">
-                <div style="padding:8px 12px;font-size:11px;font-weight:700;color:#6b7280;
-                             text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #f1f5f9;">
-                    Idioma de interfaz
+                <div id="lang-picker-title"
+                     style="padding:8px 12px;font-size:11px;font-weight:700;color:#6b7280;
+                            text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #f1f5f9;">
+                    <?= htmlspecialchars(t('ui_language_selector'), ENT_QUOTES, 'UTF-8') ?>
                 </div>
                 <?php foreach (['es'=>'Español','en'=>'English','pt'=>'Português','fr'=>'Français','de'=>'Deutsch','no'=>'Norsk','zh'=>'中文','ar'=>'العربية','hi'=>'हिन्दी','it'=>'Italiano','ru'=>'Русский','el'=>'Ελληνικά','tr'=>'Türkçe','ja'=>'日本語','ko'=>'한국어'] as $lc => $lname): ?>
                 <button type="button" class="lang-btn-option" data-lang="<?= $lc ?>"
@@ -1069,7 +1073,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         </div>
     </div>
 
-    <input type="text" id="busqueda" placeholder="🔍 Buscar..." oninput="filtrar()"
+    <input type="text" id="busqueda" placeholder="🔍 <?= htmlspecialchars(t('filter_search'), ENT_QUOTES, 'UTF-8') ?>" oninput="filtrar()"
            style="width:100%;padding:10px 12px;border:1px solid #d0d5dd;border-radius:8px;margin-bottom:12px;font-size:13px;font-family:inherit;color:#374151;transition:all 0.2s ease;"
            onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)'"
            onblur="this.style.borderColor='#d0d5dd';this.style.boxShadow='none'">
@@ -1078,7 +1082,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             style="width:100%;padding:10px 12px;border:1px solid #d0d5dd;border-radius:8px;margin-bottom:12px;font-size:13px;font-family:inherit;color:#374151;background-color:white;cursor:pointer;transition:all 0.2s ease;"
             onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)'"
             onblur="this.style.borderColor='#d0d5dd';this.style.boxShadow='none'">
-        <option value="">📂 Todos los tipos</option>
+        <option value="">📂 <?= htmlspecialchars(t('filter_all_types'), ENT_QUOTES, 'UTF-8') ?></option>
         <optgroup label="Gastronomía">
             <option value="restaurante">🍽️ Restaurante</option>
             <option value="cafeteria">☕ Cafetería</option>
@@ -1233,7 +1237,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 <span style="font-size:10px;">▼</span>
             </button>
             <div class="accordion-content">
-                <label><input type="checkbox" id="filter-open-now" onchange="filtrar()"> Solo abiertos ahora</label>
+                <label><input type="checkbox" id="filter-open-now" onchange="filtrar()"> <?= htmlspecialchars(t('filter_open_now'), ENT_QUOTES, 'UTF-8') ?></label>
                 <label><input type="checkbox" name="filter-days" value="lunes" onchange="filtrar()"> Lunes a viernes</label>
                 <label><input type="checkbox" name="filter-days" value="sabado" onchange="filtrar()"> Abierto sábados</label>
                 <label><input type="checkbox" name="filter-days" value="domingo" onchange="filtrar()"> Abierto domingos</label>
@@ -1278,7 +1282,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 <select id="filter-country-code" onchange="filtrar()"
                         style="width:100%;padding:8px 10px;border:1px solid #d0d5dd;border-radius:8px;
                                font-size:12px;background:white;color:#374151;">
-                    <option value="">🌍 Todos los países</option>
+                    <option value="">🌍 <?= htmlspecialchars(t('filter_all_countries'), ENT_QUOTES, 'UTF-8') ?></option>
                     <?php foreach (getCountryOptions() as $regionLabel => $countries): ?>
                     <optgroup label="<?= htmlspecialchars($regionLabel) ?>">
                         <?php foreach ($countries as $cc => $cname): ?>
@@ -1300,7 +1304,7 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                 <select id="filter-language-code" onchange="filtrar()"
                         style="width:100%;padding:8px 10px;border:1px solid #d0d5dd;border-radius:8px;
                                font-size:12px;background:white;color:#374151;">
-                    <option value="">🗣️ Todos los idiomas</option>
+                    <option value="">🗣️ <?= htmlspecialchars(t('filter_all_languages'), ENT_QUOTES, 'UTF-8') ?></option>
                     <?php foreach (getLanguageOptions() as $lc => $lname): ?>
                     <option value="<?= htmlspecialchars($lc) ?>"><?= htmlspecialchars($lname) ?></option>
                     <?php endforeach; ?>
@@ -1819,6 +1823,10 @@ const UI_STRINGS = {
         lbl_country: 'País', lbl_language: 'Idioma', lbl_currency: 'Moneda',
         lbl_registry: 'Registro', btn_website: 'Ver sitio web', btn_directions: 'Cómo llegar',
         filter_all_countries: 'Todos los países', filter_all_languages: 'Todos los idiomas',
+        filter_search: 'Buscar...', filter_all_types: 'Todos los tipos',
+        filter_open_now: 'Solo abiertos ahora', filter_country: 'País de la entidad',
+        filter_language: 'Idioma de operación', ui_language_selector: 'Idioma de interfaz',
+        msg_loading: 'Cargando...', msg_no_results: 'Sin resultados', btn_close: 'Cerrar',
     },
     en: {
         lbl_hours: 'Hours', lbl_phone: 'Phone', lbl_address: 'Address',
@@ -1828,6 +1836,10 @@ const UI_STRINGS = {
         lbl_country: 'Country', lbl_language: 'Language', lbl_currency: 'Currency',
         lbl_registry: 'Registry', btn_website: 'Visit website', btn_directions: 'Get directions',
         filter_all_countries: 'All countries', filter_all_languages: 'All languages',
+        filter_search: 'Search...', filter_all_types: 'All types',
+        filter_open_now: 'Open now only', filter_country: 'Entity country',
+        filter_language: 'Operating language', ui_language_selector: 'Interface language',
+        msg_loading: 'Loading...', msg_no_results: 'No results', btn_close: 'Close',
     },
     pt: {
         lbl_hours: 'Horário', lbl_phone: 'Telefone', lbl_address: 'Endereço',
@@ -1837,6 +1849,10 @@ const UI_STRINGS = {
         lbl_country: 'País', lbl_language: 'Idioma', lbl_currency: 'Moeda',
         lbl_registry: 'Registro', btn_website: 'Visitar site', btn_directions: 'Como chegar',
         filter_all_countries: 'Todos os países', filter_all_languages: 'Todos os idiomas',
+        filter_search: 'Buscar...', filter_all_types: 'Todos os tipos',
+        filter_open_now: 'Somente abertos agora', filter_country: 'País da entidade',
+        filter_language: 'Idioma de operação', ui_language_selector: 'Idioma da interface',
+        msg_loading: 'Carregando...', msg_no_results: 'Sem resultados', btn_close: 'Fechar',
     },
     fr: {
         lbl_hours: 'Horaires', lbl_phone: 'Téléphone', lbl_address: 'Adresse',
@@ -1846,6 +1862,10 @@ const UI_STRINGS = {
         lbl_country: 'Pays', lbl_language: 'Langue', lbl_currency: 'Devise',
         lbl_registry: 'Enregistrement', btn_website: 'Voir le site', btn_directions: 'Itinéraire',
         filter_all_countries: 'Tous les pays', filter_all_languages: 'Toutes les langues',
+        filter_search: 'Rechercher...', filter_all_types: 'Tous les types',
+        filter_open_now: 'Ouverts maintenant', filter_country: "Pays de l'entité",
+        filter_language: "Langue d'exploitation", ui_language_selector: "Langue de l'interface",
+        msg_loading: 'Chargement...', msg_no_results: 'Aucun résultat', btn_close: 'Fermer',
     },
     de: {
         lbl_hours: 'Öffnungszeiten', lbl_phone: 'Telefon', lbl_address: 'Adresse',
@@ -1855,6 +1875,10 @@ const UI_STRINGS = {
         lbl_country: 'Land', lbl_language: 'Sprache', lbl_currency: 'Währung',
         lbl_registry: 'Register', btn_website: 'Website besuchen', btn_directions: 'Route',
         filter_all_countries: 'Alle Länder', filter_all_languages: 'Alle Sprachen',
+        filter_search: 'Suchen...', filter_all_types: 'Alle Typen',
+        filter_open_now: 'Jetzt geöffnet', filter_country: 'Land der Entität',
+        filter_language: 'Betriebssprache', ui_language_selector: 'Anzeigesprache',
+        msg_loading: 'Wird geladen...', msg_no_results: 'Keine Ergebnisse', btn_close: 'Schließen',
     },
     no: {
         lbl_hours: 'Åpningstider', lbl_phone: 'Telefon', lbl_address: 'Adresse',
@@ -1864,6 +1888,10 @@ const UI_STRINGS = {
         lbl_country: 'Land', lbl_language: 'Språk', lbl_currency: 'Valuta',
         lbl_registry: 'Register', btn_website: 'Besøk nettsted', btn_directions: 'Veibeskrivelse',
         filter_all_countries: 'Alle land', filter_all_languages: 'Alle språk',
+        filter_search: 'Søk...', filter_all_types: 'Alle typer',
+        filter_open_now: 'Kun åpne nå', filter_country: 'Enhetens land',
+        filter_language: 'Driftsspråk', ui_language_selector: 'Grensesnittspråk',
+        msg_loading: 'Laster...', msg_no_results: 'Ingen resultater', btn_close: 'Lukk',
     },
     zh: {
         lbl_hours: '营业时间', lbl_phone: '电话', lbl_address: '地址',
@@ -1873,6 +1901,10 @@ const UI_STRINGS = {
         lbl_country: '国家', lbl_language: '语言', lbl_currency: '货币',
         lbl_registry: '注册', btn_website: '访问网站', btn_directions: '获取路线',
         filter_all_countries: '所有国家', filter_all_languages: '所有语言',
+        filter_search: '搜索...', filter_all_types: '所有类型',
+        filter_open_now: '仅显示营业中', filter_country: '实体所在国',
+        filter_language: '运营语言', ui_language_selector: '界面语言',
+        msg_loading: '加载中...', msg_no_results: '无结果', btn_close: '关闭',
     },
     ar: {
         lbl_hours: 'ساعات العمل', lbl_phone: 'الهاتف', lbl_address: 'العنوان',
@@ -1882,6 +1914,10 @@ const UI_STRINGS = {
         lbl_country: 'الدولة', lbl_language: 'اللغة', lbl_currency: 'العملة',
         lbl_registry: 'تسجيل', btn_website: 'زيارة الموقع', btn_directions: 'الاتجاهات',
         filter_all_countries: 'جميع الدول', filter_all_languages: 'جميع اللغات',
+        filter_search: 'بحث...', filter_all_types: 'جميع الأنواع',
+        filter_open_now: 'المفتوحة الآن فقط', filter_country: 'دولة الكيان',
+        filter_language: 'لغة التشغيل', ui_language_selector: 'لغة الواجهة',
+        msg_loading: 'جارٍ التحميل...', msg_no_results: 'لا توجد نتائج', btn_close: 'إغلاق',
     },
     it: {
         lbl_hours: 'Orario', lbl_phone: 'Telefono', lbl_address: 'Indirizzo',
@@ -1891,6 +1927,10 @@ const UI_STRINGS = {
         lbl_country: 'Paese', lbl_language: 'Lingua', lbl_currency: 'Valuta',
         lbl_registry: 'Registro', btn_website: 'Visita il sito', btn_directions: 'Come arrivare',
         filter_all_countries: 'Tutti i paesi', filter_all_languages: 'Tutte le lingue',
+        filter_search: 'Cerca...', filter_all_types: 'Tutti i tipi',
+        filter_open_now: 'Solo aperti ora', filter_country: "Paese dell'entità",
+        filter_language: 'Lingua operativa', ui_language_selector: "Lingua dell'interfaccia",
+        msg_loading: 'Caricamento...', msg_no_results: 'Nessun risultato', btn_close: 'Chiudi',
     },
     ru: {
         lbl_hours: 'Часы работы', lbl_phone: 'Телефон', lbl_address: 'Адрес',
@@ -1900,6 +1940,10 @@ const UI_STRINGS = {
         lbl_country: 'Страна', lbl_language: 'Язык', lbl_currency: 'Валюта',
         lbl_registry: 'Реестр', btn_website: 'Посетить сайт', btn_directions: 'Как добраться',
         filter_all_countries: 'Все страны', filter_all_languages: 'Все языки',
+        filter_search: 'Поиск...', filter_all_types: 'Все типы',
+        filter_open_now: 'Только открытые', filter_country: 'Страна объекта',
+        filter_language: 'Рабочий язык', ui_language_selector: 'Язык интерфейса',
+        msg_loading: 'Загрузка...', msg_no_results: 'Нет результатов', btn_close: 'Закрыть',
     },
     el: {
         lbl_hours: 'Ώρες', lbl_phone: 'Τηλέφωνο', lbl_address: 'Διεύθυνση',
@@ -1909,6 +1953,10 @@ const UI_STRINGS = {
         lbl_country: 'Χώρα', lbl_language: 'Γλώσσα', lbl_currency: 'Νόμισμα',
         lbl_registry: 'Μητρώο', btn_website: 'Επίσκεψη', btn_directions: 'Οδηγίες',
         filter_all_countries: 'Όλες οι χώρες', filter_all_languages: 'Όλες οι γλώσσες',
+        filter_search: 'Αναζήτηση...', filter_all_types: 'Όλοι οι τύποι',
+        filter_open_now: 'Μόνο ανοιχτά', filter_country: 'Χώρα οντότητας',
+        filter_language: 'Γλώσσα λειτουργίας', ui_language_selector: 'Γλώσσα διεπαφής',
+        msg_loading: 'Φόρτωση...', msg_no_results: 'Κανένα αποτέλεσμα', btn_close: 'Κλείσιμο',
     },
     tr: {
         lbl_hours: 'Çalışma saatleri', lbl_phone: 'Telefon', lbl_address: 'Adres',
@@ -1918,6 +1966,10 @@ const UI_STRINGS = {
         lbl_country: 'Ülke', lbl_language: 'Dil', lbl_currency: 'Para birimi',
         lbl_registry: 'Sicil', btn_website: 'Web sitesini ziyaret et', btn_directions: 'Yol tarifi',
         filter_all_countries: 'Tüm ülkeler', filter_all_languages: 'Tüm diller',
+        filter_search: 'Ara...', filter_all_types: 'Tüm türler',
+        filter_open_now: 'Yalnızca açık olanlar', filter_country: 'Kuruluş ülkesi',
+        filter_language: 'Çalışma dili', ui_language_selector: 'Arayüz dili',
+        msg_loading: 'Yükleniyor...', msg_no_results: 'Sonuç yok', btn_close: 'Kapat',
     },
     ja: {
         lbl_hours: '営業時間', lbl_phone: '電話', lbl_address: '住所',
@@ -1927,6 +1979,10 @@ const UI_STRINGS = {
         lbl_country: '国', lbl_language: '言語', lbl_currency: '通貨',
         lbl_registry: '登録', btn_website: 'ウェブサイトを見る', btn_directions: '道順',
         filter_all_countries: 'すべての国', filter_all_languages: 'すべての言語',
+        filter_search: '検索...', filter_all_types: 'すべての種類',
+        filter_open_now: '営業中のみ', filter_country: '事業者の国',
+        filter_language: '業務言語', ui_language_selector: 'インターフェース言語',
+        msg_loading: '読み込み中...', msg_no_results: '結果なし', btn_close: '閉じる',
     },
     ko: {
         lbl_hours: '영업시간', lbl_phone: '전화', lbl_address: '주소',
@@ -1936,6 +1992,10 @@ const UI_STRINGS = {
         lbl_country: '국가', lbl_language: '언어', lbl_currency: '통화',
         lbl_registry: '등록', btn_website: '웹사이트 방문', btn_directions: '길 찾기',
         filter_all_countries: '모든 국가', filter_all_languages: '모든 언어',
+        filter_search: '검색...', filter_all_types: '모든 유형',
+        filter_open_now: '영업 중만', filter_country: '사업체 국가',
+        filter_language: '업무 언어', ui_language_selector: '인터페이스 언어',
+        msg_loading: '로딩 중...', msg_no_results: '결과 없음', btn_close: '닫기',
     },
     hi: {
         lbl_hours: 'समय', lbl_phone: 'फ़ोन', lbl_address: 'पता',
@@ -1945,17 +2005,26 @@ const UI_STRINGS = {
         lbl_country: 'देश', lbl_language: 'भाषा', lbl_currency: 'मुद्रा',
         lbl_registry: 'रजिस्ट्री', btn_website: 'वेबसाइट देखें', btn_directions: 'रास्ता',
         filter_all_countries: 'सभी देश', filter_all_languages: 'सभी भाषाएँ',
+        filter_search: 'खोजें...', filter_all_types: 'सभी प्रकार',
+        filter_open_now: 'केवल अभी खुले', filter_country: 'इकाई देश',
+        filter_language: 'संचालन भाषा', ui_language_selector: 'इंटरफ़ेस भाषा',
+        msg_loading: 'लोड हो रहा है...', msg_no_results: 'कोई परिणाम नहीं', btn_close: 'बंद करें',
     },
 };
 
 /** Idioma activo de la interfaz del visitante (persiste en sesión PHP y localStorage). */
 const MAPITA_PHP_LANG = '<?= htmlspecialchars($_html_lang, ENT_QUOTES, 'UTF-8') ?>';
+/** True when the language was explicitly chosen by the user (not just the server default). */
+const MAPITA_PHP_LANG_EXPLICIT = <?= $_lang_explicit ? 'true' : 'false' ?>;
 let MAPITA_UI_LANG = (function() {
     const supported = Object.keys(UI_STRINGS);
-    // PHP session language has highest priority (set via ?lang= param)
-    if (MAPITA_PHP_LANG && supported.includes(MAPITA_PHP_LANG)) return MAPITA_PHP_LANG;
+    // Priority 1: PHP session language (only when explicitly set via ?lang= or a prior session).
+    // When not explicit, we fall through so localStorage / browser language can take precedence.
+    if (MAPITA_PHP_LANG_EXPLICIT && supported.includes(MAPITA_PHP_LANG)) return MAPITA_PHP_LANG;
+    // Priority 2: Language previously saved in localStorage (persists across tabs/sessions).
     const stored = localStorage.getItem('mapita_ui_lang');
     if (stored && supported.includes(stored)) return stored;
+    // Priority 3: Browser/OS language as a convenience default for new visitors.
     const browser = (navigator.language || 'es').split('-')[0].toLowerCase();
     return supported.includes(browser) ? browser : 'es';
 })();
@@ -1965,16 +2034,83 @@ function uiStr(key) {
     return (UI_STRINGS[MAPITA_UI_LANG] || UI_STRINGS.es)[key] || key;
 }
 
+/**
+ * Applies the active UI language to key static DOM elements.
+ * Called on DOMContentLoaded and also after any language change.
+ */
+function applyI18n() {
+    const s = UI_STRINGS[MAPITA_UI_LANG] || UI_STRINGS.es;
+
+    // Search input placeholder
+    const busqueda = document.getElementById('busqueda');
+    if (busqueda) busqueda.placeholder = '🔍 ' + (s.filter_search || 'Buscar...');
+
+    // Type filter — update the "all types" default option (value="")
+    const tipoSel = document.getElementById('tipo');
+    if (tipoSel) {
+        const allTypesOpt = Array.from(tipoSel.options).find(function(o) { return o.value === ''; });
+        if (allTypesOpt) allTypesOpt.text = '📂 ' + (s.filter_all_types || 'Todos los tipos');
+    }
+
+    // Lang picker title
+    const pickerTitle = document.getElementById('lang-picker-title');
+    if (pickerTitle) pickerTitle.textContent = s.ui_language_selector || 'Idioma de interfaz';
+
+    // Country filter default option (value="")
+    const countrySel = document.getElementById('filter-country-code');
+    if (countrySel) {
+        const allCountriesOpt = Array.from(countrySel.options).find(function(o) { return o.value === ''; });
+        if (allCountriesOpt) allCountriesOpt.text = '🌍 ' + (s.filter_all_countries || 'Todos los países');
+    }
+
+    // Language filter default option (value="")
+    const langSel = document.getElementById('filter-language-code');
+    if (langSel) {
+        const allLangsOpt = Array.from(langSel.options).find(function(o) { return o.value === ''; });
+        if (allLangsOpt) allLangsOpt.text = '🗣️ ' + (s.filter_all_languages || 'Todos los idiomas');
+    }
+
+    // RTL layout for Arabic
+    document.documentElement.dir = (MAPITA_UI_LANG === 'ar') ? 'rtl' : 'ltr';
+
+    // Highlight the active language button inside the picker
+    document.querySelectorAll('.lang-btn-option').forEach(function(el) {
+        el.style.fontWeight = (el.dataset.lang === MAPITA_UI_LANG) ? '700' : '400';
+        el.style.background = (el.dataset.lang === MAPITA_UI_LANG) ? '#f0f4ff' : 'none';
+    });
+
+    console.info('[i18n] UI language applied:', MAPITA_UI_LANG);
+}
+
 /** Cambia el idioma de interfaz, persiste en sesión PHP y recarga la página. */
 function setMapUILang(lang) {
-    if (!UI_STRINGS[lang]) return;
+    if (!UI_STRINGS[lang]) {
+        console.warn('[i18n] Unsupported language code:', lang);
+        return;
+    }
     MAPITA_UI_LANG = lang;
     localStorage.setItem('mapita_ui_lang', lang);
     // Recarga la página pasando el idioma como param; map.php lo persiste en sesión
     const url = new URL(window.location.href);
     url.searchParams.set('lang', lang);
+    console.info('[i18n] Switching language to:', lang, '→', url.toString());
     window.location.href = url.toString();
 }
+
+// Auto-detect browser language for first-time visitors (no explicit session, no localStorage).
+// Priority chain (when no explicit choice exists): localStorage → browser → default.
+// Triggers a page reload with ?lang=XX so the PHP session is also set correctly.
+(function() {
+    if (!MAPITA_PHP_LANG_EXPLICIT && !localStorage.getItem('mapita_ui_lang')) {
+        const browserLang = (navigator.language || 'es').split('-')[0].toLowerCase();
+        // Only redirect when the detected browser language differs from the current server default
+        // to avoid redundant reloads when the browser already matches the default.
+        if (UI_STRINGS[browserLang] && browserLang !== MAPITA_PHP_LANG) {
+            console.info('[i18n] Auto-detecting browser language for first-time visitor:', browserLang);
+            setMapUILang(browserLang);
+        }
+    }
+})();
 
 let negocios  = [];
 let marcas    = [];
@@ -5034,6 +5170,9 @@ function updateRadiusCircle() {
 // ─── Heuristics for company type ────────────────────────────────────────────────
 // ─── Boot ─────────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+    // Apply the active UI language to key DOM elements on page load
+    applyI18n();
+
     // Setup radius slider: update display and circle in real-time
     const radiusInput = document.getElementById('filter-location-radius');
     const radiusValue = document.getElementById('filter-location-radius-value');
