@@ -2068,14 +2068,13 @@ const MAPITA_PHP_LANG_EXPLICIT = <?= $_lang_explicit ? 'true' : 'false' ?>;
 let MAPITA_UI_LANG = (function() {
     const supported = Object.keys(UI_STRINGS);
     // Priority 1: PHP session language (only when explicitly set via ?lang= or a prior session).
-    // When not explicit, we fall through so localStorage / browser language can take precedence.
+    // When not explicit, we fall through so localStorage can take precedence.
     if (MAPITA_PHP_LANG_EXPLICIT && supported.includes(MAPITA_PHP_LANG)) return MAPITA_PHP_LANG;
     // Priority 2: Language previously saved in localStorage (persists across tabs/sessions).
     const stored = localStorage.getItem('mapita_ui_lang');
     if (stored && supported.includes(stored)) return stored;
-    // Priority 3: Browser/OS language as a convenience default for new visitors.
-    const browser = (navigator.language || 'es').split('-')[0].toLowerCase();
-    return supported.includes(browser) ? browser : 'es';
+    // Priority 3: Default to Spanish.
+    return 'es';
 })();
 
 /** Devuelve el string traducido para la clave dada. */
@@ -2146,20 +2145,8 @@ function setMapUILang(lang) {
     window.location.href = url.toString();
 }
 
-// Auto-detect browser language for first-time visitors (no explicit session, no localStorage).
-// Priority chain (when no explicit choice exists): localStorage → browser → default.
-// Triggers a page reload with ?lang=XX so the PHP session is also set correctly.
-(function() {
-    if (!MAPITA_PHP_LANG_EXPLICIT && !localStorage.getItem('mapita_ui_lang')) {
-        const browserLang = (navigator.language || 'es').split('-')[0].toLowerCase();
-        // Only redirect when the detected browser language differs from the current server default
-        // to avoid redundant reloads when the browser already matches the default.
-        if (UI_STRINGS[browserLang] && browserLang !== MAPITA_PHP_LANG) {
-            console.info('[i18n] Auto-detecting browser language for first-time visitor:', browserLang);
-            setMapUILang(browserLang);
-        }
-    }
-})();
+// Auto-detect is disabled: Spanish ('es') is the default language for new visitors.
+// Users can still change the language explicitly via the language selector (setMapUILang).
 
 let negocios  = [];
 let marcas    = [];
