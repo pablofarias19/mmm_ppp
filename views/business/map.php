@@ -7190,8 +7190,9 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
     const inmNombre = overrideBizName || inm.inmobiliaria_nombre || 'Inmobiliaria';
     const inmId     = overrideBizId   || inm.business_id         || null;
     const inmIcon   = inm.inmobiliaria_icon || '';
-    const bizLat    = parseFloat(inm.inm_lat_fallback || inm.biz_lat);
-    const bizLng    = parseFloat(inm.inm_lng_fallback || inm.biz_lng);
+    // Both map_inmuebles.php and inmuebles.php?business_id use inm_lat_fallback/inm_lng_fallback
+    const bizLat    = parseFloat(inm.inm_lat_fallback);
+    const bizLng    = parseFloat(inm.inm_lng_fallback);
 
     let p = '<div>';
 
@@ -7211,7 +7212,7 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
     // ── Body ─────────────────────────────────────────────────────────────────
     p += '<div class="popup-body">';
 
-    // Foto (con fallback oculto)
+    // Foto (con fallback oculto vía CSS)
     if (inm.foto_url && /^https?:\/\//i.test(inm.foto_url)) {
         p += '<img class="popup-inm-photo" src="' + escapeHtml(inm.foto_url) + '" alt="Foto del inmueble" loading="lazy" onerror="this.style.display=\'none\'">';
     }
@@ -7230,7 +7231,7 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
         p += '</div>';
     }
 
-    // Descripción
+    // Descripción (máx. 110 chars)
     if (inm.descripcion && inm.descripcion.trim()) {
         const desc = inm.descripcion.length > 110 ? inm.descripcion.substring(0, 110) + '…' : inm.descripcion;
         p += '<p style="margin:0 0 8px;font-size:12px;line-height:1.5;color:#374151;">' + escapeHtml(desc) + '</p>';
@@ -7246,11 +7247,10 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
 
     // ── Tarjeta Inmobiliaria ─────────────────────────────────────────────────
     p += '<div class="popup-inmobiliaria-card">';
-    // Logo / fallback
+    // Logo / fallback emoji
     p += '<div class="popup-inmobiliaria-card__logo">';
     if (inmIcon && /^https?:\/\//i.test(inmIcon)) {
-        p += '<img src="' + escapeHtml(inmIcon) + '" alt="Logo ' + escapeHtml(inmNombre) + '" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\'">';
-        p += '<span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:16px;">🏢</span>';
+        p += '<img src="' + escapeHtml(inmIcon) + '" alt="Logo ' + escapeHtml(inmNombre) + '" onerror="this.style.display=\'none\'">';
     } else {
         p += '🏢';
     }
@@ -7260,7 +7260,7 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
     p += '<span class="popup-inmobiliaria-card__label">Inmobiliaria</span>';
     p += '<span class="popup-inmobiliaria-card__name">' + escapeHtml(inmNombre) + '</span>';
     p += '</div>';
-    // Botón enfocar
+    // Botón enfocar (usa JSON.stringify para el nombre)
     if (inmId) {
         const safeId  = parseInt(inmId, 10);
         const safeLat = isNaN(bizLat) ? 'null' : bizLat;
@@ -7279,10 +7279,10 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
         p += '<a href="tel:' + escapeHtml(inm.contacto) + '" class="popup-action" style="background:#27ae60;">📞 Llamar</a>';
     }
     if (inmId) {
-        const safeId2  = parseInt(inmId, 10);
-        const safeName = escapeHtml(inmNombre).replace(/'/g, '&#39;');
+        const safeId2   = parseInt(inmId, 10);
+        const safeNameJ = JSON.stringify(inmNombre); // safe for inline onclick
         p += '<button type="button" class="popup-action popup-action--inm" '
-           + 'onclick="verInmueblesDe(' + safeId2 + ',\'' + safeName + '\')">🏘️ Ver Inmuebles</button>';
+           + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameJ + ')">🏘️ Ver Inmuebles</button>';
     }
     p += '</div>';
 
