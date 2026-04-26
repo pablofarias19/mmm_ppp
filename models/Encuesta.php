@@ -326,24 +326,58 @@ class Encuesta {
     }
 
     /**
-     * Elimina físicamente una encuesta y sus preguntas/respuestas/participaciones
+     * Elimina físicamente una encuesta y sus preguntas/respuestas/participaciones.
+     * Compatible con el esquema legacy (preguntas_encuesta / respuestas_encuesta /
+     * encuesta_participaciones) y con el esquema de migration.sql
+     * (encuesta_questions / encuesta_responses).
      * @param int $id
      * @return bool
      */
     public static function delete($id) {
         try {
             $db = Database::getInstance()->getConnection();
-            // Borrar respuestas de las preguntas de esta encuesta
-            $db->prepare(
+
+            // Helper: ejecuta una sentencia ignorando "table doesn't exist" (42S02 / 1146)
+            $safeExec = function (string $sql, array $params) use ($db): void {
+                try {
+                    $db->prepare($sql)->execute($params);
+                } catch (\PDOException $e) {
+                    $sqlState = $e->getCode();
+                    $errCode  = (int)($e->errorInfo[1] ?? 0);
+                    if ($sqlState !== '42S02' && $errCode !== 1146) {
+                        throw $e;
+                    }
+                    // Tabla inexistente (migración pendiente) — registrar para diagnóstico
+                    error_log("Encuesta::delete — tabla ausente (migración pendiente): " . $e->getMessage());
+                }
+            };
+
+            // ── Esquema legacy ───────────────────────────────────────────────────
+            // Borrar respuestas vinculadas a preguntas de esta encuesta
+            $safeExec(
                 "DELETE r FROM respuestas_encuesta r
                  INNER JOIN preguntas_encuesta p ON p.id = r.pregunta_id
-                 WHERE p.encuesta_id = ?"
-            )->execute([$id]);
-            // Borrar participaciones
-            $db->prepare("DELETE FROM encuesta_participaciones WHERE encuesta_id = ?")->execute([$id]);
-            // Borrar preguntas
-            $db->prepare("DELETE FROM preguntas_encuesta WHERE encuesta_id = ?")->execute([$id]);
-            // Borrar encuesta
+                 WHERE p.encuesta_id = ?",
+                [$id]
+            );
+            // Borrar participaciones (legacy)
+            $safeExec("DELETE FROM encuesta_participaciones WHERE encuesta_id = ?", [$id]);
+            // Borrar preguntas (legacy)
+            $safeExec("DELETE FROM preguntas_encuesta WHERE encuesta_id = ?", [$id]);
+
+            // ── Esquema nuevo (migration.sql) ────────────────────────────────────
+            // Las FK ON DELETE CASCADE de encuesta_questions → encuesta_responses
+            // eliminan las respuestas automáticamente, pero borramos explícitamente
+            // en caso de que no estén definidas las FK en la instalación.
+            $safeExec(
+                "DELETE r FROM encuesta_responses r
+                 INNER JOIN encuesta_questions q ON q.id = r.question_id
+                 WHERE q.encuesta_id = ?",
+                [$id]
+            );
+            $safeExec("DELETE FROM encuesta_questions WHERE encuesta_id = ?", [$id]);
+
+            // ── Borrar la encuesta ───────────────────────────────────────────────
             return $db->prepare("DELETE FROM encuestas WHERE id = ?")->execute([$id]);
         } catch (Exception $e) {
             error_log("Error en Encuesta::delete - " . $e->getMessage());
