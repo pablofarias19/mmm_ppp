@@ -34,7 +34,7 @@ El mapa principal tiene un **botón 🌐** en la barra superior del panel latera
    - Guarda el código en `localStorage` (`mapita_ui_lang`).
    - Recarga la página añadiendo `?lang=XX` a la URL.
 3. `views/business/map.php` detecta `$_GET['lang']` y llama a `setUILanguage()`, guardando la preferencia en `$_SESSION['ui_lang']`.
-4. En el lado del cliente, `MAPITA_UI_LANG` se inicializa con la siguiente prioridad: **sesión PHP → localStorage → idioma del navegador**.
+4. En el lado del cliente, `MAPITA_UI_LANG` se inicializa con la siguiente prioridad: **sesión PHP → localStorage → español (`es`) por defecto**.
 5. `uiStr(key)` (JS) y `t(key)` (PHP) usan el mismo idioma activo para etiquetar la interfaz.
 
 > **Nota:** El parámetro `?lang=XX` en la URL del mapa también establece el idioma para los Módulos Avanzados, porque ambos guardan la preferencia en la misma clave de sesión (`$_SESSION['ui_lang']`).

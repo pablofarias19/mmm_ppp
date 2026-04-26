@@ -2,6 +2,17 @@
 //error_reporting(E_ALL);
 //ini_set('display_errors', 1);
 session_start();
+require_once __DIR__ . '/../../core/helpers.php';
+require_once __DIR__ . '/../../includes/db_helper.php';
+
+$_mapGlobalIconBoost = 1.0;
+try {
+    $_settingsDb = getDbConnection();
+    if ($_settingsDb) {
+        $_mapGlobalIconBoost = (float)mapitaGetSetting($_settingsDb, 'global_icon_boost', '1.0');
+        $_mapGlobalIconBoost = max(0.5, min(3.0, $_mapGlobalIconBoost));
+    }
+} catch (Throwable $_e) { /* silencioso */ }
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -140,6 +151,7 @@ session_start();
 <div id="map"></div>
 
 <script>
+const GLOBAL_ICON_BOOST = <?= json_encode(round($_mapGlobalIconBoost, 2)) ?>;
 let negocios = [];
 let marcas = [];
 let verActual = 'negocios';
@@ -223,12 +235,12 @@ function mostrarMarkers(items) {
         
         if (isMarca) {
             marker = L.circleMarker([item.lat, item.lng], {
-                radius: 14, fillColor: getColor(item.clase_principal),
+                radius: Math.round(14 * GLOBAL_ICON_BOOST), fillColor: getColor(item.clase_principal),
                 color: '#fff', weight: 2, fillOpacity: 0.85
             });
         } else {
             marker = L.circleMarker([item.lat, item.lng], {
-                radius: 10, fillColor: '#1976d2', color: '#fff', weight: 2, fillOpacity: 0.8
+                radius: Math.round(10 * GLOBAL_ICON_BOOST), fillColor: '#1976d2', color: '#fff', weight: 2, fillOpacity: 0.8
             });
         }
         

@@ -1,5 +1,16 @@
 <?php
 session_start();
+require_once __DIR__ . '/../../core/helpers.php';
+require_once __DIR__ . '/../../includes/db_helper.php';
+
+$_mapGlobalIconBoost = 1.0;
+try {
+    $_settingsDb = getDbConnection();
+    if ($_settingsDb) {
+        $_mapGlobalIconBoost = (float)mapitaGetSetting($_settingsDb, 'global_icon_boost', '1.0');
+        $_mapGlobalIconBoost = max(0.5, min(3.0, $_mapGlobalIconBoost));
+    }
+} catch (Throwable $_e) { /* silencioso */ }
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -260,6 +271,7 @@ session_start();
 // Variables de sesión disponibles para el JS
 const SESSION_USER_ID = <?= (int)($_SESSION['user_id'] ?? 0) ?>;
 const IS_ADMIN        = <?= !empty($_SESSION['is_admin']) ? 'true' : 'false' ?>;
+const GLOBAL_ICON_BOOST = <?= json_encode(round($_mapGlobalIconBoost, 2)) ?>;
 
 let marcas      = [];
 let mapa, marcadores = [], circulos = [];
@@ -414,7 +426,7 @@ function actualizarMapa() {
         let marker;
         if (m.logo_url && activa) {
             // ── Icono de foto circular ──────────────────────────────────────
-            const size = 40;
+            const size = Math.round(40 * GLOBAL_ICON_BOOST);
             const html = `<div style="
                 width:${size}px;height:${size}px;border-radius:50%;
                 border:3px solid ${color};
@@ -429,21 +441,22 @@ function actualizarMapa() {
             }).addTo(mapa);
         } else if (m.logo_url && !activa) {
             // Inactiva con logo → pequeño y gris
+            const sizeInact = Math.round(26 * GLOBAL_ICON_BOOST);
             const html = `<div style="
-                width:26px;height:26px;border-radius:50%;
+                width:${sizeInact}px;height:${sizeInact}px;border-radius:50%;
                 border:2px solid #ddd;
                 background:url('${m.logo_url}') center/cover no-repeat #eee;
                 opacity:0.4;filter:grayscale(1);"></div>`;
             marker = L.marker([m.lat, m.lng], {
                 icon: L.divIcon({
                     html, className: '',
-                    iconSize: [26, 26], iconAnchor: [13, 26], popupAnchor: [0, -28]
+                    iconSize: [sizeInact, sizeInact], iconAnchor: [Math.round(sizeInact/2), sizeInact], popupAnchor: [0, -(sizeInact+2)]
                 })
             }).addTo(mapa);
         } else {
             // ── Círculo de color (sin logo) ─────────────────────────────────
             marker = L.circleMarker([m.lat, m.lng], {
-                radius:      activa ? 11 : 7,
+                radius:      activa ? Math.round(11 * GLOBAL_ICON_BOOST) : Math.round(7 * GLOBAL_ICON_BOOST),
                 fillColor:   activa ? color : '#ccc',
                 color:       activa ? '#fff' : '#ddd',
                 weight:      activa ? 2 : 1,
