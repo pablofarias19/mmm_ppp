@@ -9,7 +9,7 @@ session_start();
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/helpers.php';
 
-$validTabs = ['negocios','marcas','noticias','eventos','trivias','encuestas','ofertas','transmisiones','moderacion','sectores'];
+$validTabs = ['negocios','marcas','noticias','eventos','trivias','encuestas','ofertas','transmisiones','moderacion','sectores','comercial','camaras','agencias','lineas','competencias','radar_legal'];
 $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
 ?>
 <!DOCTYPE html>
@@ -298,6 +298,12 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         <button id="tab-btn-transmisiones"  class="tab-btn <?php echo $tab==='transmisiones'  ? 'active' : ''; ?>" onclick="switchTab('transmisiones')">📡 En Vivo</button>
         <button id="tab-btn-moderacion"     class="tab-btn <?php echo $tab==='moderacion'     ? 'active' : ''; ?>" onclick="switchTab('moderacion')">🚨 Moderación</button>
         <button id="tab-btn-sectores"       class="tab-btn <?php echo $tab==='sectores'       ? 'active' : ''; ?>" onclick="switchTab('sectores')">🏭 Catálogo: Sectores Ind.</button>
+        <button id="tab-btn-comercial"      class="tab-btn <?php echo $tab==='comercial'      ? 'active' : ''; ?>" onclick="switchTab('comercial')">🏪 Sectores Comerciales</button>
+        <button id="tab-btn-camaras"        class="tab-btn <?php echo $tab==='camaras'        ? 'active' : ''; ?>" onclick="switchTab('camaras')">🏛️ Cámaras</button>
+        <button id="tab-btn-agencias"       class="tab-btn <?php echo $tab==='agencias'       ? 'active' : ''; ?>" onclick="switchTab('agencias')">🏢 Agencias</button>
+        <button id="tab-btn-lineas"         class="tab-btn <?php echo $tab==='lineas'         ? 'active' : ''; ?>" onclick="switchTab('lineas')">📋 Líneas de Política</button>
+        <button id="tab-btn-competencias"   class="tab-btn <?php echo $tab==='competencias'   ? 'active' : ''; ?>" onclick="switchTab('competencias')">⚖️ Competencias</button>
+        <button id="tab-btn-radar_legal"    class="tab-btn <?php echo $tab==='radar_legal'    ? 'active' : ''; ?>" onclick="switchTab('radar_legal')">🌐 Radar Legal</button>
     </div>
 
     <!-- NEGOCIOS -->
@@ -508,6 +514,351 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         </div>
         <div id="audit-log-list"></div>
     </div>
+
+    <!-- SECTORES COMERCIALES -->
+    <div class="tab-content <?php echo $tab==='comercial' ? 'active' : ''; ?>" id="tab-comercial">
+        <div class="section-header">
+            <h2>🏪 Sectores Comerciales</h2>
+            <button class="btn btn-primary" onclick="openComercialModal()">+ Nuevo Sector Comercial</button>
+        </div>
+        <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="search-comercial" placeholder="🔍 Buscar…"
+                   oninput="filtrarComercial(this.value)"
+                   style="flex:1;padding:10px 14px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;">
+            <select id="filter-comercial-type" onchange="filtrarComercial(document.getElementById('search-comercial').value)"
+                    style="padding:10px 12px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;background:white;">
+                <option value="">Todos los tipos</option>
+                <option value="retail">🛒 Retail</option>
+                <option value="servicios">💼 Servicios</option>
+                <option value="gastronomia">🍽️ Gastronomía</option>
+                <option value="tecnologia">💻 Tecnología</option>
+                <option value="salud">🏥 Salud</option>
+                <option value="educacion">📚 Educación</option>
+                <option value="finanzas">💰 Finanzas</option>
+                <option value="transporte">🚛 Transporte</option>
+                <option value="turismo">✈️ Turismo</option>
+                <option value="otro">📌 Otro</option>
+            </select>
+            <span id="count-comercial" style="font-size:12px;color:var(--text-tertiary);white-space:nowrap;"></span>
+        </div>
+        <div id="comercial-list"></div>
+    </div>
+
+    <!-- CAMARAS -->
+    <div class="tab-content <?php echo $tab==='camaras' ? 'active' : ''; ?>" id="tab-camaras">
+        <div class="section-header">
+            <h2>🏛️ Cámaras</h2>
+            <button class="btn btn-primary" onclick="openCamaraModal()">+ Nueva Cámara</button>
+        </div>
+        <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="search-camaras" placeholder="🔍 Buscar por nombre o área…"
+                   oninput="filtrarCamaras(this.value)"
+                   style="flex:1;padding:10px 14px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;">
+            <span id="count-camaras" style="font-size:12px;color:var(--text-tertiary);white-space:nowrap;"></span>
+        </div>
+        <div id="camaras-list"></div>
+    </div>
+
+    <!-- AGENCIAS -->
+    <div class="tab-content <?php echo $tab==='agencias' ? 'active' : ''; ?>" id="tab-agencias">
+        <div class="section-header">
+            <h2>🏢 Agencias</h2>
+            <button class="btn btn-primary" onclick="openAgenciaModal()">+ Nueva Agencia</button>
+        </div>
+        <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="search-agencias" placeholder="🔍 Buscar por nombre o área…"
+                   oninput="filtrarAgencias(this.value)"
+                   style="flex:1;padding:10px 14px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;">
+            <span id="count-agencias" style="font-size:12px;color:var(--text-tertiary);white-space:nowrap;"></span>
+        </div>
+        <div id="agencias-list"></div>
+    </div>
+
+    <!-- LÍNEAS DE POLÍTICA -->
+    <div class="tab-content <?php echo $tab==='lineas' ? 'active' : ''; ?>" id="tab-lineas">
+        <div class="section-header">
+            <h2>📋 Líneas de Política</h2>
+            <button class="btn btn-primary" onclick="openLineaModal()">+ Nueva Línea</button>
+        </div>
+        <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="search-lineas" placeholder="🔍 Buscar por título…"
+                   oninput="filtrarLineas(this.value)"
+                   style="flex:1;padding:10px 14px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;">
+            <select id="filter-lineas-type" onchange="filtrarLineas(document.getElementById('search-lineas').value)"
+                    style="padding:10px 12px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;background:white;">
+                <option value="">Todos los tipos</option>
+                <option value="propia">📌 Propia</option>
+                <option value="gobierno">🏛️ Gobierno</option>
+            </select>
+            <select id="filter-lineas-status" onchange="filtrarLineas(document.getElementById('search-lineas').value)"
+                    style="padding:10px 12px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;background:white;">
+                <option value="">Todos los estados</option>
+                <option value="vigente">✅ Vigente</option>
+                <option value="vencida">⏳ Vencida</option>
+                <option value="derogada">❌ Derogada</option>
+            </select>
+            <span id="count-lineas" style="font-size:12px;color:var(--text-tertiary);white-space:nowrap;"></span>
+        </div>
+        <div id="lineas-list"></div>
+    </div>
+
+    <!-- COMPETENCIAS -->
+    <div class="tab-content <?php echo $tab==='competencias' ? 'active' : ''; ?>" id="tab-competencias">
+        <div class="section-header">
+            <h2>⚖️ Mapa de Competencias / Facultades</h2>
+            <button class="btn btn-primary" onclick="openCompetenciaModal()">+ Nueva Competencia</button>
+        </div>
+        <div style="margin-bottom:16px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <input type="text" id="search-competencias" placeholder="🔍 Buscar por organismo…"
+                   oninput="filtrarCompetencias(this.value)"
+                   style="flex:1;padding:10px 14px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;">
+            <select id="filter-comp-role" onchange="filtrarCompetencias(document.getElementById('search-competencias').value)"
+                    style="padding:10px 12px;border:1px solid var(--color-gray-300);border-radius:8px;font-size:14px;background:white;">
+                <option value="">Todos los roles</option>
+                <option value="aprobar">✅ Aprobar</option>
+                <option value="rechazar">❌ Rechazar</option>
+                <option value="controlar">🔍 Controlar</option>
+                <option value="auditar">📋 Auditar</option>
+                <option value="sancionar">⚖️ Sancionar</option>
+                <option value="dictamen">📄 Dictamen</option>
+                <option value="emitir">📤 Emitir</option>
+                <option value="fiscalizar">🏛️ Fiscalizar</option>
+            </select>
+            <span id="count-competencias" style="font-size:12px;color:var(--text-tertiary);white-space:nowrap;"></span>
+        </div>
+        <div id="competencias-list"></div>
+    </div>
+
+    <!-- RADAR LEGAL -->
+    <div class="tab-content <?php echo $tab==='radar_legal' ? 'active' : ''; ?>" id="tab-radar_legal">
+        <div class="section-header">
+            <h2>🌐 Radar Legal — Catálogos &amp; Configuración</h2>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-bottom:20px;" id="radar-stats">
+            <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:16px;">
+                <h3 style="margin:0 0 4px;font-size:14px;">🚢 Modos de Transporte</h3>
+                <div id="radar-count-transport" class="muted" style="font-size:13px;">Cargando...</div>
+            </div>
+            <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:16px;">
+                <h3 style="margin:0 0 4px;font-size:14px;">📦 Destinaciones</h3>
+                <div id="radar-count-dest" class="muted" style="font-size:13px;">Cargando...</div>
+            </div>
+            <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:16px;">
+                <h3 style="margin:0 0 4px;font-size:14px;">🚫 Restricciones</h3>
+                <div id="radar-count-rest" class="muted" style="font-size:13px;">Cargando...</div>
+            </div>
+            <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:16px;">
+                <h3 style="margin:0 0 4px;font-size:14px;">📝 Contratos</h3>
+                <div id="radar-count-contr" class="muted" style="font-size:13px;">Cargando...</div>
+            </div>
+        </div>
+
+        <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:18px;margin-bottom:16px;">
+            <h3 style="margin:0 0 12px;">🔧 Habilitar Radar Legal por Sector</h3>
+            <p style="font-size:13px;color:#6b7280;margin-bottom:12px;">Seleccioná un sector y activá o desactivá el módulo Radar Legal.</p>
+            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                <select id="radar-sector-type" style="padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;">
+                    <option value="commercial">🏪 Sector Comercial</option>
+                    <option value="industrial">🏭 Sector Industrial</option>
+                </select>
+                <select id="radar-sector-id" style="flex:1;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;">
+                    <option value="">-- Seleccionar sector --</option>
+                </select>
+                <label style="display:flex;align-items:center;gap:6px;font-size:14px;font-weight:600;">
+                    <input type="checkbox" id="radar-enabled-chk" style="width:16px;height:16px;">
+                    Habilitado
+                </label>
+                <button class="btn btn-primary" style="font-size:13px;" onclick="guardarRadarConfig()">💾 Guardar</button>
+            </div>
+            <div id="radar-config-result" style="margin-top:8px;font-size:13px;"></div>
+        </div>
+
+        <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:18px;">
+            <h3 style="margin:0 0 10px;">📊 Catálogo Radar Legal</h3>
+            <div id="radar-catalog-list"><p style="color:#6b7280;">⏳ Cargando catálogos...</p></div>
+        </div>
+    </div>
+</div>
+
+
+<!-- ── MODAL SECTOR COMERCIAL ──────────── -->
+<div id="comercial-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:white;border-radius:12px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.22);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 16px;border-bottom:1px solid #e5e7eb;">
+            <h3 id="comercial-modal-title" style="margin:0;font-size:1.1rem;">Nuevo Sector Comercial</h3>
+            <button onclick="closeComercialModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#6b7280;">×</button>
+        </div>
+        <form id="comercial-form" onsubmit="handleComercialSubmit(event)" style="padding:20px 24px;">
+            <div class="form-group"><label>Nombre *</label><input type="text" id="cs-form-name" required maxlength="255" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label>Tipo *</label>
+                    <select id="cs-form-type" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;">
+                        <option value="retail">🛒 Retail</option><option value="servicios">💼 Servicios</option>
+                        <option value="gastronomia">🍽️ Gastronomía</option><option value="tecnologia">💻 Tecnología</option>
+                        <option value="salud">🏥 Salud</option><option value="educacion">📚 Educación</option>
+                        <option value="finanzas">💰 Finanzas</option><option value="transporte">🚛 Transporte</option>
+                        <option value="turismo">✈️ Turismo</option><option value="otro">📌 Otro</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="cs-form-status" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;">
+                        <option value="potencial">💡 Potencial</option><option value="activo">✅ Activo</option><option value="proyecto">📐 Proyecto</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group"><label>Subtipo</label><input type="text" id="cs-form-subtype" maxlength="100" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div class="form-group"><label>Jurisdicción</label><input type="text" id="cs-form-jurisdiction" maxlength="255" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div class="form-group"><label>Descripción</label><textarea id="cs-form-description" rows="3" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;"></textarea></div>
+            <div class="form-group"><label><input type="checkbox" id="cs-form-radar" style="margin-right:6px;">🌐 Habilitar Radar Legal</label></div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:12px;border-top:1px solid #e5e7eb;">
+                <button type="button" class="btn btn-secondary" onclick="closeComercialModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── MODAL CÁMARAS ──────────── -->
+<div id="camara-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:white;border-radius:12px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.22);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 16px;border-bottom:1px solid #e5e7eb;">
+            <h3 id="camara-modal-title" style="margin:0;font-size:1.1rem;">Nueva Cámara</h3>
+            <button onclick="closeCamaraModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#6b7280;">×</button>
+        </div>
+        <form onsubmit="handleCamaraSubmit(event)" style="padding:20px 24px;">
+            <div class="form-group"><label>Nombre *</label><input type="text" id="ch-form-name" required maxlength="255" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div class="form-group"><label>Área *</label><input type="text" id="ch-form-area" required maxlength="150" placeholder="Ej: energía, transporte, comercio" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div class="form-group"><label>Descripción</label><textarea id="ch-form-description" rows="3" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;"></textarea></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group"><label>Sitio web</label><input type="url" id="ch-form-website" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="ch-form-email" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+                <div class="form-group"><label>Teléfono</label><input type="text" id="ch-form-phone" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+                <div class="form-group"><label>Estado</label><select id="ch-form-status" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;"><option value="activa">✅ Activa</option><option value="inactiva">❌ Inactiva</option></select></div>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:12px;border-top:1px solid #e5e7eb;">
+                <button type="button" class="btn btn-secondary" onclick="closeCamaraModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── MODAL AGENCIAS ──────────── -->
+<div id="agencia-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:white;border-radius:12px;width:100%;max-width:560px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.22);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 16px;border-bottom:1px solid #e5e7eb;">
+            <h3 id="agencia-modal-title" style="margin:0;font-size:1.1rem;">Nueva Agencia</h3>
+            <button onclick="closeAgenciaModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#6b7280;">×</button>
+        </div>
+        <form onsubmit="handleAgenciaSubmit(event)" style="padding:20px 24px;">
+            <div class="form-group"><label>Nombre *</label><input type="text" id="ag-form-name" required maxlength="255" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div class="form-group"><label>Área *</label><input type="text" id="ag-form-area" required maxlength="150" placeholder="Ej: turismo, comercio exterior" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div class="form-group"><label>Descripción</label><textarea id="ag-form-description" rows="3" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;"></textarea></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group"><label>Sitio web</label><input type="url" id="ag-form-website" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="ag-form-email" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+                <div class="form-group"><label>Teléfono</label><input type="text" id="ag-form-phone" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+                <div class="form-group"><label>Estado</label><select id="ag-form-status" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;"><option value="activa">✅ Activa</option><option value="inactiva">❌ Inactiva</option></select></div>
+            </div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:12px;border-top:1px solid #e5e7eb;">
+                <button type="button" class="btn btn-secondary" onclick="closeAgenciaModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── MODAL LÍNEAS DE POLÍTICA ──────────── -->
+<div id="linea-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:white;border-radius:12px;width:100%;max-width:680px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.22);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 16px;border-bottom:1px solid #e5e7eb;">
+            <h3 id="linea-modal-title" style="margin:0;font-size:1.1rem;">Nueva Línea de Política</h3>
+            <button onclick="closeLineaModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#6b7280;">×</button>
+        </div>
+        <form onsubmit="handleLineaSubmit(event)" style="padding:20px 24px;">
+            <div class="form-group"><label>Título *</label><input type="text" id="pl-form-title" required maxlength="500" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label>Origen *</label>
+                    <select id="pl-form-source-type" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;">
+                        <option value="chamber">🏛️ Cámara</option><option value="agency">🏢 Agencia</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>ID de Origen *</label><input type="number" id="pl-form-source-id" required min="1" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label>Tipo</label>
+                    <select id="pl-form-line-type" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;">
+                        <option value="propia">📌 Propia</option><option value="gobierno">🏛️ Gobierno</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Estado</label>
+                    <select id="pl-form-status" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;">
+                        <option value="vigente">✅ Vigente</option><option value="vencida">⏳ Vencida</option><option value="derogada">❌ Derogada</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group"><label>Área</label><input type="text" id="pl-form-area" maxlength="150" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+                <div class="form-group"><label>Jurisdicción</label><input type="text" id="pl-form-jurisdiction" maxlength="255" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            </div>
+            <div class="form-group"><label>Link / Fuente</label><input type="url" id="pl-form-source-link" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+                <div class="form-group"><label>Publicación</label><input type="date" id="pl-form-published" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+                <div class="form-group"><label>Vigencia desde</label><input type="date" id="pl-form-valid-from" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+                <div class="form-group"><label>Vigencia hasta</label><input type="date" id="pl-form-valid-until" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            </div>
+            <div class="form-group"><label>Tags (CSV)</label><input type="text" id="pl-form-tags" maxlength="500" placeholder="Ej: comercio, importacion, arancel" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div class="form-group"><label>Resumen</label><textarea id="pl-form-summary" rows="3" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;"></textarea></div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:12px;border-top:1px solid #e5e7eb;">
+                <button type="button" class="btn btn-secondary" onclick="closeLineaModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ── MODAL COMPETENCIAS ──────────── -->
+<div id="comp-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:white;border-radius:12px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.22);">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:20px 24px 16px;border-bottom:1px solid #e5e7eb;">
+            <h3 id="comp-modal-title" style="margin:0;font-size:1.1rem;">Nueva Competencia</h3>
+            <button onclick="closeCompetenciaModal()" style="background:none;border:none;font-size:1.4rem;cursor:pointer;color:#6b7280;">×</button>
+        </div>
+        <form onsubmit="handleCompetenciaSubmit(event)" style="padding:20px 24px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group">
+                    <label>Origen *</label>
+                    <select id="comp-form-source-type" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;">
+                        <option value="chamber">🏛️ Cámara</option><option value="agency">🏢 Agencia</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>ID de Origen *</label><input type="number" id="comp-form-source-id" required min="1" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            </div>
+            <div class="form-group">
+                <label>Rol / Facultad *</label>
+                <select id="comp-form-role" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;background:white;font-size:14px;">
+                    <option value="aprobar">✅ Aprobar</option><option value="rechazar">❌ Rechazar</option>
+                    <option value="controlar">🔍 Controlar</option><option value="auditar">📋 Auditar</option>
+                    <option value="sancionar">⚖️ Sancionar</option><option value="dictamen">📄 Dictamen</option>
+                    <option value="emitir">📤 Emitir</option><option value="fiscalizar">🏛️ Fiscalizar</option>
+                </select>
+            </div>
+            <div class="form-group"><label>Organismo *</label><input type="text" id="comp-form-organism" required maxlength="255" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div class="form-group"><label>Órgano</label><input type="text" id="comp-form-organ" maxlength="255" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div class="form-group"><label>Responsable</label><input type="text" id="comp-form-responsible" maxlength="255" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div class="form-group"><label>Alcance / Descripción</label><textarea id="comp-form-scope" rows="3" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;resize:vertical;"></textarea></div>
+            <div class="form-group"><label>Fundamento legal</label><input type="text" id="comp-form-legal-basis" maxlength="500" style="width:100%;padding:9px 12px;border:1px solid #d1d5db;border-radius:8px;font-size:14px;"></div>
+            <div style="display:flex;gap:12px;justify-content:flex-end;padding-top:12px;border-top:1px solid #e5e7eb;">
+                <button type="button" class="btn btn-secondary" onclick="closeCompetenciaModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Guardar</button>
+            </div>
+        </form>
+    </div>
 </div>
 
 <!-- ── MODAL SECTORES INDUSTRIALES ──────────── -->
@@ -680,10 +1031,16 @@ function switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
     document.getElementById('tab-btn-' + tab).classList.add('active');
-    if (tab === 'marcas')         loadMarcas();
-    else if (tab === 'negocios')  loadNegocios();
-    else if (tab === 'moderacion') { loadReports(); loadAuditLog(); }
-    else if (tab === 'sectores')  loadSectores();
+    if (tab === 'marcas')            loadMarcas();
+    else if (tab === 'negocios')     loadNegocios();
+    else if (tab === 'moderacion')   { loadReports(); loadAuditLog(); }
+    else if (tab === 'sectores')     loadSectores();
+    else if (tab === 'comercial')    loadComercialSectores();
+    else if (tab === 'camaras')      loadCamaras();
+    else if (tab === 'agencias')     loadAgencias();
+    else if (tab === 'lineas')       loadLineas();
+    else if (tab === 'competencias') loadCompetencias();
+    else if (tab === 'radar_legal')  loadRadarLegal();
     else {
         loadData(tab);
         if (tab === 'encuestas') loadEncuestasStats();
@@ -2176,18 +2533,607 @@ async function loadEncuestasStats() {
 }
 
 // ── Init ─────────────────────────────────────────
-document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeSectorModal(); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeModal(); closeSectorModal(); closeCamaraModal(); closeAgenciaModal(); closeLineaModal(); closeCompetenciaModal(); closeComercialModal(); } });
 window.addEventListener('load', () => {
     const tab = '<?php echo $tab; ?>';
-    if (tab === 'marcas')          loadMarcas();
-    else if (tab === 'negocios')   loadNegocios();
-    else if (tab === 'moderacion') { loadReports(); loadAuditLog(); }
-    else if (tab === 'sectores')   loadSectores();
+    if (tab === 'marcas')            loadMarcas();
+    else if (tab === 'negocios')     loadNegocios();
+    else if (tab === 'moderacion')   { loadReports(); loadAuditLog(); }
+    else if (tab === 'sectores')     loadSectores();
+    else if (tab === 'comercial')    loadComercialSectores();
+    else if (tab === 'camaras')      loadCamaras();
+    else if (tab === 'agencias')     loadAgencias();
+    else if (tab === 'lineas')       loadLineas();
+    else if (tab === 'competencias') loadCompetencias();
+    else if (tab === 'radar_legal')  loadRadarLegal();
     else {
         loadData(tab);
         if (tab === 'encuestas') loadEncuestasStats();
     }
 });
+
+// ── SECTORES COMERCIALES ─────────────────────────────────────────────────────
+let allComercialSectores = [];
+let editingComercialId = null;
+
+async function loadComercialSectores() {
+    const el = document.getElementById('comercial-list');
+    if (!el) return;
+    el.innerHTML = '<p style="color:var(--text-tertiary);padding:16px;">⏳ Cargando...</p>';
+    try {
+        const res  = await fetch('/api/commercial_sectors.php');
+        const data = await res.json();
+        allComercialSectores = data.data || [];
+        document.getElementById('count-comercial').textContent = allComercialSectores.length + ' sector(es)';
+        filtrarComercial(document.getElementById('search-comercial')?.value || '');
+    } catch(err) {
+        el.innerHTML = '<p style="color:#ef4444;">Error: ' + escapeHtml(err.message) + '</p>';
+    }
+}
+
+function filtrarComercial(q) {
+    const type = document.getElementById('filter-comercial-type')?.value || '';
+    let rows = allComercialSectores.filter(s => {
+        const matchQ    = !q    || s.name.toLowerCase().includes(q.toLowerCase());
+        const matchType = !type || s.type === type;
+        return matchQ && matchType;
+    });
+    renderComercial(rows);
+}
+
+function renderComercial(rows) {
+    const el = document.getElementById('comercial-list');
+    if (!rows.length) { el.innerHTML = '<p style="color:var(--text-tertiary);padding:16px;">Sin resultados.</p>'; return; }
+    const statusBadge = { activo:'badge-success', proyecto:'badge-danger', potencial:'' };
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:#f9fafb;">
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Nombre</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Tipo</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Estado</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Radar</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Acciones</th>
+    </tr></thead>
+    <tbody>${rows.map(s => `<tr>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;font-weight:600;">${escapeHtml(s.name)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">${escapeHtml(s.type)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;"><span class="badge ${statusBadge[s.status]||''}">${escapeHtml(s.status)}</span></td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">${s.radar_enabled ? '🌐 Sí' : '—'}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">
+            <a href="/sector-comercial?id=${s.id}" target="_blank" class="btn btn-secondary" style="font-size:12px;padding:5px 10px;margin-right:4px;">👁 Ver</a>
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;margin-right:4px;" onclick='openComercialModal(${JSON.stringify(s)})'>✏️ Editar</button>
+            <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteComercial(${s.id})">🗑</button>
+        </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function openComercialModal(data) {
+    editingComercialId = data ? data.id : null;
+    const v = data || {};
+    document.getElementById('comercial-modal-title').textContent = editingComercialId ? 'Editar Sector Comercial' : 'Nuevo Sector Comercial';
+    document.getElementById('cs-form-name').value         = v.name || '';
+    document.getElementById('cs-form-type').value         = v.type || 'retail';
+    document.getElementById('cs-form-subtype').value      = v.subtype || '';
+    document.getElementById('cs-form-status').value       = v.status || 'potencial';
+    document.getElementById('cs-form-jurisdiction').value = v.jurisdiction || '';
+    document.getElementById('cs-form-description').value  = v.description || '';
+    document.getElementById('cs-form-radar').checked      = !!v.radar_enabled;
+    document.getElementById('comercial-modal').style.display = 'flex';
+}
+
+function closeComercialModal() {
+    document.getElementById('comercial-modal').style.display = 'none';
+    editingComercialId = null;
+}
+
+async function handleComercialSubmit(e) {
+    e.preventDefault();
+    const payload = {
+        name:         document.getElementById('cs-form-name').value,
+        type:         document.getElementById('cs-form-type').value,
+        subtype:      document.getElementById('cs-form-subtype').value || null,
+        status:       document.getElementById('cs-form-status').value,
+        jurisdiction: document.getElementById('cs-form-jurisdiction').value || null,
+        description:  document.getElementById('cs-form-description').value || null,
+        radar_enabled: document.getElementById('cs-form-radar').checked ? 1 : 0,
+    };
+    const action = editingComercialId ? 'update' : 'create';
+    const url    = '/api/commercial_sectors.php?action=' + action + (editingComercialId ? '&id=' + editingComercialId : '');
+    try {
+        const res    = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const result = await res.json();
+        if (result.ok || result.id) {
+            closeComercialModal(); loadComercialSectores();
+            showToast('✅ Sector comercial ' + (editingComercialId ? 'actualizado' : 'creado'), 'success');
+        } else {
+            showToast('❌ ' + (result.error || 'Error al guardar'), 'error');
+        }
+    } catch(err) { showToast('❌ Error: ' + err.message, 'error'); }
+}
+
+async function deleteComercial(id) {
+    if (!confirm('¿Eliminar este sector comercial?')) return;
+    const res = await fetch('/api/commercial_sectors.php?action=delete&id=' + id, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) });
+    const r   = await res.json();
+    if (r.ok) { loadComercialSectores(); showToast('✅ Eliminado', 'success'); }
+    else showToast('❌ ' + (r.error || 'Error'), 'error');
+}
+
+// ── CÁMARAS ───────────────────────────────────────────────────────────────────
+let allCamaras = [];
+let editingCamaraId = null;
+
+async function loadCamaras() {
+    const el = document.getElementById('camaras-list');
+    if (!el) return;
+    el.innerHTML = '<p style="color:var(--text-tertiary);padding:16px;">⏳ Cargando...</p>';
+    try {
+        const res  = await fetch('/api/chambers.php');
+        const data = await res.json();
+        allCamaras = data.data || [];
+        document.getElementById('count-camaras').textContent = allCamaras.length + ' cámara(s)';
+        filtrarCamaras('');
+    } catch(err) {
+        el.innerHTML = '<p style="color:#ef4444;">Error: ' + escapeHtml(err.message) + '</p>';
+    }
+}
+
+function filtrarCamaras(q) {
+    let rows = allCamaras.filter(c => !q || c.name.toLowerCase().includes(q.toLowerCase()) || (c.area||'').toLowerCase().includes(q.toLowerCase()));
+    renderCamaras(rows);
+}
+
+function renderCamaras(rows) {
+    const el = document.getElementById('camaras-list');
+    if (!rows.length) { el.innerHTML = '<p style="color:var(--text-tertiary);padding:16px;">Sin resultados.</p>'; return; }
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:#f9fafb;">
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Nombre</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Área</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Estado</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Acciones</th>
+    </tr></thead>
+    <tbody>${rows.map(c => `<tr>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;font-weight:600;">${escapeHtml(c.name)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">${escapeHtml(c.area)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;"><span class="badge ${c.status==='activa'?'badge-success':'badge-danger'}">${escapeHtml(c.status)}</span></td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;margin-right:4px;" onclick='openCamaraModal(${JSON.stringify(c)})'>✏️ Editar</button>
+            <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteCamara(${c.id})">🗑</button>
+        </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function openCamaraModal(data) {
+    editingCamaraId = data ? data.id : null;
+    const v = data || {};
+    document.getElementById('camara-modal-title').textContent = editingCamaraId ? 'Editar Cámara' : 'Nueva Cámara';
+    document.getElementById('ch-form-name').value        = v.name || '';
+    document.getElementById('ch-form-area').value        = v.area || '';
+    document.getElementById('ch-form-description').value = v.description || '';
+    document.getElementById('ch-form-website').value     = v.website || '';
+    document.getElementById('ch-form-email').value       = v.email || '';
+    document.getElementById('ch-form-phone').value       = v.phone || '';
+    document.getElementById('ch-form-status').value      = v.status || 'activa';
+    document.getElementById('camara-modal').style.display = 'flex';
+}
+function closeCamaraModal() { document.getElementById('camara-modal').style.display = 'none'; editingCamaraId = null; }
+
+async function handleCamaraSubmit(e) {
+    e.preventDefault();
+    const payload = {
+        name: document.getElementById('ch-form-name').value,
+        area: document.getElementById('ch-form-area').value,
+        description: document.getElementById('ch-form-description').value || null,
+        website: document.getElementById('ch-form-website').value || null,
+        email: document.getElementById('ch-form-email').value || null,
+        phone: document.getElementById('ch-form-phone').value || null,
+        status: document.getElementById('ch-form-status').value,
+    };
+    const action = editingCamaraId ? 'update' : 'create';
+    const url    = '/api/chambers.php?action=' + action + (editingCamaraId ? '&id=' + editingCamaraId : '');
+    try {
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const r   = await res.json();
+        if (r.ok || r.id) { closeCamaraModal(); loadCamaras(); showToast('✅ Cámara ' + (editingCamaraId?'actualizada':'creada'), 'success'); }
+        else showToast('❌ ' + (r.error || 'Error'), 'error');
+    } catch(err) { showToast('❌ ' + err.message, 'error'); }
+}
+
+async function deleteCamara(id) {
+    if (!confirm('¿Eliminar esta cámara?')) return;
+    const res = await fetch('/api/chambers.php?action=delete&id=' + id, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) });
+    const r   = await res.json();
+    if (r.ok) { loadCamaras(); showToast('✅ Eliminada', 'success'); }
+    else showToast('❌ ' + (r.error || 'Error'), 'error');
+}
+
+// ── AGENCIAS ──────────────────────────────────────────────────────────────────
+let allAgencias = [];
+let editingAgenciaId = null;
+
+async function loadAgencias() {
+    const el = document.getElementById('agencias-list');
+    if (!el) return;
+    el.innerHTML = '<p style="color:var(--text-tertiary);padding:16px;">⏳ Cargando...</p>';
+    try {
+        const res  = await fetch('/api/agencies.php');
+        const data = await res.json();
+        allAgencias = data.data || [];
+        document.getElementById('count-agencias').textContent = allAgencias.length + ' agencia(s)';
+        filtrarAgencias('');
+    } catch(err) { el.innerHTML = '<p style="color:#ef4444;">Error: ' + escapeHtml(err.message) + '</p>'; }
+}
+
+function filtrarAgencias(q) {
+    let rows = allAgencias.filter(a => !q || a.name.toLowerCase().includes(q.toLowerCase()) || (a.area||'').toLowerCase().includes(q.toLowerCase()));
+    renderAgencias(rows);
+}
+
+function renderAgencias(rows) {
+    const el = document.getElementById('agencias-list');
+    if (!rows.length) { el.innerHTML = '<p style="color:var(--text-tertiary);padding:16px;">Sin resultados.</p>'; return; }
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:#f9fafb;">
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Nombre</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Área</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Estado</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Acciones</th>
+    </tr></thead>
+    <tbody>${rows.map(a => `<tr>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;font-weight:600;">${escapeHtml(a.name)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">${escapeHtml(a.area)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;"><span class="badge ${a.status==='activa'?'badge-success':'badge-danger'}">${escapeHtml(a.status)}</span></td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;margin-right:4px;" onclick='openAgenciaModal(${JSON.stringify(a)})'>✏️ Editar</button>
+            <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteAgencia(${a.id})">🗑</button>
+        </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function openAgenciaModal(data) {
+    editingAgenciaId = data ? data.id : null;
+    const v = data || {};
+    document.getElementById('agencia-modal-title').textContent = editingAgenciaId ? 'Editar Agencia' : 'Nueva Agencia';
+    document.getElementById('ag-form-name').value        = v.name || '';
+    document.getElementById('ag-form-area').value        = v.area || '';
+    document.getElementById('ag-form-description').value = v.description || '';
+    document.getElementById('ag-form-website').value     = v.website || '';
+    document.getElementById('ag-form-email').value       = v.email || '';
+    document.getElementById('ag-form-phone').value       = v.phone || '';
+    document.getElementById('ag-form-status').value      = v.status || 'activa';
+    document.getElementById('agencia-modal').style.display = 'flex';
+}
+function closeAgenciaModal() { document.getElementById('agencia-modal').style.display = 'none'; editingAgenciaId = null; }
+
+async function handleAgenciaSubmit(e) {
+    e.preventDefault();
+    const payload = {
+        name: document.getElementById('ag-form-name').value,
+        area: document.getElementById('ag-form-area').value,
+        description: document.getElementById('ag-form-description').value || null,
+        website: document.getElementById('ag-form-website').value || null,
+        email: document.getElementById('ag-form-email').value || null,
+        phone: document.getElementById('ag-form-phone').value || null,
+        status: document.getElementById('ag-form-status').value,
+    };
+    const action = editingAgenciaId ? 'update' : 'create';
+    const url    = '/api/agencies.php?action=' + action + (editingAgenciaId ? '&id=' + editingAgenciaId : '');
+    try {
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const r   = await res.json();
+        if (r.ok || r.id) { closeAgenciaModal(); loadAgencias(); showToast('✅ Agencia ' + (editingAgenciaId?'actualizada':'creada'), 'success'); }
+        else showToast('❌ ' + (r.error || 'Error'), 'error');
+    } catch(err) { showToast('❌ ' + err.message, 'error'); }
+}
+
+async function deleteAgencia(id) {
+    if (!confirm('¿Eliminar esta agencia?')) return;
+    const res = await fetch('/api/agencies.php?action=delete&id=' + id, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) });
+    const r   = await res.json();
+    if (r.ok) { loadAgencias(); showToast('✅ Eliminada', 'success'); }
+    else showToast('❌ ' + (r.error || 'Error'), 'error');
+}
+
+// ── LÍNEAS DE POLÍTICA ───────────────────────────────────────────────────────
+let allLineas = [];
+let editingLineaId = null;
+
+async function loadLineas() {
+    const el = document.getElementById('lineas-list');
+    if (!el) return;
+    el.innerHTML = '<p style="color:var(--text-tertiary);padding:16px;">⏳ Cargando...</p>';
+    try {
+        const res  = await fetch('/api/policy_lines.php');
+        const data = await res.json();
+        allLineas = data.data || [];
+        document.getElementById('count-lineas').textContent = allLineas.length + ' línea(s)';
+        filtrarLineas('');
+    } catch(err) { el.innerHTML = '<p style="color:#ef4444;">Error: ' + escapeHtml(err.message) + '</p>'; }
+}
+
+function filtrarLineas(q) {
+    const type   = document.getElementById('filter-lineas-type')?.value || '';
+    const status = document.getElementById('filter-lineas-status')?.value || '';
+    let rows = allLineas.filter(l => {
+        const mQ = !q    || l.title.toLowerCase().includes(q.toLowerCase());
+        const mT = !type || l.line_type === type;
+        const mS = !status || l.status === status;
+        return mQ && mT && mS;
+    });
+    renderLineas(rows);
+}
+
+function renderLineas(rows) {
+    const el = document.getElementById('lineas-list');
+    if (!rows.length) { el.innerHTML = '<p style="color:var(--text-tertiary);padding:16px;">Sin resultados.</p>'; return; }
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:#f9fafb;">
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Título</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Tipo</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Origen</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Estado</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Publicación</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Acciones</th>
+    </tr></thead>
+    <tbody>${rows.map(l => `<tr>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;font-weight:600;">${escapeHtml(l.title)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">${escapeHtml(l.line_type)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">${escapeHtml(l.source_type)} #${l.source_id}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;"><span class="badge ${l.status==='vigente'?'badge-success':'badge-danger'}">${escapeHtml(l.status)}</span></td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">${escapeHtml(l.published_at||'')}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;margin-right:4px;" onclick='openLineaModal(${JSON.stringify(l)})'>✏️ Editar</button>
+            <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteLinea(${l.id})">🗑</button>
+        </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function openLineaModal(data) {
+    editingLineaId = data ? data.id : null;
+    const v = data || {};
+    document.getElementById('linea-modal-title').textContent = editingLineaId ? 'Editar Línea' : 'Nueva Línea de Política';
+    document.getElementById('pl-form-title').value        = v.title || '';
+    document.getElementById('pl-form-source-type').value  = v.source_type || 'chamber';
+    document.getElementById('pl-form-source-id').value    = v.source_id || '';
+    document.getElementById('pl-form-line-type').value    = v.line_type || 'propia';
+    document.getElementById('pl-form-area').value         = v.area || '';
+    document.getElementById('pl-form-jurisdiction').value = v.jurisdiction || '';
+    document.getElementById('pl-form-source-link').value  = v.source_link || '';
+    document.getElementById('pl-form-published').value    = v.published_at || '';
+    document.getElementById('pl-form-valid-from').value   = v.valid_from || '';
+    document.getElementById('pl-form-valid-until').value  = v.valid_until || '';
+    document.getElementById('pl-form-tags').value         = v.tags || '';
+    document.getElementById('pl-form-status').value       = v.status || 'vigente';
+    document.getElementById('pl-form-summary').value      = v.summary || '';
+    document.getElementById('linea-modal').style.display = 'flex';
+}
+function closeLineaModal() { document.getElementById('linea-modal').style.display = 'none'; editingLineaId = null; }
+
+async function handleLineaSubmit(e) {
+    e.preventDefault();
+    const payload = {
+        title:        document.getElementById('pl-form-title').value,
+        source_type:  document.getElementById('pl-form-source-type').value,
+        source_id:    parseInt(document.getElementById('pl-form-source-id').value),
+        line_type:    document.getElementById('pl-form-line-type').value,
+        area:         document.getElementById('pl-form-area').value || null,
+        jurisdiction: document.getElementById('pl-form-jurisdiction').value || null,
+        source_link:  document.getElementById('pl-form-source-link').value || null,
+        published_at: document.getElementById('pl-form-published').value || null,
+        valid_from:   document.getElementById('pl-form-valid-from').value || null,
+        valid_until:  document.getElementById('pl-form-valid-until').value || null,
+        tags:         document.getElementById('pl-form-tags').value || null,
+        status:       document.getElementById('pl-form-status').value,
+        summary:      document.getElementById('pl-form-summary').value || null,
+    };
+    const action = editingLineaId ? 'update' : 'create';
+    const url    = '/api/policy_lines.php?action=' + action + (editingLineaId ? '&id=' + editingLineaId : '');
+    try {
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const r   = await res.json();
+        if (r.ok || r.id) { closeLineaModal(); loadLineas(); showToast('✅ Línea ' + (editingLineaId?'actualizada':'creada'), 'success'); }
+        else showToast('❌ ' + (r.error || 'Error'), 'error');
+    } catch(err) { showToast('❌ ' + err.message, 'error'); }
+}
+
+async function deleteLinea(id) {
+    if (!confirm('¿Eliminar esta línea?')) return;
+    const res = await fetch('/api/policy_lines.php?action=delete&id=' + id, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) });
+    const r   = await res.json();
+    if (r.ok) { loadLineas(); showToast('✅ Eliminada', 'success'); }
+    else showToast('❌ ' + (r.error || 'Error'), 'error');
+}
+
+// ── COMPETENCIAS ──────────────────────────────────────────────────────────────
+let allCompetencias = [];
+let editingCompetenciaId = null;
+
+async function loadCompetencias() {
+    const el = document.getElementById('competencias-list');
+    if (!el) return;
+    el.innerHTML = '<p style="color:var(--text-tertiary);padding:16px;">⏳ Cargando...</p>';
+    try {
+        const res  = await fetch('/api/competencies.php');
+        const data = await res.json();
+        allCompetencias = data.data || [];
+        document.getElementById('count-competencias').textContent = allCompetencias.length + ' competencia(s)';
+        filtrarCompetencias('');
+    } catch(err) { el.innerHTML = '<p style="color:#ef4444;">Error: ' + escapeHtml(err.message) + '</p>'; }
+}
+
+function filtrarCompetencias(q) {
+    const role = document.getElementById('filter-comp-role')?.value || '';
+    let rows = allCompetencias.filter(c => {
+        const mQ = !q    || (c.organism||'').toLowerCase().includes(q.toLowerCase());
+        const mR = !role || c.role === role;
+        return mQ && mR;
+    });
+    renderCompetencias(rows);
+}
+
+function renderCompetencias(rows) {
+    const el = document.getElementById('competencias-list');
+    if (!rows.length) { el.innerHTML = '<p style="color:var(--text-tertiary);padding:16px;">Sin resultados.</p>'; return; }
+    el.innerHTML = `<table style="width:100%;border-collapse:collapse;font-size:13px;">
+    <thead><tr style="background:#f9fafb;">
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Rol</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Organismo</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Órgano</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Origen</th>
+        <th style="padding:10px;border-bottom:2px solid #e5e7eb;text-align:left;">Acciones</th>
+    </tr></thead>
+    <tbody>${rows.map(c => `<tr>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;font-weight:600;">${escapeHtml(c.role)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">${escapeHtml(c.organism)}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">${escapeHtml(c.organ||'')}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">${escapeHtml(c.source_type)} #${c.source_id}</td>
+        <td style="padding:9px 10px;border-bottom:1px solid #f3f4f6;">
+            <button class="btn btn-secondary" style="font-size:12px;padding:5px 10px;margin-right:4px;" onclick='openCompetenciaModal(${JSON.stringify(c)})'>✏️ Editar</button>
+            <button class="btn btn-danger" style="font-size:12px;padding:5px 10px;" onclick="deleteCompetencia(${c.id})">🗑</button>
+        </td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+function openCompetenciaModal(data) {
+    editingCompetenciaId = data ? data.id : null;
+    const v = data || {};
+    document.getElementById('comp-modal-title').textContent = editingCompetenciaId ? 'Editar Competencia' : 'Nueva Competencia';
+    document.getElementById('comp-form-source-type').value = v.source_type || 'chamber';
+    document.getElementById('comp-form-source-id').value   = v.source_id || '';
+    document.getElementById('comp-form-role').value        = v.role || 'aprobar';
+    document.getElementById('comp-form-organism').value    = v.organism || '';
+    document.getElementById('comp-form-organ').value       = v.organ || '';
+    document.getElementById('comp-form-responsible').value = v.responsible || '';
+    document.getElementById('comp-form-scope').value       = v.scope || '';
+    document.getElementById('comp-form-legal-basis').value = v.legal_basis || '';
+    document.getElementById('comp-modal').style.display = 'flex';
+}
+function closeCompetenciaModal() { document.getElementById('comp-modal').style.display = 'none'; editingCompetenciaId = null; }
+
+async function handleCompetenciaSubmit(e) {
+    e.preventDefault();
+    const payload = {
+        source_type: document.getElementById('comp-form-source-type').value,
+        source_id:   parseInt(document.getElementById('comp-form-source-id').value),
+        role:        document.getElementById('comp-form-role').value,
+        organism:    document.getElementById('comp-form-organism').value,
+        organ:       document.getElementById('comp-form-organ').value || null,
+        responsible: document.getElementById('comp-form-responsible').value || null,
+        scope:       document.getElementById('comp-form-scope').value || null,
+        legal_basis: document.getElementById('comp-form-legal-basis').value || null,
+    };
+    const action = editingCompetenciaId ? 'update' : 'create';
+    const url    = '/api/competencies.php?action=' + action + (editingCompetenciaId ? '&id=' + editingCompetenciaId : '');
+    try {
+        const res = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload) });
+        const r   = await res.json();
+        if (r.ok || r.id) { closeCompetenciaModal(); loadCompetencias(); showToast('✅ Competencia ' + (editingCompetenciaId?'actualizada':'creada'), 'success'); }
+        else showToast('❌ ' + (r.error || 'Error'), 'error');
+    } catch(err) { showToast('❌ ' + err.message, 'error'); }
+}
+
+async function deleteCompetencia(id) {
+    if (!confirm('¿Eliminar esta competencia?')) return;
+    const res = await fetch('/api/competencies.php?action=delete&id=' + id, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) });
+    const r   = await res.json();
+    if (r.ok) { loadCompetencias(); showToast('✅ Eliminada', 'success'); }
+    else showToast('❌ ' + (r.error || 'Error'), 'error');
+}
+
+// ── RADAR LEGAL (Admin) ──────────────────────────────────────────────────────
+async function loadRadarLegal() {
+    try {
+        const [tm, dest, rest, contr] = await Promise.all([
+            fetch('/api/radar_legal.php?resource=transport_modes').then(r=>r.json()),
+            fetch('/api/radar_legal.php?resource=destinations').then(r=>r.json()),
+            fetch('/api/radar_legal.php?resource=restrictions').then(r=>r.json()),
+            fetch('/api/radar_legal.php?resource=contract_types').then(r=>r.json()),
+        ]);
+        document.getElementById('radar-count-transport').textContent = (tm.data||[]).length + ' modos';
+        document.getElementById('radar-count-dest').textContent      = (dest.data||[]).length + ' destinaciones';
+        document.getElementById('radar-count-rest').textContent      = (rest.data||[]).length + ' restricciones';
+        document.getElementById('radar-count-contr').textContent     = (contr.data||[]).length + ' contratos';
+
+        // Load sector list for config
+        await loadSectorListForRadar();
+
+        // Render catalog summary
+        const el = document.getElementById('radar-catalog-list');
+        if (el) {
+            el.innerHTML = `
+                <p style="font-size:13px;color:#374151;margin-bottom:8px;">
+                    El catálogo Radar Legal incluye <strong>${(tm.data||[]).length}</strong> modos de transporte,
+                    <strong>${(dest.data||[]).length}</strong> destinaciones aduaneras,
+                    <strong>${(rest.data||[]).length}</strong> restricciones y
+                    <strong>${(contr.data||[]).length}</strong> tipos de contrato internacional.
+                </p>
+                <p style="font-size:12px;color:#6b7280;">Para ampliar el catálogo (agregar puertos, restricciones, contratos, etc.) podés usar la API directamente o ejecutar sentencias INSERT en la base de datos.</p>
+                <div style="margin-top:12px;">
+                    <a href="/sector-comercial" target="_blank" class="btn btn-secondary" style="font-size:13px;margin-right:8px;">🏪 Ver Sector Comercial</a>
+                    <a href="/sector-industrial" target="_blank" class="btn btn-secondary" style="font-size:13px;">🏭 Ver Sector Industrial</a>
+                </div>`;
+        }
+    } catch(err) {
+        const el = document.getElementById('radar-catalog-list');
+        if (el) el.innerHTML = '<p style="color:#ef4444;">Error: ' + escapeHtml(err.message) + '</p>';
+    }
+}
+
+async function loadSectorListForRadar() {
+    const typeEl = document.getElementById('radar-sector-type');
+    const idEl   = document.getElementById('radar-sector-id');
+    if (!typeEl || !idEl) return;
+
+    async function refreshSectorOptions() {
+        const type = typeEl.value;
+        const url  = type === 'commercial' ? '/api/commercial_sectors.php' : '/api/industrial_sectors.php';
+        try {
+            const res  = await fetch(url);
+            const data = await res.json();
+            const rows = data.data || [];
+            idEl.innerHTML = '<option value="">-- Seleccionar sector --</option>' +
+                rows.map(s => `<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+        } catch(e) {}
+    }
+
+    typeEl.addEventListener('change', refreshSectorOptions);
+    idEl.addEventListener('change', async () => {
+        const type = typeEl.value;
+        const id   = parseInt(idEl.value);
+        if (!id) return;
+        try {
+            const res  = await fetch(`/api/radar_legal.php?resource=settings&sector_type=${type}&sector_id=${id}`);
+            const data = await res.json();
+            document.getElementById('radar-enabled-chk').checked = !!data.enabled;
+        } catch(e) {}
+    });
+
+    await refreshSectorOptions();
+}
+
+async function guardarRadarConfig() {
+    const type    = document.getElementById('radar-sector-type').value;
+    const id      = parseInt(document.getElementById('radar-sector-id').value);
+    const enabled = document.getElementById('radar-enabled-chk').checked;
+    const resEl   = document.getElementById('radar-config-result');
+    if (!id) { resEl.textContent = '⚠️ Seleccioná un sector primero.'; return; }
+    try {
+        const res = await fetch('/api/radar_legal.php?action=set_enabled', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ sector_type: type, sector_id: id, enabled })
+        });
+        const r = await res.json();
+        if (r.ok) {
+            resEl.innerHTML = '<span style="color:#059669;">✅ Configuración guardada.</span>';
+            showToast('✅ Radar Legal ' + (enabled ? 'habilitado' : 'deshabilitado'), 'success');
+        } else {
+            resEl.innerHTML = '<span style="color:#ef4444;">❌ ' + escapeHtml(r.error||'Error') + '</span>';
+        }
+    } catch(err) {
+        resEl.innerHTML = '<span style="color:#ef4444;">❌ ' + escapeHtml(err.message) + '</span>';
+    }
+}
 </script>
+
 </body>
 </html>
