@@ -920,6 +920,13 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
             background: linear-gradient(135deg, #c0392b 0%, #7b241c 100%) !important;
             border-color: #7b241c !important;
         }
+        /* EN VIVO filter pills */
+        .tx-tipo-pill {
+            padding:3px 9px;font-size:11px;border-radius:12px;border:1px solid #fecaca;
+            background:#fef2f2;color:#c0392b;cursor:pointer;font-weight:600;transition:all .15s;
+        }
+        .tx-tipo-pill:hover { background:#fee2e2; }
+        .tx-tipo-active { background:#c0392b !important;color:#fff !important;border-color:#9b1c1c !important; }
     </style>
 </head>
 <body>
@@ -1046,9 +1053,10 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                              text-transform:uppercase;letter-spacing:.07em;border-bottom:1px solid #f1f5f9;">
                     Idioma de interfaz
                 </div>
-                <?php foreach (['es'=>'Español','en'=>'English','pt'=>'Português','fr'=>'Français','de'=>'Deutsch','no'=>'Norsk','zh'=>'中文','ar'=>'العربية','it'=>'Italiano','ru'=>'Русский','el'=>'Ελληνικά','tr'=>'Türkçe','ja'=>'日本語','ko'=>'한국어'] as $lc => $lname): ?>
-                <button type="button" id="lang-btn-option" data-lang="<?= $lc ?>"
+                <?php foreach (['es'=>'Español','en'=>'English','pt'=>'Português','fr'=>'Français','de'=>'Deutsch','no'=>'Norsk','zh'=>'中文','ar'=>'العربية','hi'=>'हिन्दी','it'=>'Italiano','ru'=>'Русский','el'=>'Ελληνικά','tr'=>'Türkçe','ja'=>'日本語','ko'=>'한국어'] as $lc => $lname): ?>
+                <button type="button" class="lang-btn-option" data-lang="<?= $lc ?>"
                         onclick="setMapUILang('<?= $lc ?>')"
+                        aria-label="<?= htmlspecialchars($lname, ENT_QUOTES, 'UTF-8') ?>"
                         style="display:block;width:100%;text-align:left;background:none;border:none;
                                padding:9px 14px;font-size:13px;cursor:pointer;color:#374151;
                                transition:background .15s;"
@@ -1538,7 +1546,31 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
         </div>
         <div class="sb-mod-body open">
             <div class="sb-mod-body-inner">
-                <div id="transmisiones-list" style="max-height:150px;overflow-y:auto;"></div>
+                <!-- Filtros -->
+                <div style="padding:8px 10px;border-bottom:1px solid #fde8e8;display:flex;flex-direction:column;gap:6px;">
+                    <div style="display:flex;gap:4px;flex-wrap:wrap;">
+                        <button class="tx-tipo-pill tx-tipo-active" data-tipo="" onclick="setTxTipo(this,'')">Todos</button>
+                        <button class="tx-tipo-pill" data-tipo="youtube" onclick="setTxTipo(this,'youtube')">▶ YouTube</button>
+                        <button class="tx-tipo-pill" data-tipo="en_vivo" onclick="setTxTipo(this,'en_vivo')">🔴 En vivo</button>
+                    </div>
+                    <input type="text" id="tx-q-input" placeholder="🔍 Buscar por nombre…" autocomplete="off"
+                           oninput="onTxQChange()"
+                           style="width:100%;padding:5px 8px;border:1px solid #e5c0c0;border-radius:6px;font-size:12px;font-family:inherit;color:#374151;box-sizing:border-box;outline:none;" />
+                    <select id="tx-radio-sel" onchange="onTxRadioChange()"
+                            style="width:100%;padding:5px 8px;border:1px solid #e5c0c0;border-radius:6px;font-size:12px;font-family:inherit;color:#374151;background:white;cursor:pointer;box-sizing:border-box;">
+                        <option value="100">📍 100 km</option>
+                        <option value="250">📍 250 km</option>
+                        <option value="500">📍 500 km</option>
+                        <option value="0">🌐 Global</option>
+                    </select>
+                </div>
+                <div id="transmisiones-list" style="overflow-y:auto;padding:8px 10px;"></div>
+                <div id="tx-load-more-wrap" style="display:none;padding:0 10px 8px;">
+                    <button onclick="txLoadMore()"
+                            style="width:100%;padding:7px;font-size:12px;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;cursor:pointer;color:#c0392b;font-weight:600;">
+                        Mostrar más
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1905,12 +1937,24 @@ const UI_STRINGS = {
         lbl_registry: '등록', btn_website: '웹사이트 방문', btn_directions: '길 찾기',
         filter_all_countries: '모든 국가', filter_all_languages: '모든 언어',
     },
+    hi: {
+        lbl_hours: 'समय', lbl_phone: 'फ़ोन', lbl_address: 'पता',
+        lbl_type: 'प्रकार', lbl_specialty: 'विशेषता', lbl_products: 'उत्पाद/सेवाएँ',
+        lbl_email: 'ईमेल', lbl_website: 'वेबसाइट', lbl_open_now: 'अभी खुला है',
+        lbl_closed: 'बंद', lbl_niza_class: 'नीस वर्ग', lbl_protection: 'सुरक्षा',
+        lbl_country: 'देश', lbl_language: 'भाषा', lbl_currency: 'मुद्रा',
+        lbl_registry: 'रजिस्ट्री', btn_website: 'वेबसाइट देखें', btn_directions: 'रास्ता',
+        filter_all_countries: 'सभी देश', filter_all_languages: 'सभी भाषाएँ',
+    },
 };
 
-/** Idioma activo de la interfaz del visitante (persiste en localStorage). */
+/** Idioma activo de la interfaz del visitante (persiste en sesión PHP y localStorage). */
+const MAPITA_PHP_LANG = '<?= htmlspecialchars($_html_lang, ENT_QUOTES, 'UTF-8') ?>';
 let MAPITA_UI_LANG = (function() {
-    const stored = localStorage.getItem('mapita_ui_lang');
     const supported = Object.keys(UI_STRINGS);
+    // PHP session language has highest priority (set via ?lang= param)
+    if (MAPITA_PHP_LANG && supported.includes(MAPITA_PHP_LANG)) return MAPITA_PHP_LANG;
+    const stored = localStorage.getItem('mapita_ui_lang');
     if (stored && supported.includes(stored)) return stored;
     const browser = (navigator.language || 'es').split('-')[0].toLowerCase();
     return supported.includes(browser) ? browser : 'es';
@@ -5075,12 +5119,15 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     } catch (e) { console.error('Error cargando ofertas', e); }
 
-    // Cargar transmisiones
+    // Cargar transmisiones (all for map markers; sidebar shows first TX_DEFAULT_LIMIT)
     try {
         const rt2 = await fetch('/api/transmisiones.php').then(r => r.json());
         if (rt2.success && rt2.data.length > 0) {
-            mostrarTransmisionesWidget(rt2.data);
             mostrarMarcadoresTransmisiones(rt2.data);
+            _txState._allData = rt2.data;
+            const first = rt2.data.slice(0, TX_DEFAULT_LIMIT);
+            _txState.data = first;
+            renderTransmisionesWidget(first, rt2.data.length > TX_DEFAULT_LIMIT);
         }
     } catch (e) { console.error('Error cargando transmisiones', e); }
 
@@ -6376,11 +6423,87 @@ function mostrarMarcadoresOfertas(ofertas) {
     });
 }
 
-// ─── TRANSMISIONES WIDGET ──────────────────────────────────────────────────────
-function mostrarTransmisionesWidget(transmisiones) {
-    const container = document.getElementById('transmisiones-container');
-    const lista     = document.getElementById('transmisiones-list');
-    if (!container || !lista || !transmisiones || transmisiones.length === 0) return;
+// ─── TRANSMISIONES FILTER STATE & WIDGET ──────────────────────────────────────
+const TX_DEFAULT_LIMIT = 2;
+const TX_SEARCH_LIMIT  = 7;
+let _txState = { tipo: '', q: '', radio: 100, offset: 0, data: [], _allData: [] };
+let _txQTimer = null;
+
+function setTxTipo(btn, tipo) {
+    document.querySelectorAll('.tx-tipo-pill').forEach(b => b.classList.remove('tx-tipo-active'));
+    btn.classList.add('tx-tipo-active');
+    _txState.tipo = tipo;
+    _txState.offset = 0;
+    _fetchTxWithFilters(false);
+}
+
+function onTxQChange() {
+    clearTimeout(_txQTimer);
+    _txQTimer = setTimeout(() => {
+        _txState.q = (document.getElementById('tx-q-input')?.value || '').trim();
+        _txState.offset = 0;
+        _fetchTxWithFilters(false);
+    }, 400);
+}
+
+function onTxRadioChange() {
+    _txState.radio = parseInt(document.getElementById('tx-radio-sel')?.value || '100', 10);
+    _txState.offset = 0;
+    _fetchTxWithFilters(false);
+}
+
+function txLoadMore() {
+    _txState.offset += TX_SEARCH_LIMIT;
+    _fetchTxWithFilters(true);
+}
+
+async function _fetchTxWithFilters(append) {
+    const isSearch = (_txState.tipo !== '' || _txState.q !== '');
+    const limit    = isSearch ? TX_SEARCH_LIMIT : TX_DEFAULT_LIMIT;
+
+    // If no filter and we have cached data, just slice from it
+    if (!isSearch && _txState._allData.length > 0 && !append) {
+        const first = _txState._allData.slice(0, TX_DEFAULT_LIMIT);
+        _txState.data = first;
+        renderTransmisionesWidget(first, _txState._allData.length > TX_DEFAULT_LIMIT);
+        return;
+    }
+
+    const center = (typeof mapa !== 'undefined' && mapa) ? mapa.getCenter() : null;
+    const lat = center ? center.lat.toFixed(6) : '';
+    const lng = center ? center.lng.toFixed(6) : '';
+
+    let url = `/api/transmisiones.php?action=search&limit=${limit}&offset=${_txState.offset}`;
+    if (_txState.tipo) url += `&tipo=${encodeURIComponent(_txState.tipo)}`;
+    if (_txState.q)    url += `&q=${encodeURIComponent(_txState.q)}`;
+    if (lat && lng && _txState.radio > 0) url += `&lat=${lat}&lng=${lng}&radio=${_txState.radio}`;
+
+    try {
+        const res = await fetch(url).then(r => r.json());
+        if (!res.success) return;
+        const rows = res.data || [];
+        if (append) {
+            _txState.data = [..._txState.data, ...rows];
+        } else {
+            _txState.data = rows;
+        }
+        renderTransmisionesWidget(_txState.data, rows.length >= limit);
+    } catch (e) {
+        console.error('Error transmisiones filtros', e);
+    }
+}
+
+function renderTransmisionesWidget(transmisiones, hasMore) {
+    const container  = document.getElementById('transmisiones-container');
+    const lista      = document.getElementById('transmisiones-list');
+    const moreWrap   = document.getElementById('tx-load-more-wrap');
+    if (!container || !lista) return;
+
+    if (!transmisiones || transmisiones.length === 0) {
+        lista.innerHTML = '<p style="padding:6px 2px;margin:0;font-size:12px;color:#888;text-align:center;">Sin transmisiones</p>';
+        if (moreWrap) moreWrap.style.display = 'none';
+        return;
+    }
 
     container.style.display = 'block';
     lista.innerHTML = '';
@@ -6388,19 +6511,11 @@ function mostrarTransmisionesWidget(transmisiones) {
     const iconTipo = { youtube_live: '▶', youtube_video: '📼', radio_stream: '📻', audio_stream: '🎵', video_stream: '🎬' };
 
     transmisiones.forEach(tx => {
-        const isVideo = tx.tipo === 'youtube_video';
+        const isVideo    = tx.tipo === 'youtube_video';
         const itemBorder = isVideo ? TX_COLOR_VIDEO : TX_COLOR_DEFAULT;
-        const itemBg = isVideo ? 'linear-gradient(135deg, #f9f0ff 0%, #f0e0ff 100%)' : 'linear-gradient(135deg, #fff2f2 0%, #ffe5e5 100%)';
-        const item = document.createElement('div');
-        item.style.cssText = `
-            padding: 10px 12px;
-            background: ${itemBg};
-            border-radius: 6px;
-            margin-bottom: 8px;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: 1px solid ${itemBorder};
-        `;
+        const itemBg     = isVideo ? 'linear-gradient(135deg, #f9f0ff 0%, #f0e0ff 100%)' : 'linear-gradient(135deg, #fff2f2 0%, #ffe5e5 100%)';
+        const item       = document.createElement('div');
+        item.style.cssText = `padding:10px 12px;background:${itemBg};border-radius:6px;margin-bottom:8px;cursor:pointer;transition:all 0.2s ease;border:1px solid ${itemBorder};`;
         if (tx.en_vivo) item.classList.add('tx-widget-item-live');
         item.onmouseover = () => { item.style.transform = 'translateY(-2px)'; item.style.boxShadow = tx.en_vivo ? '0 4px 12px rgba(114,26,14,0.45)' : (isVideo ? '0 4px 12px rgba(142,68,173,0.3)' : '0 4px 12px rgba(192,57,43,0.2)'); };
         item.onmouseout  = () => { item.style.transform = 'translateY(0)'; item.style.boxShadow = 'none'; };
@@ -6420,8 +6535,24 @@ function mostrarTransmisionesWidget(transmisiones) {
 
         item.appendChild(titulo);
         item.appendChild(sub);
+
+        if (tx.dist_km != null) {
+            const dist = document.createElement('p');
+            dist.textContent = `📍 ${parseFloat(tx.dist_km).toFixed(0)} km`;
+            dist.style.cssText = 'margin:2px 0 0 0;font-size:11px;color:#aaa;';
+            item.appendChild(dist);
+        }
+
         lista.appendChild(item);
     });
+
+    if (moreWrap) moreWrap.style.display = hasMore ? 'block' : 'none';
+}
+
+/** Legacy alias kept for any external call sites. */
+function mostrarTransmisionesWidget(transmisiones) {
+    const first = (transmisiones || []).slice(0, TX_DEFAULT_LIMIT);
+    renderTransmisionesWidget(first, transmisiones.length > TX_DEFAULT_LIMIT);
 }
 
 function abrirTransmisionModal(tx) {
@@ -6803,7 +6934,7 @@ function toggleLangPicker() {
     picker.style.display = isOpen ? 'none' : 'block';
     if (!isOpen) {
         // Resaltar el idioma activo
-        document.querySelectorAll('#lang-btn-option').forEach(el => {
+        document.querySelectorAll('.lang-btn-option').forEach(el => {
             el.style.fontWeight = (el.dataset.lang === MAPITA_UI_LANG) ? '700' : '400';
             el.style.background = (el.dataset.lang === MAPITA_UI_LANG) ? '#f0f4ff' : 'none';
         });
