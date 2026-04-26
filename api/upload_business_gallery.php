@@ -25,6 +25,9 @@ if (!isset($_SESSION['user_id'])) {
 require_once __DIR__ . '/../includes/db_helper.php';
 require_once __DIR__ . '/../core/helpers.php';
 
+/** Límite global por defecto cuando no hay override ni tipo configurado */
+define('GALLERY_DEFAULT_MAX_PHOTOS', 2);
+
 $userId     = (int)$_SESSION['user_id'];
 $method     = $_SERVER['REQUEST_METHOD'];
 
@@ -128,7 +131,33 @@ if ($method === 'POST') {
 
     // ── Subir foto ────────────────────────────────────────────────────────────
     if ($action === 'upload') {
-        $maxPhotos = 2;
+        // Determinar límite de imágenes: override por negocio > default por tipo > global
+        $maxPhotos = GALLERY_DEFAULT_MAX_PHOTOS;
+        try {
+            $db = getDbConnection();
+            $brow = $db->prepare("SELECT images_max, business_type FROM businesses WHERE id = ?");
+            $brow->execute([$businessId]);
+            $bdata = $brow->fetch(PDO::FETCH_ASSOC);
+            if ($bdata) {
+                if ($bdata['images_max'] !== null) {
+                    $maxPhotos = max(0, (int)$bdata['images_max']);
+                } else {
+                    // Intentar obtener default del tipo
+                    try {
+                        $tlrow = $db->prepare("SELECT images_max_default FROM business_type_limits WHERE business_type = ?");
+                        $tlrow->execute([$bdata['business_type']]);
+                        $tl = $tlrow->fetch(PDO::FETCH_ASSOC);
+                        if ($tl && $tl['images_max_default'] !== null) {
+                            $maxPhotos = max(0, (int)$tl['images_max_default']);
+                        }
+                    } catch (Exception $e) {
+                        error_log("upload_business_gallery: business_type_limits lookup failed: " . $e->getMessage());
+                    }
+                }
+            }
+        } catch (Exception $e) {
+            error_log("upload_business_gallery: images_max lookup failed for business $businessId: " . $e->getMessage());
+        }
         $maxSize   = 120 * 1024; // 120 KB
 
         // Verificar cuántas fotos ya hay

@@ -2903,6 +2903,9 @@ function inicializarMapa() {
         drawRelationLinesForPopup(e.popup?._source || null);
     });
 
+    // Actualizar visibilidad según zoom al cambiar zoom/posición
+    mapa.on('zoomend', filtrar);
+
     filtrar();
 }
 
@@ -3541,8 +3544,15 @@ function filtrar() {
 
     // ─── Filter negocios ────────────────────────────────────────────────────────
     let negocios_filtered = [];
+    const currentZoom = mapa ? mapa.getZoom() : 12;
     if (currentVer === 'negocios' || currentVer === 'ambos') {
         negocios_filtered = negocios.filter(n => {
+            // Visibility zoom filter (admin-controlled)
+            const minZoom = (n.visibility_min_zoom !== null && n.visibility_min_zoom !== undefined)
+                ? parseInt(n.visibility_min_zoom)
+                : (n.is_premium ? 3 : 12);
+            if (currentZoom < minZoom) return false;
+
             // Basic filters
             if (tipo && n.business_type !== tipo) return false;
             if (texto && !(n.name||'').toLowerCase().includes(texto) && !(n.address||'').toLowerCase().includes(texto)) return false;
