@@ -151,4 +151,72 @@ return [
     'tasacion_specialist'    => '🔗 品牌估值 — mariacelesteortiz.com.ar',
     'tasacion_cta_btn'       => '💎 查看估值服务',
     'tasacion_consult_btn'   => '📩 咨询我们的团队',
+
+    // ── 列表项 — 法律面板 ───────────────────────────────────────────────────────
+    'juridico_li1_title' => '推荐的公司形式',
+    'juridico_li1_desc'  => '有限责任公司、股份公司、简化股份公司或其他适合业务的形式。',
+    'juridico_li2_title' => '资产分离',
+    'juridico_li2_desc'  => '将个人资产与企业负债分隔开来。',
+    'juridico_li3_title' => '信托',
+    'juridico_li3_desc'  => '保护、投资和继承规划。',
+    'juridico_li4_title' => '债权人保护',
+    'juridico_li4_desc'  => '预防性法律策略。',
+    'juridico_li5_title' => '法律风险',
+    'juridico_li5_desc'  => '识别和降低法律风险。',
+
+    // ── 列表项 — 税务面板 ───────────────────────────────────────────────────────
+    'fiscal_li1_title'   => '税收制度',
+    'fiscal_li1_desc'    => '小企业税制、标准注册、增值税、地方商业税。',
+    'fiscal_li2_title'   => '税务优化',
+    'fiscal_li2_desc'    => '合法减轻税负。',
+    'fiscal_li3_title'   => '税务风险',
+    'fiscal_li3_desc'    => '不一致性、推计征税、罚款。',
+    'fiscal_li4_title'   => '税务规划',
+    'fiscal_li4_desc'    => '短期和长期策略。',
+
+    // ── 列表项 — 投资面板 ───────────────────────────────────────────────────────
+    'inversion_li1_title' => '自有资本',
+    'inversion_li1_desc'  => '利润再投资和自筹资金策略。',
+    'inversion_li2_title' => '投资者',
+    'inversion_li2_desc'  => '构建投资协议、股权和债务结构。',
+    'inversion_li3_title' => '信托',
+    'inversion_li3_desc'  => '投资载体和资产保护。',
+    'inversion_li4_title' => '外资流入',
+    'inversion_li4_desc'  => '外汇监管（BCRA）。',
+    'inversion_li5_title' => '利润汇回',
+    'inversion_li5_desc'  => '法律框架及现行条件。',
+
+    // ── 列表项 — 合规面板 ───────────────────────────────────────────────────────
+    'compliance_li1_title' => '内部合规计划',
+    'compliance_li1_desc'  => '政策设计与实施。',
+    'compliance_li2_title' => '尽职调查',
+    'compliance_li2_desc'  => '了解你的客户（KYC）及交易对手核查。',
+    'compliance_li3_title' => '反洗钱（UIF）',
+    'compliance_li3_desc'  => '义务、可疑交易报告及义务主体。',
+    'compliance_li4_title' => '企业刑事责任',
+    'compliance_li4_desc'  => '阿根廷第27.401号法律及其影响。',
+
+    // ── 列表项 — 品牌与扩张面板 ─────────────────────────────────────────────────
+    'marca_li1_title' => '经济价值和品牌价值',
+    'marca_li1_desc'  => '无形资产的量化评估。',
+    'marca_li2_title' => '可扩展性',
+    'marca_li2_desc'  => '识别可复制模型和增长路径。',
+    'marca_li3_title' => '多元化',
+    'marca_li3_desc'  => '新的业务线和收入单元。',
+    'marca_li4_title' => '国际扩张',
+    'marca_li4_desc'  => '策略、结构和法律框架。',
+    'marca_li5_title' => '市场潜力',
+    'marca_li5_desc'  => '竞争分析和定位。',
+
+    // ── 列表项 — 品牌估值面板 ───────────────────────────────────────────────────
+    'tasacion_li1_title' => '已确认的无形资产',
+    'tasacion_li1_desc'  => '品牌作为具有独立价值的资产出现在资产负债表上。',
+    'tasacion_li2_title' => '注册资本增加',
+    'tasacion_li2_desc'  => '估值显著增加公司注册资本。',
+    'tasacion_li3_title' => '资产可用性',
+    'tasacion_li3_desc'  => '可在需要时转让、许可、抵押或处置。',
+    'tasacion_li4_title' => '商业价值',
+    'tasacion_li4_desc'  => '建立客户信任并强化竞争地位。',
+    'tasacion_li5_title' => '合作商业模式',
+    'tasacion_li5_desc'  => '支持特许经营、使用许可和合资企业等模式。',
 ];

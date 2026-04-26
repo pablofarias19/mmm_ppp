@@ -11,11 +11,11 @@ siteHeader(t('inversion_page_title'), 'inversion');
     <h2><?= htmlspecialchars(t('inversion_title'), ENT_QUOTES, 'UTF-8') ?></h2>
     <p><?= htmlspecialchars(t('inversion_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <ul class="feature-list">
-        <li><strong>Capital propio</strong> — Reinversión de utilidades y estrategia de autofinanciamiento.</li>
-        <li><strong>Inversores</strong> — Estructuración de acuerdos de inversión, equity y deuda.</li>
-        <li><strong>Fideicomisos</strong> — Vehículos de inversión y protección patrimonial.</li>
-        <li><strong>Ingreso de capital extranjero</strong> — Regulación cambiaria y BCRA.</li>
-        <li><strong>Repatriación de utilidades</strong> — Marco legal y condiciones vigentes.</li>
+        <li><strong><?= htmlspecialchars(t('inversion_li1_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('inversion_li1_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('inversion_li2_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('inversion_li2_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('inversion_li3_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('inversion_li3_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('inversion_li4_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('inversion_li4_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('inversion_li5_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('inversion_li5_desc'), ENT_QUOTES, 'UTF-8') ?></li>
     </ul>
 </div>
 

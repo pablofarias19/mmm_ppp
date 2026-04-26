@@ -151,4 +151,72 @@ return [
     'tasacion_specialist'    => '🔗 MARKENBEWERTUNG — mariacelesteortiz.com.ar',
     'tasacion_cta_btn'       => '💎 Bewertungsservice anzeigen',
     'tasacion_consult_btn'   => '📩 Unser Team konsultieren',
+
+    // ── Listenelemente — Panel Rechtlich ─────────────────────────────────────────
+    'juridico_li1_title' => 'Empfohlene Gesellschaftsform',
+    'juridico_li1_desc'  => 'GmbH, AG, vereinfachte AG oder andere dem Unternehmen angemessene Formen.',
+    'juridico_li2_title' => 'Vermögenstrennung',
+    'juridico_li2_desc'  => 'Privatvermögen vom Betriebsvermögen abschirmen.',
+    'juridico_li3_title' => 'Treuhandvermögen',
+    'juridico_li3_desc'  => 'Schutz, Investition und Nachlassplanung.',
+    'juridico_li4_title' => 'Schutz vor Gläubigern',
+    'juridico_li4_desc'  => 'Präventive rechtliche Strategien.',
+    'juridico_li5_title' => 'Rechtliche Risiken',
+    'juridico_li5_desc'  => 'Identifizierung und Minderung rechtlicher Risiken.',
+
+    // ── Listenelemente — Panel Steuerlich ────────────────────────────────────────
+    'fiscal_li1_title'   => 'Steuerregime',
+    'fiscal_li1_desc'    => 'Kleinunternehmerregelung, Standardregistrierung, MwSt., Gewerbesteuer.',
+    'fiscal_li2_title'   => 'Steueroptimierung',
+    'fiscal_li2_desc'    => 'Legale Reduzierung der Steuerlast.',
+    'fiscal_li3_title'   => 'Steuerliche Risiken',
+    'fiscal_li3_desc'    => 'Inkonsistenzen, Schätzungsbescheide, Bußgelder.',
+    'fiscal_li4_title'   => 'Steuerplanung',
+    'fiscal_li4_desc'    => 'Kurz- und langfristige Strategien.',
+
+    // ── Listenelemente — Panel Investitionen ─────────────────────────────────────
+    'inversion_li1_title' => 'Eigenkapital',
+    'inversion_li1_desc'  => 'Gewinnreinvestition und Selbstfinanzierungsstrategie.',
+    'inversion_li2_title' => 'Investoren',
+    'inversion_li2_desc'  => 'Strukturierung von Investitionsvereinbarungen, Eigenkapital und Fremdkapital.',
+    'inversion_li3_title' => 'Treuhandvermögen',
+    'inversion_li3_desc'  => 'Investitionsvehikel und Vermögensschutz.',
+    'inversion_li4_title' => 'Zufluss ausländischen Kapitals',
+    'inversion_li4_desc'  => 'Devisenregulierung (BCRA).',
+    'inversion_li5_title' => 'Gewinnrepatriierung',
+    'inversion_li5_desc'  => 'Rechtsrahmen und aktuelle Bedingungen.',
+
+    // ── Listenelemente — Panel Compliance ────────────────────────────────────────
+    'compliance_li1_title' => 'Interne Compliance-Programme',
+    'compliance_li1_desc'  => 'Entwurf und Umsetzung von Richtlinien.',
+    'compliance_li2_title' => 'Due Diligence',
+    'compliance_li2_desc'  => 'Know Your Customer (KYC) und Gegenparteienprüfung.',
+    'compliance_li3_title' => 'Geldwäscheprävention (UIF)',
+    'compliance_li3_desc'  => 'Meldepflichten, Verdachtsmeldungen und verpflichtete Personen.',
+    'compliance_li4_title' => 'Strafrechtliche Unternehmenshaftung',
+    'compliance_li4_desc'  => 'Gesetz 27.401 (Argentinien) und seine Auswirkungen.',
+
+    // ── Listenelemente — Panel Marke & Expansion ─────────────────────────────────
+    'marca_li1_title' => 'Wirtschaftlicher Wert und Markenwert',
+    'marca_li1_desc'  => 'Quantifizierung des immateriellen Vermögenswerts.',
+    'marca_li2_title' => 'Skalierbarkeit',
+    'marca_li2_desc'  => 'Identifizierung replizierbarer Modelle und Wachstumspfade.',
+    'marca_li3_title' => 'Diversifizierung',
+    'marca_li3_desc'  => 'Neue Geschäftsbereiche und Einkommensquellen.',
+    'marca_li4_title' => 'Internationale Expansion',
+    'marca_li4_desc'  => 'Strategie, Struktur und Rechtsrahmen.',
+    'marca_li5_title' => 'Marktpotenzial',
+    'marca_li5_desc'  => 'Wettbewerbsanalyse und Positionierung.',
+
+    // ── Listenelemente — Panel Markenbewertung ───────────────────────────────────
+    'tasacion_li1_title' => 'Anerkannter immaterieller Vermögenswert',
+    'tasacion_li1_desc'  => 'Die Marke erscheint in der Bilanz als Vermögenswert mit eigenem Wert.',
+    'tasacion_li2_title' => 'Erhöhung des Grundkapitals',
+    'tasacion_li2_desc'  => 'Die Bewertung erhöht das Grundkapital des Unternehmens erheblich.',
+    'tasacion_li3_title' => 'Vermögensverfügbarkeit',
+    'tasacion_li3_desc'  => 'Kann bei Bedarf abgetreten, lizenziert, verpfändet oder verfügt werden.',
+    'tasacion_li4_title' => 'Kommerzieller Wert',
+    'tasacion_li4_desc'  => 'Stärkt das Kundenvertrauen und die Wettbewerbsposition.',
+    'tasacion_li5_title' => 'Assoziative Geschäftsmodelle',
+    'tasacion_li5_desc'  => 'Ermöglicht Modelle wie Franchising, Nutzungslizenzen und Joint Ventures.',
 ];

@@ -159,4 +159,73 @@ return [
     'tasacion_specialist'    => '🔗 TASACIÓN DE MARCAS — mariacelesteortiz.com.ar',
     'tasacion_cta_btn'       => '💎 Ver servicio de tasación',
     'tasacion_consult_btn'   => '📩 Consultar con nuestro equipo',
+
+    // ── Feature list items — Panel Jurídico ─────────────────────────────────────
+    // Para agregar nuevas claves: replicar en todos los archivos lang/XX.php.
+    'juridico_li1_title' => 'Tipo societario recomendado',
+    'juridico_li1_desc'  => 'SRL, SA, SAS u otras formas según el negocio.',
+    'juridico_li2_title' => 'Separación patrimonial',
+    'juridico_li2_desc'  => 'Blindar el patrimonio personal del empresarial.',
+    'juridico_li3_title' => 'Fideicomisos',
+    'juridico_li3_desc'  => 'Protección, inversión y planificación sucesoria.',
+    'juridico_li4_title' => 'Protección frente a acreedores',
+    'juridico_li4_desc'  => 'Estrategias legales preventivas.',
+    'juridico_li5_title' => 'Riesgos legales',
+    'juridico_li5_desc'  => 'Identificación y mitigación de contingencias.',
+
+    // ── Feature list items — Panel Fiscal ───────────────────────────────────────
+    'fiscal_li1_title'   => 'Régimen impositivo',
+    'fiscal_li1_desc'    => 'Monotributo, Responsable Inscripto, IVA, Ingresos Brutos.',
+    'fiscal_li2_title'   => 'Optimización tributaria',
+    'fiscal_li2_desc'    => 'Reducción legal de la carga impositiva.',
+    'fiscal_li3_title'   => 'Riesgos fiscales',
+    'fiscal_li3_desc'    => 'Inconsistencias, determinaciones de oficio, multas.',
+    'fiscal_li4_title'   => 'Planificación impositiva',
+    'fiscal_li4_desc'    => 'Estrategias a corto y largo plazo.',
+
+    // ── Feature list items — Panel Inversión ────────────────────────────────────
+    'inversion_li1_title' => 'Capital propio',
+    'inversion_li1_desc'  => 'Reinversión de utilidades y estrategia de autofinanciamiento.',
+    'inversion_li2_title' => 'Inversores',
+    'inversion_li2_desc'  => 'Estructuración de acuerdos de inversión, equity y deuda.',
+    'inversion_li3_title' => 'Fideicomisos',
+    'inversion_li3_desc'  => 'Vehículos de inversión y protección patrimonial.',
+    'inversion_li4_title' => 'Ingreso de capital extranjero',
+    'inversion_li4_desc'  => 'Regulación cambiaria y BCRA.',
+    'inversion_li5_title' => 'Repatriación de utilidades',
+    'inversion_li5_desc'  => 'Marco legal y condiciones vigentes.',
+
+    // ── Feature list items — Panel Compliance ───────────────────────────────────
+    'compliance_li1_title' => 'Programas internos de compliance',
+    'compliance_li1_desc'  => 'Diseño e implementación de políticas.',
+    'compliance_li2_title' => 'Debida diligencia',
+    'compliance_li2_desc'  => 'Know Your Customer (KYC) y verificación de contrapartes.',
+    'compliance_li3_title' => 'Prevención de lavado (UIF)',
+    'compliance_li3_desc'  => 'Obligaciones, reportes y sujetos obligados.',
+    'compliance_li4_title' => 'Responsabilidad penal empresaria',
+    'compliance_li4_desc'  => 'Ley 27.401 y sus implicancias.',
+
+    // ── Feature list items — Panel Marca y Expansión ────────────────────────────
+    'marca_li1_title' => 'Valor económico y de marca',
+    'marca_li1_desc'  => 'Cuantificación del activo intangible.',
+    'marca_li2_title' => 'Escalabilidad',
+    'marca_li2_desc'  => 'Identificación de modelos replicables y crecimiento.',
+    'marca_li3_title' => 'Diversificación',
+    'marca_li3_desc'  => 'Nuevas líneas de negocio y unidades de ingreso.',
+    'marca_li4_title' => 'Expansión internacional',
+    'marca_li4_desc'  => 'Estrategia, estructura y marco legal.',
+    'marca_li5_title' => 'Potencial de mercado',
+    'marca_li5_desc'  => 'Análisis competitivo y posicionamiento.',
+
+    // ── Feature list items — Panel Tasación ─────────────────────────────────────
+    'tasacion_li1_title' => 'Activo intangible reconocido',
+    'tasacion_li1_desc'  => 'La marca figura en el balance como un activo con valor propio.',
+    'tasacion_li2_title' => 'Incremento del capital social',
+    'tasacion_li2_desc'  => 'La tasación aumenta significativamente el capital social de la empresa.',
+    'tasacion_li3_title' => 'Disponibilidad patrimonial',
+    'tasacion_li3_desc'  => 'Puede cederse, licenciarse, hipotecarse o disponerse cuando sea necesario.',
+    'tasacion_li4_title' => 'Valor comercial',
+    'tasacion_li4_desc'  => 'Genera confianza en la clientela y fortalece la posición competitiva.',
+    'tasacion_li5_title' => 'Negocios asociativos',
+    'tasacion_li5_desc'  => 'Habilita modelos como franquicias, licencias de uso y joint ventures.',
 ];

@@ -151,4 +151,72 @@ return [
     'tasacion_specialist'    => '🔗 ÉVALUATION DE MARQUES — mariacelesteortiz.com.ar',
     'tasacion_cta_btn'       => '💎 Voir le service d\'évaluation',
     'tasacion_consult_btn'   => '📩 Consulter notre équipe',
+
+    // ── Éléments de liste — Panneau Juridique ────────────────────────────────────
+    'juridico_li1_title' => 'Forme sociétaire recommandée',
+    'juridico_li1_desc'  => 'SARL, SA, SAS ou autres formes adaptées à l\'entreprise.',
+    'juridico_li2_title' => 'Séparation patrimoniale',
+    'juridico_li2_desc'  => 'Protéger le patrimoine personnel du patrimoine professionnel.',
+    'juridico_li3_title' => 'Fiducies',
+    'juridico_li3_desc'  => 'Protection, investissement et planification successorale.',
+    'juridico_li4_title' => 'Protection contre les créanciers',
+    'juridico_li4_desc'  => 'Stratégies juridiques préventives.',
+    'juridico_li5_title' => 'Risques juridiques',
+    'juridico_li5_desc'  => 'Identification et atténuation des risques légaux.',
+
+    // ── Éléments de liste — Panneau Fiscal ──────────────────────────────────────
+    'fiscal_li1_title'   => 'Régime fiscal',
+    'fiscal_li1_desc'    => 'Régime de petite entreprise, inscription standard, TVA, taxe locale.',
+    'fiscal_li2_title'   => 'Optimisation fiscale',
+    'fiscal_li2_desc'    => 'Réduction légale de la charge fiscale.',
+    'fiscal_li3_title'   => 'Risques fiscaux',
+    'fiscal_li3_desc'    => 'Incohérences, redressements d\'office, pénalités.',
+    'fiscal_li4_title'   => 'Planification fiscale',
+    'fiscal_li4_desc'    => 'Stratégies à court et long terme.',
+
+    // ── Éléments de liste — Panneau Investissement ───────────────────────────────
+    'inversion_li1_title' => 'Capital propre',
+    'inversion_li1_desc'  => 'Réinvestissement des bénéfices et stratégie d\'autofinancement.',
+    'inversion_li2_title' => 'Investisseurs',
+    'inversion_li2_desc'  => 'Structuration d\'accords d\'investissement, capital et dette.',
+    'inversion_li3_title' => 'Fiducies',
+    'inversion_li3_desc'  => 'Véhicules d\'investissement et protection patrimoniale.',
+    'inversion_li4_title' => 'Entrée de capitaux étrangers',
+    'inversion_li4_desc'  => 'Réglementation des changes (BCRA).',
+    'inversion_li5_title' => 'Rapatriement des bénéfices',
+    'inversion_li5_desc'  => 'Cadre juridique et conditions en vigueur.',
+
+    // ── Éléments de liste — Panneau Conformité ───────────────────────────────────
+    'compliance_li1_title' => 'Programmes de conformité internes',
+    'compliance_li1_desc'  => 'Conception et mise en œuvre de politiques.',
+    'compliance_li2_title' => 'Diligence raisonnable',
+    'compliance_li2_desc'  => 'Know Your Customer (KYC) et vérification des contreparties.',
+    'compliance_li3_title' => 'Lutte contre le blanchiment (UIF)',
+    'compliance_li3_desc'  => 'Obligations, déclarations et personnes assujetties.',
+    'compliance_li4_title' => 'Responsabilité pénale des entreprises',
+    'compliance_li4_desc'  => 'Loi 27.401 (Argentine) et ses implications.',
+
+    // ── Éléments de liste — Panneau Marque & Expansion ───────────────────────────
+    'marca_li1_title' => 'Valeur économique et de marque',
+    'marca_li1_desc'  => 'Quantification de l\'actif incorporel.',
+    'marca_li2_title' => 'Évolutivité',
+    'marca_li2_desc'  => 'Identification de modèles reproductibles et pistes de croissance.',
+    'marca_li3_title' => 'Diversification',
+    'marca_li3_desc'  => 'Nouvelles lignes de produits et unités de revenus.',
+    'marca_li4_title' => 'Expansion internationale',
+    'marca_li4_desc'  => 'Stratégie, structure et cadre juridique.',
+    'marca_li5_title' => 'Potentiel de marché',
+    'marca_li5_desc'  => 'Analyse concurrentielle et positionnement.',
+
+    // ── Éléments de liste — Panneau Évaluation de Marques ───────────────────────
+    'tasacion_li1_title' => 'Actif incorporel reconnu',
+    'tasacion_li1_desc'  => 'La marque figure au bilan comme un actif avec sa propre valeur.',
+    'tasacion_li2_title' => 'Augmentation du capital social',
+    'tasacion_li2_desc'  => 'L\'évaluation augmente significativement le capital social de l\'entreprise.',
+    'tasacion_li3_title' => 'Disponibilité patrimoniale',
+    'tasacion_li3_desc'  => 'Peut être cédée, licenciée, hypothéquée ou disposée en cas de besoin.',
+    'tasacion_li4_title' => 'Valeur commerciale',
+    'tasacion_li4_desc'  => 'Renforce la confiance des clients et la position concurrentielle.',
+    'tasacion_li5_title' => 'Modèles d\'affaires associatifs',
+    'tasacion_li5_desc'  => 'Permet des modèles tels que franchises, licences d\'utilisation et joint ventures.',
 ];

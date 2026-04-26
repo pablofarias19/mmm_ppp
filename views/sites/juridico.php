@@ -11,11 +11,11 @@ siteHeader(t('juridico_page_title'), 'juridico');
     <h2><?= htmlspecialchars(t('juridico_title'), ENT_QUOTES, 'UTF-8') ?></h2>
     <p><?= htmlspecialchars(t('juridico_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <ul class="feature-list">
-        <li><strong>Tipo societario recomendado</strong> — SRL, SA, SAS u otras formas según el negocio.</li>
-        <li><strong>Separación patrimonial</strong> — Blindar el patrimonio personal del empresarial.</li>
-        <li><strong>Fideicomisos</strong> — Protección, inversión y planificación sucesoria.</li>
-        <li><strong>Protección frente a acreedores</strong> — Estrategias legales preventivas.</li>
-        <li><strong>Riesgos legales</strong> — Identificación y mitigación de contingencias.</li>
+        <li><strong><?= htmlspecialchars(t('juridico_li1_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('juridico_li1_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('juridico_li2_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('juridico_li2_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('juridico_li3_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('juridico_li3_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('juridico_li4_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('juridico_li4_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('juridico_li5_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('juridico_li5_desc'), ENT_QUOTES, 'UTF-8') ?></li>
     </ul>
 </div>
 

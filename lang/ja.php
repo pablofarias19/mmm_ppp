@@ -151,4 +151,72 @@ return [
     'tasacion_specialist'    => '🔗 ブランド評価 — mariacelesteortiz.com.ar',
     'tasacion_cta_btn'       => '💎 評価サービスを見る',
     'tasacion_consult_btn'   => '📩 チームに相談する',
+
+    // ── リスト項目 — 法務パネル ──────────────────────────────────────────────────
+    'juridico_li1_title' => '推奨される会社形態',
+    'juridico_li1_desc'  => '有限会社、株式会社、簡易株式会社またはビジネスに適したその他の形態。',
+    'juridico_li2_title' => '資産分離',
+    'juridico_li2_desc'  => '個人資産と事業責任を分離する。',
+    'juridico_li3_title' => '信託',
+    'juridico_li3_desc'  => '保護、投資、相続計画。',
+    'juridico_li4_title' => '債権者からの保護',
+    'juridico_li4_desc'  => '予防的法律戦略。',
+    'juridico_li5_title' => '法的リスク',
+    'juridico_li5_desc'  => '法的リスクの特定と軽減。',
+
+    // ── リスト項目 — 税務パネル ──────────────────────────────────────────────────
+    'fiscal_li1_title'   => '税制',
+    'fiscal_li1_desc'    => '中小企業向け制度、標準登録、消費税、地方税。',
+    'fiscal_li2_title'   => '税務最適化',
+    'fiscal_li2_desc'    => '税負担の合法的削減。',
+    'fiscal_li3_title'   => '税務リスク',
+    'fiscal_li3_desc'    => '不整合、職権課税、罰則。',
+    'fiscal_li4_title'   => '税務計画',
+    'fiscal_li4_desc'    => '短期・長期の戦略。',
+
+    // ── リスト項目 — 投資パネル ──────────────────────────────────────────────────
+    'inversion_li1_title' => '自己資本',
+    'inversion_li1_desc'  => '利益の再投資と自己資金調達戦略。',
+    'inversion_li2_title' => '投資家',
+    'inversion_li2_desc'  => '投資契約・株式・負債の構造化。',
+    'inversion_li3_title' => '信託',
+    'inversion_li3_desc'  => '投資ビークルと資産保護。',
+    'inversion_li4_title' => '外国資本の流入',
+    'inversion_li4_desc'  => '外国為替規制（BCRA）。',
+    'inversion_li5_title' => '利益の本国送金',
+    'inversion_li5_desc'  => '法的枠組みと現行条件。',
+
+    // ── リスト項目 — コンプライアンスパネル ─────────────────────────────────────
+    'compliance_li1_title' => '内部コンプライアンスプログラム',
+    'compliance_li1_desc'  => 'ポリシーの設計と実施。',
+    'compliance_li2_title' => 'デューデリジェンス',
+    'compliance_li2_desc'  => 'KYC（顧客確認）と取引相手の検証。',
+    'compliance_li3_title' => 'マネーロンダリング防止（UIF）',
+    'compliance_li3_desc'  => '義務、疑わしい取引の届け出、義務対象者。',
+    'compliance_li4_title' => '企業刑事責任',
+    'compliance_li4_desc'  => 'アルゼンチン第27.401号法律とその影響。',
+
+    // ── リスト項目 — ブランド & 拡大パネル ──────────────────────────────────────
+    'marca_li1_title' => '経済的価値とブランド価値',
+    'marca_li1_desc'  => '無形資産の定量化。',
+    'marca_li2_title' => 'スケーラビリティ',
+    'marca_li2_desc'  => '再現可能なモデルと成長経路の特定。',
+    'marca_li3_title' => '多様化',
+    'marca_li3_desc'  => '新しいビジネスラインと収益ユニット。',
+    'marca_li4_title' => '国際展開',
+    'marca_li4_desc'  => '戦略、構造、法的枠組み。',
+    'marca_li5_title' => '市場ポテンシャル',
+    'marca_li5_desc'  => '競合分析とポジショニング。',
+
+    // ── リスト項目 — ブランド評価パネル ─────────────────────────────────────────
+    'tasacion_li1_title' => '認識された無形資産',
+    'tasacion_li1_desc'  => 'ブランドは固有の価値を持つ資産として貸借対照表に記載される。',
+    'tasacion_li2_title' => '資本金の増加',
+    'tasacion_li2_desc'  => '評価により会社の資本金が大幅に増加する。',
+    'tasacion_li3_title' => '資産の利用可能性',
+    'tasacion_li3_desc'  => '必要に応じて譲渡、許諾、担保、処分が可能。',
+    'tasacion_li4_title' => '商業的価値',
+    'tasacion_li4_desc'  => '顧客の信頼を構築し競争力を強化する。',
+    'tasacion_li5_title' => '協力ビジネスモデル',
+    'tasacion_li5_desc'  => 'フランチャイズ、使用許諾、合弁企業などのモデルを可能にする。',
 ];

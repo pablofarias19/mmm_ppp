@@ -151,4 +151,72 @@ return [
     'tasacion_specialist'    => '🔗 AVALIAÇÃO DE MARCAS — mariacelesteortiz.com.ar',
     'tasacion_cta_btn'       => '💎 Ver serviço de avaliação',
     'tasacion_consult_btn'   => '📩 Consultar nossa equipe',
+
+    // ── Itens da lista — Painel Jurídico ─────────────────────────────────────────
+    'juridico_li1_title' => 'Tipo societário recomendado',
+    'juridico_li1_desc'  => 'Ltda, S.A., SAS ou outras formas adequadas ao negócio.',
+    'juridico_li2_title' => 'Separação patrimonial',
+    'juridico_li2_desc'  => 'Proteger o patrimônio pessoal do empresarial.',
+    'juridico_li3_title' => 'Fideicomissos',
+    'juridico_li3_desc'  => 'Proteção, investimento e planejamento sucessório.',
+    'juridico_li4_title' => 'Proteção contra credores',
+    'juridico_li4_desc'  => 'Estratégias jurídicas preventivas.',
+    'juridico_li5_title' => 'Riscos jurídicos',
+    'juridico_li5_desc'  => 'Identificação e mitigação de contingências legais.',
+
+    // ── Itens da lista — Painel Fiscal ───────────────────────────────────────────
+    'fiscal_li1_title'   => 'Regime tributário',
+    'fiscal_li1_desc'    => 'Simples Nacional, regime padrão, IVA, imposto local.',
+    'fiscal_li2_title'   => 'Otimização tributária',
+    'fiscal_li2_desc'    => 'Redução legal da carga tributária.',
+    'fiscal_li3_title'   => 'Riscos fiscais',
+    'fiscal_li3_desc'    => 'Inconsistências, lançamentos de ofício, multas.',
+    'fiscal_li4_title'   => 'Planejamento tributário',
+    'fiscal_li4_desc'    => 'Estratégias de curto e longo prazo.',
+
+    // ── Itens da lista — Painel Investimento ─────────────────────────────────────
+    'inversion_li1_title' => 'Capital próprio',
+    'inversion_li1_desc'  => 'Reinvestimento de lucros e estratégia de autofinanciamento.',
+    'inversion_li2_title' => 'Investidores',
+    'inversion_li2_desc'  => 'Estruturação de acordos de investimento, equity e dívida.',
+    'inversion_li3_title' => 'Fideicomissos',
+    'inversion_li3_desc'  => 'Veículos de investimento e proteção patrimonial.',
+    'inversion_li4_title' => 'Entrada de capital estrangeiro',
+    'inversion_li4_desc'  => 'Regulação cambial (BCRA).',
+    'inversion_li5_title' => 'Repatriação de lucros',
+    'inversion_li5_desc'  => 'Marco legal e condições vigentes.',
+
+    // ── Itens da lista — Painel Compliance ──────────────────────────────────────
+    'compliance_li1_title' => 'Programas internos de compliance',
+    'compliance_li1_desc'  => 'Concepção e implementação de políticas.',
+    'compliance_li2_title' => 'Due diligence',
+    'compliance_li2_desc'  => 'Know Your Customer (KYC) e verificação de contrapartes.',
+    'compliance_li3_title' => 'Prevenção de lavagem de dinheiro (UIF)',
+    'compliance_li3_desc'  => 'Obrigações, relatórios e sujeitos obrigados.',
+    'compliance_li4_title' => 'Responsabilidade penal empresarial',
+    'compliance_li4_desc'  => 'Lei 27.401 (Argentina) e suas implicações.',
+
+    // ── Itens da lista — Painel Marca & Expansão ─────────────────────────────────
+    'marca_li1_title' => 'Valor econômico e de marca',
+    'marca_li1_desc'  => 'Quantificação do ativo intangível.',
+    'marca_li2_title' => 'Escalabilidade',
+    'marca_li2_desc'  => 'Identificação de modelos replicáveis e caminhos de crescimento.',
+    'marca_li3_title' => 'Diversificação',
+    'marca_li3_desc'  => 'Novas linhas de negócios e unidades de receita.',
+    'marca_li4_title' => 'Expansão internacional',
+    'marca_li4_desc'  => 'Estratégia, estrutura e marco legal.',
+    'marca_li5_title' => 'Potencial de mercado',
+    'marca_li5_desc'  => 'Análise competitiva e posicionamento.',
+
+    // ── Itens da lista — Painel Avaliação de Marcas ──────────────────────────────
+    'tasacion_li1_title' => 'Ativo intangível reconhecido',
+    'tasacion_li1_desc'  => 'A marca consta no balanço como ativo com valor próprio.',
+    'tasacion_li2_title' => 'Aumento do capital social',
+    'tasacion_li2_desc'  => 'A avaliação aumenta significativamente o capital social da empresa.',
+    'tasacion_li3_title' => 'Disponibilidade patrimonial',
+    'tasacion_li3_desc'  => 'Pode ser cedida, licenciada, hipotecada ou alienada quando necessário.',
+    'tasacion_li4_title' => 'Valor comercial',
+    'tasacion_li4_desc'  => 'Gera confiança na clientela e fortalece a posição competitiva.',
+    'tasacion_li5_title' => 'Modelos de negócio associativos',
+    'tasacion_li5_desc'  => 'Habilita modelos como franquias, licenças de uso e joint ventures.',
 ];

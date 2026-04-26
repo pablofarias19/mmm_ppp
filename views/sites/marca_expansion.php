@@ -11,11 +11,11 @@ siteHeader(t('marca_page_title'), 'marca');
     <h2><?= htmlspecialchars(t('marca_title'), ENT_QUOTES, 'UTF-8') ?></h2>
     <p><?= htmlspecialchars(t('marca_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <ul class="feature-list">
-        <li><strong>Valor económico y de marca</strong> — Cuantificación del activo intangible.</li>
-        <li><strong>Escalabilidad</strong> — Identificación de modelos replicables y crecimiento.</li>
-        <li><strong>Diversificación</strong> — Nuevas líneas de negocio y unidades de ingreso.</li>
-        <li><strong>Expansión internacional</strong> — Estrategia, estructura y marco legal.</li>
-        <li><strong>Potencial de mercado</strong> — Análisis competitivo y posicionamiento.</li>
+        <li><strong><?= htmlspecialchars(t('marca_li1_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('marca_li1_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('marca_li2_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('marca_li2_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('marca_li3_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('marca_li3_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('marca_li4_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('marca_li4_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('marca_li5_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('marca_li5_desc'), ENT_QUOTES, 'UTF-8') ?></li>
     </ul>
 </div>
 

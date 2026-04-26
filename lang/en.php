@@ -151,4 +151,72 @@ return [
     'tasacion_specialist'    => '🔗 BRAND VALUATION — mariacelesteortiz.com.ar',
     'tasacion_cta_btn'       => '💎 View valuation service',
     'tasacion_consult_btn'   => '📩 Consult our team',
+
+    // ── Feature list items — Legal panel ────────────────────────────────────────
+    'juridico_li1_title' => 'Recommended corporate structure',
+    'juridico_li1_desc'  => 'LLC, corporation, simplified corporation or other forms suited to the business.',
+    'juridico_li2_title' => 'Asset separation',
+    'juridico_li2_desc'  => 'Shield personal assets from business liabilities.',
+    'juridico_li3_title' => 'Trusts',
+    'juridico_li3_desc'  => 'Protection, investment and succession planning.',
+    'juridico_li4_title' => 'Protection from creditors',
+    'juridico_li4_desc'  => 'Preventive legal strategies.',
+    'juridico_li5_title' => 'Legal risks',
+    'juridico_li5_desc'  => 'Identification and mitigation of legal contingencies.',
+
+    // ── Feature list items — Tax panel ──────────────────────────────────────────
+    'fiscal_li1_title'   => 'Tax regime',
+    'fiscal_li1_desc'    => 'Small business scheme, standard registration, VAT, local business tax.',
+    'fiscal_li2_title'   => 'Tax optimisation',
+    'fiscal_li2_desc'    => 'Legal reduction of the tax burden.',
+    'fiscal_li3_title'   => 'Tax risks',
+    'fiscal_li3_desc'    => 'Inconsistencies, ex officio assessments, penalties.',
+    'fiscal_li4_title'   => 'Tax planning',
+    'fiscal_li4_desc'    => 'Short and long-term strategies.',
+
+    // ── Feature list items — Investment panel ────────────────────────────────────
+    'inversion_li1_title' => 'Own capital',
+    'inversion_li1_desc'  => 'Profit reinvestment and self-financing strategy.',
+    'inversion_li2_title' => 'Investors',
+    'inversion_li2_desc'  => 'Structuring investment agreements, equity and debt.',
+    'inversion_li3_title' => 'Trusts',
+    'inversion_li3_desc'  => 'Investment vehicles and asset protection.',
+    'inversion_li4_title' => 'Foreign capital inflow',
+    'inversion_li4_desc'  => 'Foreign exchange regulation (BCRA).',
+    'inversion_li5_title' => 'Profit repatriation',
+    'inversion_li5_desc'  => 'Legal framework and current conditions.',
+
+    // ── Feature list items — Compliance panel ────────────────────────────────────
+    'compliance_li1_title' => 'Internal compliance programmes',
+    'compliance_li1_desc'  => 'Design and implementation of policies.',
+    'compliance_li2_title' => 'Due diligence',
+    'compliance_li2_desc'  => 'Know Your Customer (KYC) and counterparty verification.',
+    'compliance_li3_title' => 'Anti-money laundering (UIF)',
+    'compliance_li3_desc'  => 'Obligations, suspicious activity reports and obligated subjects.',
+    'compliance_li4_title' => 'Corporate criminal liability',
+    'compliance_li4_desc'  => 'Law 27.401 (Argentina) and its implications.',
+
+    // ── Feature list items — Brand & Expansion panel ─────────────────────────────
+    'marca_li1_title' => 'Economic and brand value',
+    'marca_li1_desc'  => 'Quantification of the intangible asset.',
+    'marca_li2_title' => 'Scalability',
+    'marca_li2_desc'  => 'Identification of replicable models and growth paths.',
+    'marca_li3_title' => 'Diversification',
+    'marca_li3_desc'  => 'New business lines and income units.',
+    'marca_li4_title' => 'International expansion',
+    'marca_li4_desc'  => 'Strategy, structure and legal framework.',
+    'marca_li5_title' => 'Market potential',
+    'marca_li5_desc'  => 'Competitive analysis and positioning.',
+
+    // ── Feature list items — Brand Valuation panel ───────────────────────────────
+    'tasacion_li1_title' => 'Recognised intangible asset',
+    'tasacion_li1_desc'  => 'The brand appears on the balance sheet as an asset with its own value.',
+    'tasacion_li2_title' => 'Increase in share capital',
+    'tasacion_li2_desc'  => 'Valuation significantly increases the company\'s share capital.',
+    'tasacion_li3_title' => 'Asset availability',
+    'tasacion_li3_desc'  => 'Can be assigned, licensed, mortgaged or disposed of when needed.',
+    'tasacion_li4_title' => 'Commercial value',
+    'tasacion_li4_desc'  => 'Builds customer confidence and strengthens the competitive position.',
+    'tasacion_li5_title' => 'Associative business models',
+    'tasacion_li5_desc'  => 'Enables models such as franchises, usage licences and joint ventures.',
 ];

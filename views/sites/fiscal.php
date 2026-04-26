@@ -11,10 +11,10 @@ siteHeader(t('fiscal_page_title'), 'fiscal');
     <h2><?= htmlspecialchars(t('fiscal_title'), ENT_QUOTES, 'UTF-8') ?></h2>
     <p><?= htmlspecialchars(t('fiscal_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <ul class="feature-list">
-        <li><strong>Régimen impositivo</strong> — Monotributo, Responsable Inscripto, IVA, Ingresos Brutos.</li>
-        <li><strong>Optimización tributaria</strong> — Reducción legal de la carga impositiva.</li>
-        <li><strong>Riesgos fiscales</strong> — Inconsistencias, determinaciones de oficio, multas.</li>
-        <li><strong>Planificación impositiva</strong> — Estrategias a corto y largo plazo.</li>
+        <li><strong><?= htmlspecialchars(t('fiscal_li1_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('fiscal_li1_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('fiscal_li2_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('fiscal_li2_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('fiscal_li3_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('fiscal_li3_desc'), ENT_QUOTES, 'UTF-8') ?></li>
+        <li><strong><?= htmlspecialchars(t('fiscal_li4_title'), ENT_QUOTES, 'UTF-8') ?></strong> — <?= htmlspecialchars(t('fiscal_li4_desc'), ENT_QUOTES, 'UTF-8') ?></li>
     </ul>
 </div>
 

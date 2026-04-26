@@ -151,4 +151,72 @@ return [
     'tasacion_specialist'    => '🔗 브랜드 평가 — mariacelesteortiz.com.ar',
     'tasacion_cta_btn'       => '💎 평가 서비스 보기',
     'tasacion_consult_btn'   => '📩 팀에 문의하기',
+
+    // ── 목록 항목 — 법무 패널 ──────────────────────────────────────────────────────
+    'juridico_li1_title' => '권장 회사 형태',
+    'juridico_li1_desc'  => '유한회사, 주식회사, 간소화 주식회사 또는 비즈니스에 적합한 다른 형태.',
+    'juridico_li2_title' => '자산 분리',
+    'juridico_li2_desc'  => '개인 자산을 기업 부채로부터 보호.',
+    'juridico_li3_title' => '신탁',
+    'juridico_li3_desc'  => '보호, 투자 및 상속 계획.',
+    'juridico_li4_title' => '채권자 보호',
+    'juridico_li4_desc'  => '예방적 법률 전략.',
+    'juridico_li5_title' => '법적 위험',
+    'juridico_li5_desc'  => '법적 위험의 식별 및 경감.',
+
+    // ── 목록 항목 — 세무 패널 ──────────────────────────────────────────────────────
+    'fiscal_li1_title'   => '세금 제도',
+    'fiscal_li1_desc'    => '소규모 사업자 제도, 표준 등록, 부가가치세, 지방세.',
+    'fiscal_li2_title'   => '세무 최적화',
+    'fiscal_li2_desc'    => '세금 부담의 합법적 절감.',
+    'fiscal_li3_title'   => '세무 위험',
+    'fiscal_li3_desc'    => '불일치, 직권 과세, 과태료.',
+    'fiscal_li4_title'   => '세금 계획',
+    'fiscal_li4_desc'    => '단기 및 장기 전략.',
+
+    // ── 목록 항목 — 투자 패널 ──────────────────────────────────────────────────────
+    'inversion_li1_title' => '자기 자본',
+    'inversion_li1_desc'  => '이익 재투자 및 자기 자금 조달 전략.',
+    'inversion_li2_title' => '투자자',
+    'inversion_li2_desc'  => '투자 계약, 주식 및 부채 구조화.',
+    'inversion_li3_title' => '신탁',
+    'inversion_li3_desc'  => '투자 수단 및 자산 보호.',
+    'inversion_li4_title' => '외국 자본 유입',
+    'inversion_li4_desc'  => '외환 규제 (BCRA).',
+    'inversion_li5_title' => '이익 본국 송금',
+    'inversion_li5_desc'  => '법적 프레임워크 및 현행 조건.',
+
+    // ── 목록 항목 — 컴플라이언스 패널 ────────────────────────────────────────────
+    'compliance_li1_title' => '내부 컴플라이언스 프로그램',
+    'compliance_li1_desc'  => '정책 설계 및 구현.',
+    'compliance_li2_title' => '실사',
+    'compliance_li2_desc'  => '고객 확인(KYC) 및 거래 상대방 검증.',
+    'compliance_li3_title' => '자금 세탁 방지 (UIF)',
+    'compliance_li3_desc'  => '의무, 의심 거래 보고 및 의무 대상자.',
+    'compliance_li4_title' => '기업 형사 책임',
+    'compliance_li4_desc'  => '아르헨티나 제27.401호 법률 및 그 영향.',
+
+    // ── 목록 항목 — 브랜드 & 확장 패널 ──────────────────────────────────────────
+    'marca_li1_title' => '경제적 가치 및 브랜드 가치',
+    'marca_li1_desc'  => '무형 자산 정량화.',
+    'marca_li2_title' => '확장성',
+    'marca_li2_desc'  => '복제 가능한 모델 및 성장 경로 식별.',
+    'marca_li3_title' => '다각화',
+    'marca_li3_desc'  => '새로운 사업 라인 및 수익 단위.',
+    'marca_li4_title' => '국제 확장',
+    'marca_li4_desc'  => '전략, 구조 및 법적 프레임워크.',
+    'marca_li5_title' => '시장 잠재력',
+    'marca_li5_desc'  => '경쟁 분석 및 포지셔닝.',
+
+    // ── 목록 항목 — 브랜드 평가 패널 ─────────────────────────────────────────────
+    'tasacion_li1_title' => '인정된 무형 자산',
+    'tasacion_li1_desc'  => '브랜드는 고유한 가치를 가진 자산으로 대차대조표에 나타납니다.',
+    'tasacion_li2_title' => '자본금 증가',
+    'tasacion_li2_desc'  => '평가가 회사의 자본금을 크게 증가시킵니다.',
+    'tasacion_li3_title' => '자산 가용성',
+    'tasacion_li3_desc'  => '필요시 양도, 허가, 담보 설정 또는 처분 가능.',
+    'tasacion_li4_title' => '상업적 가치',
+    'tasacion_li4_desc'  => '고객 신뢰를 구축하고 경쟁 위치를 강화합니다.',
+    'tasacion_li5_title' => '협력 비즈니스 모델',
+    'tasacion_li5_desc'  => '프랜차이즈, 사용 라이선스, 합작 투자 등의 모델 가능.',
 ];

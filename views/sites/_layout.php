@@ -38,8 +38,12 @@ function siteHeader(string $title, string $activePage = ''): void {
     $dir     = $isRTL ? 'rtl' : 'ltr';
     $options = ADV_LANG_OPTIONS;
     // Build a clean base URL for the language switcher (strip existing ?lang= param).
-    $baseUrl     = strtok($_SERVER['REQUEST_URI'] ?? '/', '?');
-    $queryParams = $_GET;
+    $parsedUrl   = parse_url($_SERVER['REQUEST_URI'] ?? '/');
+    $baseUrl     = $parsedUrl['path'] ?? '/';
+    $queryParams = [];
+    if (!empty($parsedUrl['query'])) {
+        parse_str($parsedUrl['query'], $queryParams);
+    }
     unset($queryParams['lang']);
     $queryString = http_build_query($queryParams);
     $langBase    = $queryString ? $baseUrl . '?' . $queryString . '&lang=' : $baseUrl . '?lang=';
