@@ -529,6 +529,8 @@ $descriptionPlaceholders = [
         .geo-search-wrap button { padding: 9px 15px; background: #1B3B6F; color: white; border: none; border-radius: 8px; font-size: .88em; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background .15s; }
         .geo-search-wrap button:hover { background: #0d2247; }
         .geo-search-results { background: white; border: 1px solid #e5e7eb; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,.1); display: none; max-height: 220px; overflow-y: auto; margin-bottom: 10px; }
+        /* Mini-mapa para la ubicación del inmueble */
+        #inm-map-picker { height: 220px; border-radius: 8px; overflow: hidden; border: 1.5px solid #d1fae5; margin-bottom: 8px; isolation: isolate; }
 
         /* ── TAGS ────────────────────────────────────────── */
         .tags-input-wrap {
@@ -1296,6 +1298,25 @@ $descriptionPlaceholders = [
                     <div style="margin-bottom:10px;">
                         <label style="font-size:.82em;font-weight:600;">Dirección</label>
                         <input type="text" id="inm-direccion" maxlength="500" placeholder="Dirección del inmueble" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                    </div>
+                    <!-- Fila 7b: Ubicación en el mapa (mini-mapa para el inmueble) -->
+                    <div style="margin-bottom:10px;">
+                        <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:6px;">
+                            📍 Ubicación del inmueble en el mapa
+                            <span style="font-weight:400;color:#6b7280;">(opcional — clic o buscar dirección)</span>
+                        </label>
+                        <div style="display:flex;gap:6px;margin-bottom:6px;">
+                            <input type="text" id="inm-geo-search-input"
+                                   placeholder="Buscar dirección del inmueble…" autocomplete="off"
+                                   style="flex:1;padding:7px 10px;border:1.5px solid #d1d5db;border-radius:6px;font-size:.84em;">
+                            <button type="button" id="inm-geo-search-btn"
+                                    style="padding:7px 12px;background:#16a34a;color:white;border:none;border-radius:6px;font-size:.84em;font-weight:600;cursor:pointer;white-space:nowrap;">
+                                🔍 Buscar
+                            </button>
+                        </div>
+                        <div id="inm-geo-search-results" style="background:white;border:1px solid #d1fae5;border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.1);display:none;max-height:180px;overflow-y:auto;margin-bottom:6px;"></div>
+                        <div id="inm-map-picker"></div>
+                        <p style="font-size:.76em;color:#6b7280;margin:4px 0 0;">Hacé clic en el mapa para fijar la ubicación exacta del inmueble. Esto es independiente de la ubicación de la inmobiliaria.</p>
                     </div>
                     <!-- Fila 8: Coordenadas -->
                     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
@@ -2756,6 +2777,100 @@ function onCountryChange(cc) {
         }
         document.getElementById('inmueble-form').style.display = 'block';
     };
+    // ── Mini-mapa para ubicación del inmueble ────────────────────────────────
+    let _inmMap = null;
+    let _inmMapMarker = null;
+
+    var _inmMarkerIcon = null;
+    function _getInmMarkerIcon() {
+        if (!_inmMarkerIcon) {
+            _inmMarkerIcon = L.divIcon({
+                html: '<div style="background:#16a34a;width:14px;height:14px;border-radius:50%;border:3px solid white;box-shadow:0 2px 8px rgba(0,0,0,.4);"></div>',
+                className: '', iconSize: [14,14], iconAnchor: [7,7]
+            });
+        }
+        return _inmMarkerIcon;
+    }
+
+    function _setInmMapMarker(lat, lng) {
+        if (!_inmMap) return;
+        if (_inmMapMarker) { _inmMap.removeLayer(_inmMapMarker); }
+        _inmMapMarker = L.marker([lat, lng], { icon: _getInmMarkerIcon() }).addTo(_inmMap);
+        _inmMap.setView([lat, lng], Math.max(_inmMap.getZoom(), 15));
+        document.getElementById('inm-lat').value = parseFloat(lat).toFixed(7);
+        document.getElementById('inm-lng').value = parseFloat(lng).toFixed(7);
+    }
+
+    function _initInmMap() {
+        if (_inmMap) {
+            // Ya inicializado; solo recalcular tamaño por si el div estuvo oculto
+            _inmMap.invalidateSize();
+            return;
+        }
+        const container = document.getElementById('inm-map-picker');
+        if (!container) return;
+
+        // Centro inicial: usar la ubicación del negocio o Argentina por defecto
+        const bizLat = parseFloat(document.getElementById('lat')?.value) || -34.6037;
+        const bizLng = parseFloat(document.getElementById('lng')?.value) || -58.3816;
+
+        _inmMap = L.map(container, { zoomControl: true }).setView([bizLat, bizLng], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(_inmMap);
+
+        _inmMap.on('click', function(e) {
+            _setInmMapMarker(e.latlng.lat, e.latlng.lng);
+        });
+
+        // Buscador de dirección para el inmueble
+        initGeoSearch({
+            map: _inmMap,
+            getMarker: function() { return _inmMapMarker; },
+            setMarker: function(m) {
+                if (_inmMapMarker) { _inmMap.removeLayer(_inmMapMarker); }
+                _inmMapMarker = m;
+                m.setIcon(_getInmMarkerIcon());
+            },
+            latInputId:    'inm-lat',
+            lngInputId:    'inm-lng',
+            searchInputId: 'inm-geo-search-input',
+            searchBtnId:   'inm-geo-search-btn',
+            resultsDivId:  'inm-geo-search-results'
+        });
+    }
+
+    // Sobreescribir abrirFormInmueble para inicializar/actualizar el mini-mapa
+    const _origAbrirForm = window.abrirFormInmueble;
+    window.abrirFormInmueble = function(id) {
+        _origAbrirForm(id);
+        // Inicializar el mapa una vez que el div sea visible
+        requestAnimationFrame(function() {
+            _initInmMap();
+            // Si hay coordenadas cargadas (edición), mover el marcador al punto
+            if (id) {
+                // Las coords se cargan de forma asíncrona; observar cambios en inm-lat
+                var _waitCoords = setInterval(function() {
+                    var latVal = document.getElementById('inm-lat').value;
+                    var lngVal = document.getElementById('inm-lng').value;
+                    if (latVal && lngVal) {
+                        clearInterval(_waitCoords);
+                        _setInmMapMarker(parseFloat(latVal), parseFloat(lngVal));
+                    }
+                }, 150);
+                // Timeout fallback
+                setTimeout(function() { clearInterval(_waitCoords); }, 5000);
+            } else {
+                // Formulario nuevo: limpiar marcador
+                if (_inmMapMarker && _inmMap) {
+                    _inmMap.removeLayer(_inmMapMarker);
+                    _inmMapMarker = null;
+                }
+            }
+        });
+    };
+
     window.cerrarFormInmueble = function() {
         document.getElementById('inmueble-form').style.display = 'none';
         const adjSec = document.getElementById('inm-adjuntos-section');

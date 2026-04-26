@@ -119,6 +119,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
+// Actualizar configuración global del mapa
+if ($action === 'update_global_settings') {
+    $boost = (float)($_POST['global_icon_boost'] ?? 1.0);
+    $boost = max(0.5, min(3.0, round($boost, 1)));
+    mapitaSetSetting($db, 'global_icon_boost', (string)$boost);
+    $message     = 'Configuración global del mapa actualizada.';
+    $messageType = 'success';
+}
+
 // ── Datos para la vista ──────────────────────────────────────────────────────
 // Tipos de negocio disponibles
 $allTypes = mapitaAllowedBusinessTypes();
@@ -127,6 +136,9 @@ $allTypes = mapitaAllowedBusinessTypes();
 $hasInmMax    = mapitaColumnExists($db, 'businesses', 'inmuebles_max');
 $hasInmDest   = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado');
 $hasInmMaxDef = mapitaColumnExists($db, 'business_type_limits', 'inmuebles_max_default');
+
+// Configuración global del mapa (migration 031)
+$globalIconBoost = (float)mapitaGetSetting($db, 'global_icon_boost', '1.0');
 
 // Límites existentes por tipo (tabla business_type_limits)
 $typeLimits = [];
@@ -241,6 +253,41 @@ $inmTotalCount  = mapitaTableExists($db, 'inmuebles')
                 15-16 → Vista de barrio
             </div>
         </div>
+    </div>
+
+    <!-- Configuración Global del Mapa -->
+    <div class="section">
+        <div class="section-header">🌐 Configuración Global del Mapa</div>
+        <form method="post" style="padding:16px;">
+            <?php echo csrfField(); ?>
+            <input type="hidden" name="action" value="update_global_settings">
+            <div style="margin-bottom:16px;">
+                <label style="font-size:13px;font-weight:700;color:#333;display:block;margin-bottom:6px;">
+                    📏 Tamaño global de iconos en el mapa
+                    <span style="font-weight:400;font-size:11px;color:#888;margin-left:6px;">
+                        (afecta negocios, marcas, eventos, encuestas, transmisiones y todos los demás marcadores)
+                    </span>
+                </label>
+                <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+                    <input type="range" name="global_icon_boost" id="boost-slider"
+                           min="0.5" max="3.0" step="0.1"
+                           value="<?php echo htmlspecialchars(number_format($globalIconBoost, 1)); ?>"
+                           oninput="document.getElementById('boost-val').textContent = parseFloat(this.value).toFixed(1) + '×'"
+                           style="width:220px;cursor:pointer;">
+                    <span id="boost-val" style="font-size:1.4rem;font-weight:700;color:#3d56c9;min-width:44px;">
+                        <?php echo number_format($globalIconBoost, 1); ?>×
+                    </span>
+                    <button class="btn btn-primary btn-sm" type="submit">💾 Guardar</button>
+                </div>
+                <div style="margin-top:8px;font-size:11px;color:#888;line-height:1.5;">
+                    💡 <strong>1.0×</strong> = tamaño normal (por defecto) &nbsp;|&nbsp;
+                    <strong>1.5×</strong> = 50% más grande &nbsp;|&nbsp;
+                    <strong>2.0×</strong> = doble de tamaño<br>
+                    Los negocios <em>premium</em> y <em>destacados</em> mantienen su tamaño mayor proporcional al resto.
+                    El cambio se ve reflejado al refrescar el mapa.
+                </div>
+            </div>
+        </form>
     </div>
 
     <!-- Defaults por tipo de negocio -->
