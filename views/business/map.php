@@ -39,6 +39,16 @@ $og_description = 'Descubrí marcas y negocios cerca tuyo.';
 $og_type        = 'website';
 $_scheme        = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
 $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') . '/img/og-mapita.png';
+
+// ── Configuración global del mapa ─────────────────────────────────────────────
+$_mapGlobalIconBoost = 1.0;
+try {
+    $_settingsDb = getDbConnection();
+    if ($_settingsDb) {
+        $_mapGlobalIconBoost = (float)mapitaGetSetting($_settingsDb, 'global_icon_boost', '1.0');
+        $_mapGlobalIconBoost = max(0.5, min(3.0, $_mapGlobalIconBoost));
+    }
+} catch (Throwable $_e) { /* silencioso */ }
 ?>
 <!DOCTYPE html>
 <html lang="<?= htmlspecialchars($_html_lang, ENT_QUOTES, 'UTF-8') ?>">
@@ -1430,12 +1440,17 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
                     <span>── Inmobiliarias ───</span>
                 </div>
                 <div class="cq-acc-body open" id="cq-grp-inmobiliarias">
-                    <div class="cq-acc-body-inner">
+                    <div class="cq-acc-body-inner" style="display:flex;align-items:center;gap:6px;">
                         <button type="button" class="cq-btn" id="btn-cerca"
                                 onclick="toggleCerca()"
                                 title="Muestra inmuebles publicados por inmobiliarias. Solo inmobiliarias pueden publicar inmuebles.">
                             🏘️ CERCA
                         </button>
+                        <button type="button"
+                                onclick="mostrarAyudaCerca()"
+                                title="¿Qué hace el botón CERCA?"
+                                style="background:none;border:1px solid #9ca3af;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;color:#6b7280;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;"
+                                aria-label="Ayuda sobre CERCA">?</button>
                     </div>
                 </div>
 
@@ -1789,6 +1804,38 @@ $og_image       = $_scheme . '://' . ($_SERVER['HTTP_HOST'] ?? 'mapita.com.ar') 
 
 <div id="map"></div>
 
+<!-- ── Modal de ayuda: CERCA ────────────────────────────────────────────────── -->
+<div id="modal-cerca-ayuda" style="display:none;position:fixed;inset:0;z-index:9999;
+     background:rgba(0,0,0,.55);align-items:center;justify-content:center;padding:16px;"
+     aria-modal="true" role="dialog" aria-labelledby="cerca-help-title">
+    <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;box-shadow:0 8px 40px rgba(0,0,0,.3);padding:24px;position:relative;">
+        <button onclick="document.getElementById('modal-cerca-ayuda').style.display='none'"
+                style="position:absolute;top:12px;right:14px;background:none;border:none;font-size:1.4rem;cursor:pointer;color:#6b7280;line-height:1;"
+                aria-label="Cerrar">✕</button>
+        <h3 id="cerca-help-title" style="margin:0 0 12px;font-size:1.05rem;color:#1f2937;">🏘️ ¿Qué hace el botón CERCA?</h3>
+        <p style="font-size:.9rem;color:#374151;line-height:1.6;margin:0 0 10px;">
+            Al activar <strong>CERCA</strong>, el mapa muestra todos los <strong>inmuebles publicados</strong>
+            por las inmobiliarias registradas — tanto en el área visible como en las cercanías de tu ubicación.
+        </p>
+        <ul style="font-size:.87rem;color:#4b5563;line-height:1.7;padding-left:18px;margin:0 0 12px;">
+            <li>🏠 Se muestran casas, departamentos, lotes, locales, oficinas y proyectos en venta o alquiler.</li>
+            <li>📍 Si tenés la ubicación activada, se priorizan los inmuebles más cercanos a vos.</li>
+            <li>💰 Los iconos con el símbolo 💰 aceptan financiación.</li>
+            <li>🌟 Las inmobiliarias <em>destacadas</em> aparecen con borde más oscuro y mayor prioridad.</li>
+            <li>🔄 El mapa se actualiza automáticamente al mover o hacer zoom.</li>
+        </ul>
+        <p style="font-size:.85rem;color:#6b7280;margin:0;">
+            Para ver los datos completos de un inmueble, tocá su ícono en el mapa.
+        </p>
+        <div style="margin-top:16px;text-align:right;">
+            <button onclick="document.getElementById('modal-cerca-ayuda').style.display='none'"
+                    style="padding:8px 20px;background:#1B3B6F;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600;">
+                Entendido ✓
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- ── Leyenda dinámica del mapa ───────────────────────────────── -->
 <button id="map-legend-btn" aria-expanded="false" aria-controls="map-legend" onclick="toggleMapLegend()" title="Mostrar leyenda del mapa">
     🗺️ Leyenda
@@ -1812,6 +1859,8 @@ const SESSION_USER_NAME = <?= json_encode($_sessionUserName) ?>;
 const SESSION_USER_EMAIL = <?= json_encode($_profileEmail) ?>;
 const SESSION_USER_PHONE = <?= json_encode($_profilePhone) ?>;
 const MAPITA_LOCALE = document.documentElement.lang || 'es-AR';
+/** Multiplicador global de tamaño de iconos (configurable por admin en Límites). */
+const GLOBAL_ICON_BOOST = <?= json_encode(round($_mapGlobalIconBoost, 2)) ?>;
 
 // ─── UI_STRINGS: etiquetas multilenguaje del popup y la interfaz ──────────────
 const UI_STRINGS = {
@@ -2317,8 +2366,9 @@ let _svgIconCount = 0;
 
 // ─── createSvgIcon con apariencia 3D ─────────────────────────────────────────────
 function createSvgIcon(emoji, color, isOpen, options = {}) {
-    const w  = options.size   || 32;
-    const h  = options.height || 44;
+    const _boost = (options.ignoreBoost ? 1 : (GLOBAL_ICON_BOOST || 1));
+    const w  = Math.round((options.size   || 32) * _boost);
+    const h  = Math.round((options.height || 44) * _boost);
     const cx = w / 2;
     const id = 'si' + (++_svgIconCount);
 
@@ -2409,7 +2459,9 @@ function getNizaColor(clase) {
 }
 
 // ─── Helper: genera SVG 3D para marcadores de contenido ─────────────────────────
-function make3dPin(emoji, color, w, h, extraClass) {
+function make3dPin(emoji, color, baseW, baseH, extraClass) {
+    const w     = Math.round(baseW * (GLOBAL_ICON_BOOST || 1));
+    const h     = Math.round(baseH * (GLOBAL_ICON_BOOST || 1));
     const cx    = w / 2;
     const id    = 'ci' + (++_svgIconCount);
     const light = lightenColor(color, 45);
@@ -2509,7 +2561,10 @@ function getEntityDisplayName(entity) {
 
 /** Returns icon size array [w, h] adjusted when a temporal badge overlay is present. */
 function calcBadgeIconSize(baseW, baseH, hasBadge) {
-    return hasBadge ? [baseW + 10, baseH + 10] : [baseW, baseH];
+    const boost = GLOBAL_ICON_BOOST || 1;
+    const w = Math.round(baseW * boost) + (hasBadge ? 10 : 0);
+    const h = Math.round(baseH * boost) + (hasBadge ? 10 : 0);
+    return [w, h];
 }
 
 let _ctxHideTimer = null;
@@ -3715,11 +3770,17 @@ function filtrar() {
     const currentZoom = mapa ? mapa.getZoom() : 12;
     if (currentVer === 'negocios' || currentVer === 'ambos') {
         negocios_filtered = negocios.filter(n => {
-            // Visibility zoom filter (admin-controlled)
-            const minZoom = (n.visibility_min_zoom !== null && n.visibility_min_zoom !== undefined)
-                ? parseInt(n.visibility_min_zoom)
-                : (n.is_premium ? 3 : 12);
-            if (currentZoom < minZoom) return false;
+            // Visibility zoom filter (admin-controlled).
+            // Si el filtro de radio está activo y el negocio está dentro del radio,
+            // siempre se muestra (prioridad de cercanía supera el zoom mínimo).
+            const isNearby = locationFilter && miUbicacion && n.lat && n.lng &&
+                calcularDistancia(miUbicacion.lat, miUbicacion.lng, n.lat, n.lng) <= locationFilter.radius;
+            if (!isNearby) {
+                const minZoom = (n.visibility_min_zoom !== null && n.visibility_min_zoom !== undefined)
+                    ? parseInt(n.visibility_min_zoom)
+                    : (n.is_premium ? 3 : 12);
+                if (currentZoom < minZoom) return false;
+            }
 
             // Basic filters
             if (tipo && n.business_type !== tipo) return false;
@@ -3927,29 +3988,31 @@ function mostrarMarcadores(lista) {
         if (isMarca) {
             if (n.logo_url) {
                 // ── Icono de foto circular ────────────────────────────────────
+                const _sz = Math.round(44 * (GLOBAL_ICON_BOOST || 1));
+                const _bdg = Math.round(16 * (GLOBAL_ICON_BOOST || 1));
                 const html = `<div style="
-                    width:44px;height:44px;border-radius:50%;
+                    width:${_sz}px;height:${_sz}px;border-radius:50%;
                     border:3px solid #1B3B6F;
                     box-shadow:0 2px 8px rgba(0,0,0,.35);
                     background:url('${n.logo_url}') center/cover no-repeat #fff;
                     position:relative;">
                     <div style="position:absolute;bottom:-2px;right:-2px;
                         background:#1B3B6F;color:white;border-radius:50%;
-                        width:16px;height:16px;font-size:9px;
+                        width:${_bdg}px;height:${_bdg}px;font-size:${Math.round(9*(GLOBAL_ICON_BOOST||1))}px;
                         display:flex;align-items:center;justify-content:center;
                         border:2px solid white;">🏷️</div>
                 </div>`;
                 marker = L.marker([n.lat, n.lng], {
                     icon: L.divIcon({
                         html: html, className: '',
-                        iconSize: [44, 44], iconAnchor: [22, 44], popupAnchor: [0, -46]
+                        iconSize: [_sz, _sz], iconAnchor: [Math.round(_sz/2), _sz], popupAnchor: [0, -(_sz+2)]
                     })
                 });
             } else {
                 // ── Círculo de color (fallback sin logo) ──────────────────────
                 const color = getNizaColor(n.clase_principal);
                 marker = L.circleMarker([n.lat, n.lng], {
-                    radius: 14, fillColor: color, color: '#fff', weight: 3, fillOpacity: 0.9
+                    radius: Math.round(14 * (GLOBAL_ICON_BOOST || 1)), fillColor: color, color: '#fff', weight: 3, fillOpacity: 0.9
                 });
             }
         } else {
@@ -6333,7 +6396,8 @@ function mostrarMarcadoresTrivias(trivias) {
         const difColor  = difColors[tri.dificultad] || '#9b59b6';
 
         const svg  = make3dPin('🎯', difColor, 32, 44, '');
-        const icon = L.divIcon({ html: svg, className: '', iconSize: [32, 44], iconAnchor: [16, 44], popupAnchor: [0, -46] });
+        const _tsz = calcBadgeIconSize(32, 44, false);
+        const icon = L.divIcon({ html: svg, className: '', iconSize: _tsz, iconAnchor: [Math.round(_tsz[0]/2), _tsz[1]], popupAnchor: [0, -(_tsz[1]+2)] });
         const m    = L.marker([parseFloat(tri.lat), parseFloat(tri.lng)], { icon });
         m._mapitaMeta = { entity_type: 'trivia', entity_id: tri.id || null, mapita_id: tri.mapita_id || null };
 
@@ -6394,7 +6458,8 @@ function mostrarMarcadoresNoticias(noticias) {
         if (!noticia.lat || !noticia.lng) return;
 
         const svg  = make3dPin('📰', '#667eea', 30, 42, '');
-        const icon = L.divIcon({ html: svg, className: '', iconSize: [30, 42], iconAnchor: [15, 42], popupAnchor: [0, -44] });
+        const _nsz = calcBadgeIconSize(30, 42, false);
+        const icon = L.divIcon({ html: svg, className: '', iconSize: _nsz, iconAnchor: [Math.round(_nsz[0]/2), _nsz[1]], popupAnchor: [0, -(_nsz[1]+2)] });
         const m    = L.marker([parseFloat(noticia.lat), parseFloat(noticia.lng)], { icon });
         m._mapitaMeta = { entity_type: 'noticia', entity_id: noticia.id || null, mapita_id: noticia.mapita_id || null };
 
@@ -6839,7 +6904,8 @@ function mostrarMarcadoresTransmisiones(transmisiones) {
         var color = tx.en_vivo ? TX_COLOR_LIVE : (tx.tipo === 'youtube_video' ? TX_COLOR_VIDEO : TX_COLOR_DEFAULT);
         var label = tx.en_vivo ? '🔴' : (tx.tipo === 'youtube_video' ? '📼' : '📡');
         var svg   = make3dPin(label, color, 30, 42, tx.en_vivo ? 'icon-glow' : '');
-        var icon  = L.divIcon({ html: svg, className: '', iconSize: [30,42], iconAnchor: [15,42], popupAnchor: [0,-44] });
+        var _txsz = calcBadgeIconSize(30, 42, false);
+        var icon  = L.divIcon({ html: svg, className: '', iconSize: _txsz, iconAnchor: [Math.round(_txsz[0]/2),_txsz[1]], popupAnchor: [0,-(_txsz[1]+2)] });
         var m    = L.marker([parseFloat(tx.lat), parseFloat(tx.lng)], { icon: icon });
         m._mapitaMeta = { entity_type: 'transmision', entity_id: tx.id || null, mapita_id: tx.mapita_id || null };
         var popIconLabel = tx.tipo === 'youtube_video' ? '📼' : '📡';
@@ -7101,6 +7167,18 @@ const INM_TIPO_ICONS = {
 };
 const INM_MONEDA_SYM = { ARS:'$', USD:'US$', EUR:'€', UYU:'$U', BRL:'R$' };
 
+/** Muestra el modal de ayuda del botón CERCA. */
+function mostrarAyudaCerca() {
+    const m = document.getElementById('modal-cerca-ayuda');
+    if (!m) return;
+    m.style.display = 'flex';
+    // Cerrar con Escape
+    const _close = function(e) {
+        if (e.key === 'Escape') { m.style.display = 'none'; document.removeEventListener('keydown', _close); }
+    };
+    document.addEventListener('keydown', _close);
+}
+
 function toggleCerca() {
     if (_cercaActivo) {
         desactivarCerca();
@@ -7113,10 +7191,7 @@ async function activarCerca() {
     const btn = document.getElementById('btn-cerca');
     if (btn) { btn.style.background = '#16a34a'; btn.style.color = 'white'; btn.textContent = '✅ CERCA (activo)'; }
     _cercaActivo = true;
-    // Hide normal markers
-    if (typeof markerCluster !== 'undefined' && markerCluster) {
-        mapa.removeLayer(markerCluster);
-    }
+    // Mantener marcadores normales visibles (negocios/marcas); mostrar inmuebles encima
     await _cargarInmueblesCerca();
     // Recargar al mover/hacer zoom
     mapa.on('moveend zoomend', _onMapMoveCerca);
@@ -7160,21 +7235,24 @@ async function _cargarInmueblesCerca() {
             const lng = parseFloat(inm.lng) || parseFloat(inm.inm_lng_fallback);
             if (lat == null || lng == null || isNaN(lat) || isNaN(lng)) return;
 
-            // Icon by tipo
+            // Icon by tipo – respeta el boost global
             const tipoIcon = INM_TIPO_ICONS[inm.tipo] || '🏘️';
-            const finBadge = parseInt(inm.financiado, 10) ? '<div style="position:absolute;top:-5px;right:-5px;background:#f59e0b;border-radius:50%;width:14px;height:14px;font-size:9px;display:flex;align-items:center;justify-content:center;border:1px solid #fff;">💰</div>' : '';
+            const _ib = GLOBAL_ICON_BOOST || 1;
+            const _isz = Math.round(36 * _ib);
+            const _fsz = Math.round(18 * _ib);
+            const finBadge = parseInt(inm.financiado, 10) ? `<div style="position:absolute;top:-5px;right:-5px;background:#f59e0b;border-radius:50%;width:${Math.round(14*_ib)}px;height:${Math.round(14*_ib)}px;font-size:${Math.round(9*_ib)}px;display:flex;align-items:center;justify-content:center;border:1px solid #fff;">💰</div>` : '';
             const destBg = inm.inmuebles_destacado ? '#0f766e' : '#16a34a';
 
             const iconHtml = inm.inmobiliaria_icon
-                ? `<div style="position:relative;"><img src="${escapeHtml(inm.inmobiliaria_icon)}" style="width:36px;height:36px;border-radius:50%;border:3px solid ${destBg};object-fit:cover;" />${finBadge}</div>`
-                : `<div style="position:relative;"><div style="background:${destBg};color:white;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;border:2px solid #fff;">${tipoIcon}</div>${finBadge}</div>`;
+                ? `<div style="position:relative;"><img src="${escapeHtml(inm.inmobiliaria_icon)}" style="width:${_isz}px;height:${_isz}px;border-radius:50%;border:3px solid ${destBg};object-fit:cover;" />${finBadge}</div>`
+                : `<div style="position:relative;"><div style="background:${destBg};color:white;border-radius:50%;width:${_isz}px;height:${_isz}px;display:flex;align-items:center;justify-content:center;font-size:${_fsz}px;border:2px solid #fff;">${tipoIcon}</div>${finBadge}</div>`;
 
             const mk = L.marker([lat, lng], {
                 icon: L.divIcon({
                     className: '',
                     html: iconHtml,
-                    iconSize: [36, 36],
-                    iconAnchor: [18, 18],
+                    iconSize: [_isz, _isz],
+                    iconAnchor: [Math.round(_isz/2), Math.round(_isz/2)],
                 })
             });
 
@@ -7215,10 +7293,6 @@ function desactivarCerca() {
     const btn = document.getElementById('btn-cerca');
     if (btn) { btn.style.background = ''; btn.style.color = ''; btn.textContent = '🏘️ CERCA'; }
     if (_cercaLayer) { mapa.removeLayer(_cercaLayer); _cercaLayer = null; }
-    // Restore normal markers
-    if (typeof markerCluster !== 'undefined' && markerCluster && !mapa.hasLayer(markerCluster)) {
-        mapa.addLayer(markerCluster);
-    }
 }
 
 // ─── Ver Inmuebles de una inmobiliaria específica ─────────────────────────────
@@ -7246,11 +7320,14 @@ async function verInmueblesDe(bizId, bizName) {
             latLngs.push([lat, lng]);
 
             const tipoIcon = INM_TIPO_ICONS[inm.tipo] || '🏘️';
-            const finBadge = parseInt(inm.financiado, 10) ? '<div style="position:absolute;top:-5px;right:-5px;background:#f59e0b;border-radius:50%;width:14px;height:14px;font-size:9px;display:flex;align-items:center;justify-content:center;border:1px solid #fff;">💰</div>' : '';
-            const iconHtml = `<div style="position:relative;"><div style="background:#0f766e;color:white;border-radius:50%;width:38px;height:38px;display:flex;align-items:center;justify-content:center;font-size:20px;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);">${tipoIcon}</div>${finBadge}</div>`;
+            const _ib2 = GLOBAL_ICON_BOOST || 1;
+            const _isz2 = Math.round(38 * _ib2);
+            const _fsz2 = Math.round(20 * _ib2);
+            const finBadge = parseInt(inm.financiado, 10) ? `<div style="position:absolute;top:-5px;right:-5px;background:#f59e0b;border-radius:50%;width:${Math.round(14*_ib2)}px;height:${Math.round(14*_ib2)}px;font-size:${Math.round(9*_ib2)}px;display:flex;align-items:center;justify-content:center;border:1px solid #fff;">💰</div>` : '';
+            const iconHtml = `<div style="position:relative;"><div style="background:#0f766e;color:white;border-radius:50%;width:${_isz2}px;height:${_isz2}px;display:flex;align-items:center;justify-content:center;font-size:${_fsz2}px;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.3);">${tipoIcon}</div>${finBadge}</div>`;
 
             const mk = L.marker([lat, lng], {
-                icon: L.divIcon({ className:'', html: iconHtml, iconSize:[38,38], iconAnchor:[19,19] })
+                icon: L.divIcon({ className:'', html: iconHtml, iconSize:[_isz2,_isz2], iconAnchor:[Math.round(_isz2/2),Math.round(_isz2/2)] })
             });
 
             const monSym = INM_MONEDA_SYM[inm.moneda] || '$';

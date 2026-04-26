@@ -72,6 +72,46 @@ function respondError($message = "Ha ocurrido un error") {
     }
 }
 
+if (!function_exists('mapitaGetSetting')) {
+    /**
+     * Obtiene el valor de una configuración global desde la tabla mapita_settings.
+     * Devuelve $default si la tabla no existe o la clave no fue encontrada.
+     */
+    function mapitaGetSetting(PDO $db, string $key, $default = null) {
+        try {
+            if (!mapitaTableExists($db, 'mapita_settings')) {
+                return $default;
+            }
+            $stmt = $db->prepare('SELECT setting_value FROM mapita_settings WHERE setting_key = ? LIMIT 1');
+            $stmt->execute([$key]);
+            $val = $stmt->fetchColumn();
+            return ($val !== false) ? $val : $default;
+        } catch (Throwable $e) {
+            return $default;
+        }
+    }
+}
+
+if (!function_exists('mapitaSetSetting')) {
+    /**
+     * Guarda (INSERT o UPDATE) una configuración global en mapita_settings.
+     */
+    function mapitaSetSetting(PDO $db, string $key, string $value): void {
+        try {
+            if (!mapitaTableExists($db, 'mapita_settings')) {
+                return;
+            }
+            $db->prepare("
+                INSERT INTO mapita_settings (setting_key, setting_value)
+                VALUES (?, ?)
+                ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
+            ")->execute([$key, $value]);
+        } catch (Throwable $e) {
+            // silencioso – la tabla puede no existir aún
+        }
+    }
+}
+
 if (!function_exists('mapitaTableExists')) {
     function mapitaTableExists(PDO $db, string $table): bool {
         if (!preg_match('/^[a-zA-Z0-9_]+$/', $table)) {
