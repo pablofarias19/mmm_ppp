@@ -101,10 +101,14 @@ if ($method === 'GET') {
     }
 
     if ($businessId > 0) {
-        $extCols = $hasExtended ? ", tipo, financiado, ambientes, superficie_m2" : "";
-        $stmt = $db->prepare("SELECT id, business_id, operacion, titulo, descripcion, precio, moneda,
-                                      direccion, lat, lng, foto_url, contacto, activo, created_at, updated_at{$extCols}
-                               FROM inmuebles WHERE business_id = ? ORDER BY created_at DESC");
+        $extCols = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
+        $stmt = $db->prepare("SELECT i.id, i.business_id, i.operacion, i.titulo, i.descripcion, i.precio, i.moneda,
+                                      i.direccion, i.lat, i.lng, i.foto_url, i.contacto, i.activo, i.created_at, i.updated_at,
+                                      b.name AS inmobiliaria_nombre, b.icon_url AS inmobiliaria_icon,
+                                      b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$extCols}
+                               FROM inmuebles i
+                               JOIN businesses b ON b.id = i.business_id
+                               WHERE i.business_id = ? ORDER BY i.created_at DESC");
         $stmt->execute([$businessId]);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         inm_ok($rows);
