@@ -2018,10 +2018,13 @@ const MAPITA_PHP_LANG = '<?= htmlspecialchars($_html_lang, ENT_QUOTES, 'UTF-8') 
 const MAPITA_PHP_LANG_EXPLICIT = <?= $_lang_explicit ? 'true' : 'false' ?>;
 let MAPITA_UI_LANG = (function() {
     const supported = Object.keys(UI_STRINGS);
-    // PHP session language has highest priority when explicitly chosen via ?lang= or prior session
+    // Priority 1: PHP session language (only when explicitly set via ?lang= or a prior session).
+    // When not explicit, we fall through so localStorage / browser language can take precedence.
     if (MAPITA_PHP_LANG_EXPLICIT && supported.includes(MAPITA_PHP_LANG)) return MAPITA_PHP_LANG;
+    // Priority 2: Language previously saved in localStorage (persists across tabs/sessions).
     const stored = localStorage.getItem('mapita_ui_lang');
     if (stored && supported.includes(stored)) return stored;
+    // Priority 3: Browser/OS language as a convenience default for new visitors.
     const browser = (navigator.language || 'es').split('-')[0].toLowerCase();
     return supported.includes(browser) ? browser : 'es';
 })();
@@ -2042,26 +2045,29 @@ function applyI18n() {
     const busqueda = document.getElementById('busqueda');
     if (busqueda) busqueda.placeholder = '🔍 ' + (s.filter_search || 'Buscar...');
 
-    // Type filter — update only the "all types" default option (value="")
+    // Type filter — update the "all types" default option (value="")
     const tipoSel = document.getElementById('tipo');
-    if (tipoSel && tipoSel.options.length > 0 && tipoSel.options[0].value === '') {
-        tipoSel.options[0].text = '📂 ' + (s.filter_all_types || 'Todos los tipos');
+    if (tipoSel) {
+        const allTypesOpt = Array.from(tipoSel.options).find(function(o) { return o.value === ''; });
+        if (allTypesOpt) allTypesOpt.text = '📂 ' + (s.filter_all_types || 'Todos los tipos');
     }
 
     // Lang picker title
     const pickerTitle = document.getElementById('lang-picker-title');
     if (pickerTitle) pickerTitle.textContent = s.ui_language_selector || 'Idioma de interfaz';
 
-    // Country filter default option
+    // Country filter default option (value="")
     const countrySel = document.getElementById('filter-country-code');
-    if (countrySel && countrySel.options.length > 0 && countrySel.options[0].value === '') {
-        countrySel.options[0].text = '🌍 ' + (s.filter_all_countries || 'Todos los países');
+    if (countrySel) {
+        const allCountriesOpt = Array.from(countrySel.options).find(function(o) { return o.value === ''; });
+        if (allCountriesOpt) allCountriesOpt.text = '🌍 ' + (s.filter_all_countries || 'Todos los países');
     }
 
-    // Language filter default option
+    // Language filter default option (value="")
     const langSel = document.getElementById('filter-language-code');
-    if (langSel && langSel.options.length > 0 && langSel.options[0].value === '') {
-        langSel.options[0].text = '🗣️ ' + (s.filter_all_languages || 'Todos los idiomas');
+    if (langSel) {
+        const allLangsOpt = Array.from(langSel.options).find(function(o) { return o.value === ''; });
+        if (allLangsOpt) allLangsOpt.text = '🗣️ ' + (s.filter_all_languages || 'Todos los idiomas');
     }
 
     // RTL layout for Arabic
@@ -2092,11 +2098,14 @@ function setMapUILang(lang) {
 }
 
 // Auto-detect browser language for first-time visitors (no explicit session, no localStorage).
+// Priority chain (when no explicit choice exists): localStorage → browser → default.
 // Triggers a page reload with ?lang=XX so the PHP session is also set correctly.
 (function() {
     if (!MAPITA_PHP_LANG_EXPLICIT && !localStorage.getItem('mapita_ui_lang')) {
         const browserLang = (navigator.language || 'es').split('-')[0].toLowerCase();
-        if (UI_STRINGS[browserLang] && browserLang !== 'es') {
+        // Only redirect when the detected browser language differs from the current server default
+        // to avoid redundant reloads when the browser already matches the default.
+        if (UI_STRINGS[browserLang] && browserLang !== MAPITA_PHP_LANG) {
             console.info('[i18n] Auto-detecting browser language for first-time visitor:', browserLang);
             setMapUILang(browserLang);
         }
