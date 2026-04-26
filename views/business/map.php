@@ -7629,5 +7629,172 @@ window.BUSINESS_TYPE_LABELS = window.BUSINESS_TYPE_LABELS || {
 <script src="/consultas-panel.js"></script>
 <!-- ══ FIN MÓDULO CONSULTAS MASIVAS ════════════════════════════════════════ -->
 
+<!-- ══ MÓDULO ANALYTICS TRACKING ═══════════════════════════════════════════ -->
+<script>
+(function () {
+    'use strict';
+
+    var TRACK_URL = '/api/analytics_track.php';
+
+    /* ── Core send helper ─────────────────────────────────────────────── */
+    function _send(params) {
+        try {
+            var body = new URLSearchParams(params);
+            if (navigator.sendBeacon) {
+                var blob = new Blob([body.toString()], { type: 'application/x-www-form-urlencoded' });
+                navigator.sendBeacon(TRACK_URL, blob);
+            } else {
+                fetch(TRACK_URL, { method: 'POST', body: body, keepalive: true }).catch(function () {});
+            }
+        } catch (_e) { /* fail silently */ }
+    }
+
+    /* ── Public API: window.mapitaTrack ──────────────────────────────── */
+    window.mapitaTrack = function (eventType, businessId, meta) {
+        try {
+            var params = { action: 'event', event_type: String(eventType) };
+            if (businessId) params.business_id = parseInt(businessId, 10);
+            if (meta) params.meta = (typeof meta === 'string') ? meta : JSON.stringify(meta);
+            _send(params);
+        } catch (_e) {}
+    };
+
+    /* ── Heartbeat ───────────────────────────────────────────────────── */
+    var _lastHeartbeat = 0;
+    function sendHeartbeat() {
+        try {
+            var now = Date.now();
+            if (now - _lastHeartbeat < 25000) return; // guard: min 25 s
+            _lastHeartbeat = now;
+            _send({ action: 'heartbeat', path: window.location.pathname });
+        } catch (_e) {}
+    }
+    // Initial heartbeat and timer every 30 s
+    sendHeartbeat();
+    setInterval(sendHeartbeat, 30000);
+    // Also on visibility change (tab back into focus)
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'visible') sendHeartbeat();
+    });
+
+    /* ── map_open: fired when the Leaflet map is ready ───────────────── */
+    // We hook into the DOMContentLoaded + a short delay to ensure `mapa` exists.
+    var _mapOpenSent = false;
+    function tryFireMapOpen() {
+        if (_mapOpenSent) return;
+        if (typeof mapa !== 'undefined' && mapa) {
+            _mapOpenSent = true;
+            window.mapitaTrack('map_open', null, null);
+        }
+    }
+    setTimeout(tryFireMapOpen, 1500);
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(tryFireMapOpen, 800); });
+
+    /* ── business_open: hook into map popupopen ───────────────────────── */
+    // We patch mapa.on after the map is initialised (poll until available)
+    var _popupHooked = false;
+    function hookPopupOpen() {
+        if (_popupHooked) return;
+        if (typeof mapa === 'undefined' || !mapa) return;
+        _popupHooked = true;
+        mapa.on('popupopen', function (e) {
+            try {
+                var src = e.popup && e.popup._source;
+                if (!src) return;
+                var meta = src._mapitaMeta || {};
+                var entityType = meta.entity_type || 'business';
+                var entityId   = meta.entity_id   || null;
+                var evType     = (entityType === 'brand') ? 'brand_open' : 'business_open';
+                window.mapitaTrack(evType, entityId, null);
+            } catch (_e) {}
+        });
+    }
+    var _hookInterval = setInterval(function () {
+        hookPopupOpen();
+        if (_popupHooked) clearInterval(_hookInterval);
+    }, 500);
+
+    /* ── search: wrap filtrar() to detect search-input changes ──────── */
+    var _lastSearchVal = '';
+    var _searchDebounce = null;
+    function watchSearch() {
+        var input = document.getElementById('busqueda');
+        if (!input) return;
+        input.addEventListener('input', function () {
+            var val = input.value.trim();
+            if (val === _lastSearchVal || val.length < 2) return;
+            clearTimeout(_searchDebounce);
+            _searchDebounce = setTimeout(function () {
+                _lastSearchVal = val;
+                window.mapitaTrack('search', null, JSON.stringify({ q: val.substring(0, 200) }));
+            }, 600);
+        });
+    }
+
+    /* ── filter_change: detect filter interactions ───────────────────── */
+    var _filterDebounce = null;
+    function watchFilters() {
+        function onFilterChange() {
+            clearTimeout(_filterDebounce);
+            _filterDebounce = setTimeout(function () {
+                try {
+                    var tipo  = (document.getElementById('tipo') || {}).value || '';
+                    var bq    = (document.getElementById('busqueda') || {}).value || '';
+                    window.mapitaTrack('filter_change', null, JSON.stringify({
+                        tipo: tipo.substring(0, 60),
+                        q:    bq.substring(0, 100)
+                    }));
+                } catch (_e) {}
+            }, 800);
+        }
+        var tipoEl = document.getElementById('tipo');
+        if (tipoEl) tipoEl.addEventListener('change', onFilterChange);
+        // Also listen to any checkbox filter changes
+        document.addEventListener('change', function (ev) {
+            if (ev.target && (ev.target.name === 'company-type' || ev.target.name === 'filter-days'
+                || ev.target.name === 'price-range' || ev.target.name === 'protection-level')) {
+                onFilterChange();
+            }
+        });
+    }
+
+    /* ── Popup action clicks (WA / phone / website / directions) ─────── */
+    document.addEventListener('click', function (ev) {
+        try {
+            var el = ev.target;
+            if (!el || el.tagName !== 'A') return;
+            var href = el.getAttribute('href') || '';
+            var evType = null;
+            if (href.startsWith('https://wa.me') || href.startsWith('whatsapp://')) evType = 'whatsapp_click';
+            else if (href.startsWith('tel:')) evType = 'phone_click';
+            else if (href.startsWith('mailto:')) evType = 'email_click';
+            else if (href.includes('google.com/maps/dir')) evType = 'directions_click';
+            else if (el.classList && el.classList.contains('popup-action') && href.startsWith('http')) evType = 'website_click';
+            if (!evType) return;
+            // Try to get business id from a parent popup element
+            var popup = el.closest('.leaflet-popup-content');
+            var bizId = null;
+            if (popup) {
+                var detailA = popup.querySelector('a[href*="/business/view_business.php?id="]');
+                if (detailA) {
+                    var m = detailA.href.match(/id=(\d+)/);
+                    if (m) bizId = parseInt(m[1], 10);
+                }
+            }
+            window.mapitaTrack(evType, bizId, null);
+        } catch (_e) {}
+    });
+
+    /* ── Init hooks once DOM is ready ─────────────────────────────────── */
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () { watchSearch(); watchFilters(); });
+    } else {
+        watchSearch(); watchFilters();
+    }
+
+})();
+</script>
+<!-- ══ FIN MÓDULO ANALYTICS TRACKING ═══════════════════════════════════════ -->
+
 </body>
 </html>
