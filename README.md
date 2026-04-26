@@ -400,3 +400,88 @@ Los siguientes idiomas están habilitados en la interfaz y en el CMS:
 | `no` | Norsk |
 
 Los archivos de traducción de interfaz viven en `lang/{código}.php`.
+
+---
+
+## Módulo: Plano Sector Comercial + Institucional & Normativo + Radar Legal
+
+### Descripción general
+
+Este módulo amplía el sistema con un nuevo "Plano Sector" para Sector Comercial y enriquece el Sector Industrial existente, incorporando:
+
+1. **Sector Comercial** (`commercial_sectors`) — catálogo de sectores (retail, finanzas, turismo, etc.)
+2. **Cámaras y Agencias** (`chambers`, `agencies`) — entidades institucionales/normativas creables desde el ADMIN, vinculables a múltiples sectores (industrial o comercial) con relación many-to-many.
+3. **Líneas de Política** (`policy_lines`) — documentos/entradas con metadata completa (título, resumen, tipo: propia/gobierno, jurisdicción, fuente/link, fechas, tags, estado).
+4. **Mapa de Competencias** (`competencies`) — mapa estructurado de facultades (aprobar, rechazar, controlar, auditar, sancionar, dictamen, emitir, fiscalizar) por organismo/órgano/responsable.
+5. **Radar Legal** (tablas `radar_*`) — submódulo diferenciado habilitado por sector para consultar:
+   - Modos de transporte (marítimo/aéreo/terrestre/multimodal) + puertos
+   - Destinaciones aduaneras (importación/exportación)
+   - Restricciones (prohibiciones, dumping, licencias)
+   - Controversias y delitos aduaneros
+   - Tipos de contrato internacional
+
+### Migración
+
+```sql
+-- Aplicar la migración:
+-- migrations/030_sector_comercial_camaras_radar.sql
+-- Incluye seeds mínimos de ejemplo.
+```
+
+### Rutas de acceso
+
+| URL | Descripción |
+|-----|-------------|
+| `/sector-comercial` | Listado de sectores comerciales |
+| `/sector-comercial?id=N` | Hub del sector comercial N (tab=overview por defecto) |
+| `/sector-comercial?id=N&tab=institucional` | Módulo Institucional & Normativo |
+| `/sector-comercial?id=N&tab=radar` | Módulo Radar Legal |
+| `/sector-industrial?id=N` | Hub del sector industrial N |
+| `/sector-industrial?id=N&tab=institucional` | Institucional & Normativo (industrial) |
+| `/sector-industrial?id=N&tab=radar` | Radar Legal (industrial) |
+
+### Rutas ADMIN
+
+| Tab en /admin | Descripción |
+|---------------|-------------|
+| `?tab=comercial` | CRUD de Sectores Comerciales |
+| `?tab=camaras` | CRUD de Cámaras |
+| `?tab=agencias` | CRUD de Agencias |
+| `?tab=lineas` | CRUD de Líneas de Política |
+| `?tab=competencias` | CRUD de Competencias/Facultades |
+| `?tab=radar_legal` | Estadísticas y configuración del Radar Legal por sector |
+
+### APIs
+
+| Endpoint | Descripción |
+|----------|-------------|
+| `GET/POST /api/commercial_sectors.php` | CRUD de sectores comerciales |
+| `GET/POST /api/chambers.php` | CRUD de cámaras + sync de sectores |
+| `GET/POST /api/agencies.php` | CRUD de agencias + sync de sectores |
+| `GET/POST /api/policy_lines.php` | CRUD de líneas de política |
+| `GET/POST /api/competencies.php` | CRUD de competencias |
+| `GET/POST /api/radar_legal.php` | Catálogos Radar Legal + configuración por sector |
+
+### Entidades y relaciones
+
+```
+commercial_sectors          ←→ chamber_sector   ←→ chambers
+                            ←→ agency_sector    ←→ agencies
+industrial_sectors          ←→ chamber_sector
+                            ←→ agency_sector
+
+chambers / agencies → policy_lines (source_type + source_id)
+chambers / agencies → competencies (source_type + source_id)
+
+sector_radar_settings (sector_type + sector_id → enabled flag)
+radar_transport_modes → radar_ports
+radar_destinations
+radar_restrictions
+radar_disputes
+radar_contract_types
+```
+
+### Permisos
+
+- **Lectura** (vistas públicas `/sector-comercial`, `/sector-industrial`): sin autenticación.
+- **Escritura** (CRUD desde API y admin): requiere `$_SESSION['is_admin'] = true`.
