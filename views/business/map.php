@@ -7531,7 +7531,7 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
     // Acepta URLs absolutas (https?://) y rutas relativas (/uploads/...)
     if (inm.foto_url && (/^https?:\/\//i.test(inm.foto_url) || /^\//.test(inm.foto_url))) {
         p += '<div class="popup-inm-media">';
-        p += '<img class="popup-inm-img" src="' + escapeHtml(inm.foto_url) + '" alt="Foto del inmueble" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.style.display=\'flex\')">';
+        p += '<img class="popup-inm-img" src="' + escapeHtml(inm.foto_url) + '" alt="Foto del inmueble" loading="eager" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.style.display=\'flex\')" onload="this.style.display=\'block\'">';
         p += '<div class="popup-inm-placeholder" style="display:none" aria-hidden="true">' + tipoIcon + '</div>';
         p += '</div>';
     } else {
@@ -7586,25 +7586,27 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
     // 1) Ver detalle — CTA principal
     if (inmIdInt) {
         p += '<button type="button" class="popup-action popup-action--inm" '
-           + 'onclick="abrirDetalleInmueble(' + inmIdInt + ')">🔍 Ver detalle</button>';
+           + 'title="Ver detalle del inmueble" aria-label="Ver detalle del inmueble" '
+           + 'onclick="abrirDetalleInmueble(' + inmIdInt + ')">🔍</button>';
     }
     // 2) Llamar — si hay contacto
     if (inm.contacto) {
-        p += '<a href="tel:' + escapeHtml(inm.contacto) + '" class="popup-action popup-action--inm-call">📞 Llamar</a>';
+        p += '<a href="tel:' + escapeHtml(inm.contacto) + '" class="popup-action popup-action--inm-call" title="Llamar" aria-label="Llamar">📞</a>';
     }
     // 3) Ver Inmuebles de esta inmobiliaria
     if (inmId) {
         const safeId2    = parseInt(inmId, 10);
         const safeNameS  = toJsSingleStr(inmNombre);
         p += '<button type="button" class="popup-action popup-action--inm-list" '
-           + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameS + ')">🏘️ Ver otros Inmuebles</button>';
+           + 'title="Ver otros inmuebles de esta inmobiliaria" aria-label="Ver otros inmuebles de esta inmobiliaria" '
+           + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameS + ')">🏘️</button>';
         // 4) Enfocar inmobiliaria en el mapa (movido aquí desde la tarjeta eliminada)
         const safeIdF  = parseInt(inmId, 10);
         const safeLatF = isNaN(bizLat) ? 'null' : bizLat;
         const safeLngF = isNaN(bizLng) ? 'null' : bizLng;
         p += '<button type="button" class="popup-action popup-action--inm-map" '
-           + 'title="Ver inmobiliaria en el mapa" '
-           + 'onclick="enfocarInmobiliaria(' + safeIdF + ',' + safeLatF + ',' + safeLngF + ')">📍 En mapa</button>';
+           + 'title="Ver inmobiliaria en el mapa" aria-label="Ver inmobiliaria en el mapa" '
+           + 'onclick="enfocarInmobiliaria(' + safeIdF + ',' + safeLatF + ',' + safeLngF + ')">🗺️</button>';
     }
     p += '</div>';
 
