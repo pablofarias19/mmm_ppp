@@ -59,5 +59,5 @@ $_render_tools = $tools ?? $_default_tools;
 <?php endif; ?>
 <?php
 // Limpiar variables locales para no contaminar el scope externo
-unset($_default_tools, $_render_tools, $_tool, $_href, $_wrap_card);
+unset($_default_tools, $_render_tools, $_wrap_card);
 ?>
