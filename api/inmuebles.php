@@ -50,13 +50,19 @@ if ($method === 'GET') {
     $all        = !empty($_GET['all']);
 
     if ($id > 0) {
-        $extCols = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
-        $stmt = $db->prepare("SELECT i.*, b.name AS inmobiliaria_nombre, b.icon_url AS inmobiliaria_icon,
-                                      b.inmuebles_destacado{$extCols}
-                               FROM inmuebles i
-                               JOIN businesses b ON b.id = i.business_id
-                               WHERE i.id = ? LIMIT 1");
-        $stmt->execute([$id]);
+        $extCols    = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
+        $destCol    = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado') ? ", b.inmuebles_destacado" : "";
+        try {
+            $stmt = $db->prepare("SELECT i.*, b.name AS inmobiliaria_nombre, b.og_image_url AS inmobiliaria_icon,
+                                          b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$destCol}{$extCols}
+                                   FROM inmuebles i
+                                   LEFT JOIN businesses b ON b.id = i.business_id
+                                   WHERE i.id = ? LIMIT 1");
+            $stmt->execute([$id]);
+        } catch (\PDOException $e) {
+            error_log('inmuebles.php ?id PDO error: ' . $e->getMessage());
+            inm_err('Error al consultar inmueble', 500);
+        }
         $row = $stmt->fetch(\PDO::FETCH_ASSOC);
         if (!$row) inm_err('Inmueble no encontrado', 404);
 
@@ -73,43 +79,42 @@ if ($method === 'GET') {
     }
 
     if ($all) {
-        $extCols = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
-        $bizExtCols = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado')
-            ? ", b.inmuebles_destacado" : "";
-        $stmt = $db->prepare("SELECT i.*, b.name AS inmobiliaria_nombre, b.icon_url AS inmobiliaria_icon,
-                                      b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$bizExtCols}{$extCols}
-                               FROM inmuebles i
-                               JOIN businesses b ON b.id = i.business_id
-                               WHERE i.activo = 1
-                               ORDER BY b.inmuebles_destacado DESC, i.created_at DESC
-                               LIMIT 500");
-        // fallback if inmuebles_destacado col doesn't exist yet
+        $extCols    = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
+        $bizExtCols = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado') ? ", b.inmuebles_destacado" : "";
+        $orderDest  = $bizExtCols ? "b.inmuebles_destacado DESC, " : "";
         try {
-            $stmt->execute();
-        } catch (\PDOException $e) {
-            $stmt = $db->prepare("SELECT i.*, b.name AS inmobiliaria_nombre, b.icon_url AS inmobiliaria_icon,
-                                          b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$extCols}
+            $stmt = $db->prepare("SELECT i.*, b.name AS inmobiliaria_nombre, b.og_image_url AS inmobiliaria_icon,
+                                          b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$bizExtCols}{$extCols}
                                    FROM inmuebles i
-                                   JOIN businesses b ON b.id = i.business_id
+                                   LEFT JOIN businesses b ON b.id = i.business_id
                                    WHERE i.activo = 1
-                                   ORDER BY i.created_at DESC
+                                   ORDER BY {$orderDest}i.created_at DESC
                                    LIMIT 500");
             $stmt->execute();
+        } catch (\PDOException $e) {
+            error_log('inmuebles.php ?all PDO error: ' . $e->getMessage());
+            inm_err('Error al consultar inmuebles', 500);
         }
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         inm_ok($rows);
     }
 
     if ($businessId > 0) {
-        $extCols = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
-        $stmt = $db->prepare("SELECT i.id, i.business_id, i.operacion, i.titulo, i.descripcion, i.precio, i.moneda,
-                                      i.direccion, i.lat, i.lng, i.foto_url, i.contacto, i.activo, i.created_at, i.updated_at,
-                                      b.name AS inmobiliaria_nombre, b.icon_url AS inmobiliaria_icon,
-                                      b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$extCols}
-                               FROM inmuebles i
-                               JOIN businesses b ON b.id = i.business_id
-                               WHERE i.business_id = ? ORDER BY i.created_at DESC");
-        $stmt->execute([$businessId]);
+        $extCols    = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
+        $bizExtCols = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado') ? ", b.inmuebles_destacado" : "";
+        try {
+            $stmt = $db->prepare("SELECT i.id, i.business_id, i.operacion, i.titulo, i.descripcion, i.precio, i.moneda,
+                                          i.direccion, i.lat, i.lng, i.foto_url, i.contacto, i.activo, i.created_at, i.updated_at,
+                                          b.name AS inmobiliaria_nombre, b.og_image_url AS inmobiliaria_icon,
+                                          b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$bizExtCols}{$extCols}
+                                   FROM inmuebles i
+                                   LEFT JOIN businesses b ON b.id = i.business_id
+                                   WHERE i.business_id = ? ORDER BY i.created_at DESC");
+            $stmt->execute([$businessId]);
+        } catch (\PDOException $e) {
+            error_log('inmuebles.php ?business_id PDO error: ' . $e->getMessage());
+            inm_err('Error al consultar inmuebles', 500);
+        }
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         inm_ok($rows);
     }

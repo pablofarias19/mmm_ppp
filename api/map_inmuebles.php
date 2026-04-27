@@ -72,10 +72,10 @@ try {
         SELECT i.id, i.business_id, i.operacion, i.titulo, i.descripcion,
                i.precio, i.moneda, i.direccion, i.lat, i.lng,
                i.foto_url, i.contacto, i.activo, i.created_at,
-               b.name AS inmobiliaria_nombre, b.icon_url AS inmobiliaria_icon,
+               b.name AS inmobiliaria_nombre, b.og_image_url AS inmobiliaria_icon,
                b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$destCol}{$extCols}
         FROM inmuebles i
-        JOIN businesses b ON b.id = i.business_id
+        LEFT JOIN businesses b ON b.id = i.business_id
         WHERE i.activo = 1
           AND (i.lat IS NOT NULL OR b.lat IS NOT NULL)
     ";
