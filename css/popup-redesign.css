@@ -216,17 +216,17 @@
     }
 
     .popup-footer {
-        flex-direction: row;
-        flex-wrap: wrap;
-        gap: 4px;
+        flex-direction: column;
+        gap: 5px;
         padding: 8px 10px;
     }
 
     .popup-action {
-        flex: 1 1 auto;
+        width: 100%;
         min-width: 0;
-        padding: 6px 8px;
-        font-size: 11px;
+        padding: 9px 10px;
+        font-size: 12px;
+        text-align: center;
     }
 
     /* ── Hide WT (Walkie Talkie) system section on mobile ── */
