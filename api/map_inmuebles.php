@@ -61,10 +61,12 @@ try {
     // Columnas opcionales
     $hasExtended = mapitaColumnExists($db, 'inmuebles', 'tipo');
     $hasDestacado = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado');
+    $hasWebUrl   = mapitaColumnExists($db, 'inmuebles', 'web_url');
 
     $extCols    = $hasExtended  ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
     $destCol    = $hasDestacado ? ", b.inmuebles_destacado" : "";
     $orderDest  = $hasDestacado ? "b.inmuebles_destacado DESC, " : "";
+    $webUrlCol  = $hasWebUrl    ? ", i.web_url" : "";
 
     // ── Construir query ──────────────────────────────────────────────────────
     $params = [];
@@ -73,7 +75,7 @@ try {
                i.precio, i.moneda, i.direccion, i.lat, i.lng,
                i.foto_url, i.contacto, i.activo, i.created_at,
                b.name AS inmobiliaria_nombre, b.og_image_url AS inmobiliaria_icon,
-               b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$destCol}{$extCols}
+               b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$destCol}{$extCols}{$webUrlCol}
         FROM inmuebles i
         LEFT JOIN businesses b ON b.id = i.business_id
         WHERE i.activo = 1

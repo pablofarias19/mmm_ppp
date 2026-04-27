@@ -4756,7 +4756,7 @@ function buildPopup(n, isMarca) {
         // Botón "Ver Inmuebles" para inmobiliarias
         if (n.business_type === 'inmobiliaria') {
             p += '<button type="button" class="popup-action" style="background:#16a34a;font-weight:700;" '
-               + 'onclick="verInmueblesDe(' + parseInt(n.id) + ',\'' + escapeHtml(n.name || n.nombre || '').replace(/'/g, '&#39;') + '\')">🏘️ Ver Inmuebles</button>';
+               + 'onclick="verInmueblesDe(' + parseInt(n.id) + ',\'' + escapeHtml(n.name || n.nombre || '').replace(/'/g, '&#39;') + '\')">🏘️ Ver otros Inmuebles</button>';
         }
         p += '</div>';
     }
@@ -7539,7 +7539,7 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
         const safeId2   = parseInt(inmId, 10);
         const safeNameJ = JSON.stringify(inmNombre);
         p += '<button type="button" class="popup-action popup-action--inm-list" '
-           + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameJ + ')">🏘️ Ver Inmuebles</button>';
+           + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameJ + ')">🏘️ Ver otros Inmuebles</button>';
         // 4) Enfocar inmobiliaria en el mapa (movido aquí desde la tarjeta eliminada)
         const safeIdF  = parseInt(inmId, 10);
         const safeLatF = isNaN(bizLat) ? 'null' : bizLat;
@@ -8418,16 +8418,15 @@ function abrirDetalleInmueble(inmId) {
             ftHtml += '<a href="tel:' + escapeHtml(inm.contacto) + '" class="inm-detail-btn inm-detail-btn--call">📞 Llamar</a>';
         }
         const bizId2 = parseInt(inm.business_id, 10) || 0;
+        if (inm.web_url) {
+            ftHtml += '<a class="inm-detail-btn inm-detail-btn--map"'
+                   + ' href="' + escapeHtml(inm.web_url) + '"'
+                   + ' target="_blank" rel="noopener noreferrer">🔎 Detalles</a>';
+        }
         if (bizId2) {
-            const bizLat2 = parseFloat(inm.inm_lat_fallback);
-            const bizLng2 = parseFloat(inm.inm_lng_fallback);
-            const safeL   = isNaN(bizLat2) ? 'null' : bizLat2;
-            const safeG   = isNaN(bizLng2) ? 'null' : bizLng2;
-            ftHtml += '<button type="button" class="inm-detail-btn inm-detail-btn--map"'
-                   + ' onclick="cerrarDetalleInmueble();enfocarInmobiliaria(' + bizId2 + ',' + safeL + ',' + safeG + ')">📍 Ver en mapa</button>';
             const safeNameJ = JSON.stringify(bizName);
             ftHtml += '<button type="button" class="inm-detail-btn inm-detail-btn--list"'
-                   + ' onclick="cerrarDetalleInmueble();verInmueblesDe(' + bizId2 + ',' + safeNameJ + ')">🏘️ Ver Inmuebles</button>';
+                   + ' onclick="cerrarDetalleInmueble();verInmueblesDe(' + bizId2 + ',' + safeNameJ + ')">🏘️ Ver otros Inmuebles</button>';
         }
         footer.innerHTML = ftHtml;
     })

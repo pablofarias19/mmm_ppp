@@ -36,6 +36,8 @@ if (!mapitaTableExists($db, 'inmuebles')) {
 // Columnas opcionales (migración 029)
 $hasExtended = mapitaColumnExists($db, 'inmuebles', 'tipo');
 $hasAdjuntos = mapitaTableExists($db, 'inmueble_adjuntos');
+// Columna opcional (migración 034)
+$hasWebUrl   = mapitaColumnExists($db, 'inmuebles', 'web_url');
 
 $method = $_SERVER['REQUEST_METHOD'];
 $userId = (int)($_SESSION['user_id'] ?? 0);
@@ -189,6 +191,18 @@ if ($method === 'POST') {
     $superficie  = $hasExtended && is_numeric($input['superficie_m2'] ?? null) && (float)$input['superficie_m2'] > 0
                     ? (float)$input['superficie_m2'] : null;
 
+    // Campo web_url (migración 034)
+    $webUrl = null;
+    if ($hasWebUrl) {
+        $rawUrl = trim((string)($input['web_url'] ?? ''));
+        if ($rawUrl !== '') {
+            if (!filter_var($rawUrl, FILTER_VALIDATE_URL)) {
+                inm_err('El link del inmueble no es una URL válida (debe comenzar con http:// o https://)');
+            }
+            $webUrl = mb_substr($rawUrl, 0, 500);
+        }
+    }
+
     if ($inmId > 0) {
         // Update
         $stmt2 = $db->prepare("SELECT id FROM inmuebles WHERE id = ? AND business_id = ? LIMIT 1");
@@ -196,40 +210,57 @@ if ($method === 'POST') {
         if (!$stmt2->fetch()) inm_err('Inmueble no encontrado o sin acceso', 404);
 
         if ($hasExtended) {
+            $webUrlSql = $hasWebUrl ? ",web_url=?" : "";
             $upd = $db->prepare("UPDATE inmuebles
                                   SET operacion=?,titulo=?,descripcion=?,precio=?,moneda=?,
                                       direccion=?,lat=?,lng=?,contacto=?,
-                                      tipo=?,financiado=?,ambientes=?,superficie_m2=?,
-                                      updated_at=NOW()
+                                      tipo=?,financiado=?,ambientes=?,superficie_m2=?
+                                      {$webUrlSql},updated_at=NOW()
                                   WHERE id=?");
-            $upd->execute([$operacion,$titulo,$descripcion,$precio,$moneda,
-                           $direccion,$lat,$lng,$contacto,
-                           $tipo,$financiado,$ambientes,$superficie,$inmId]);
+            $params = [$operacion,$titulo,$descripcion,$precio,$moneda,
+                       $direccion,$lat,$lng,$contacto,
+                       $tipo,$financiado,$ambientes,$superficie];
+            if ($hasWebUrl) $params[] = $webUrl;
+            $params[] = $inmId;
+            $upd->execute($params);
         } else {
+            $webUrlSql = $hasWebUrl ? ",web_url=?" : "";
             $upd = $db->prepare("UPDATE inmuebles
                                   SET operacion=?,titulo=?,descripcion=?,precio=?,moneda=?,
-                                      direccion=?,lat=?,lng=?,contacto=?,updated_at=NOW()
+                                      direccion=?,lat=?,lng=?,contacto=?
+                                      {$webUrlSql},updated_at=NOW()
                                   WHERE id=?");
-            $upd->execute([$operacion,$titulo,$descripcion,$precio,$moneda,
-                           $direccion,$lat,$lng,$contacto,$inmId]);
+            $params = [$operacion,$titulo,$descripcion,$precio,$moneda,
+                       $direccion,$lat,$lng,$contacto];
+            if ($hasWebUrl) $params[] = $webUrl;
+            $params[] = $inmId;
+            $upd->execute($params);
         }
         inm_ok(['id' => $inmId], 'Inmueble actualizado');
     } else {
         // Insert
         if ($hasExtended) {
+            $webUrlCol = $hasWebUrl ? ",web_url" : "";
+            $webUrlPh  = $hasWebUrl ? ",?"        : "";
             $ins = $db->prepare("INSERT INTO inmuebles
                                   (business_id,operacion,titulo,descripcion,precio,moneda,
-                                   direccion,lat,lng,contacto,tipo,financiado,ambientes,superficie_m2)
-                                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
-            $ins->execute([$businessId,$operacion,$titulo,$descripcion,$precio,$moneda,
-                           $direccion,$lat,$lng,$contacto,$tipo,$financiado,$ambientes,$superficie]);
+                                   direccion,lat,lng,contacto,tipo,financiado,ambientes,superficie_m2{$webUrlCol})
+                                  VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?{$webUrlPh})");
+            $params = [$businessId,$operacion,$titulo,$descripcion,$precio,$moneda,
+                       $direccion,$lat,$lng,$contacto,$tipo,$financiado,$ambientes,$superficie];
+            if ($hasWebUrl) $params[] = $webUrl;
+            $ins->execute($params);
         } else {
+            $webUrlCol = $hasWebUrl ? ",web_url" : "";
+            $webUrlPh  = $hasWebUrl ? ",?"        : "";
             $ins = $db->prepare("INSERT INTO inmuebles
                                   (business_id,operacion,titulo,descripcion,precio,moneda,
-                                   direccion,lat,lng,contacto)
-                                  VALUES (?,?,?,?,?,?,?,?,?,?)");
-            $ins->execute([$businessId,$operacion,$titulo,$descripcion,$precio,$moneda,
-                           $direccion,$lat,$lng,$contacto]);
+                                   direccion,lat,lng,contacto{$webUrlCol})
+                                  VALUES (?,?,?,?,?,?,?,?,?,?{$webUrlPh})");
+            $params = [$businessId,$operacion,$titulo,$descripcion,$precio,$moneda,
+                       $direccion,$lat,$lng,$contacto];
+            if ($hasWebUrl) $params[] = $webUrl;
+            $ins->execute($params);
         }
         $newId = (int)$db->lastInsertId();
         inm_ok(['id' => $newId], 'Inmueble creado');
