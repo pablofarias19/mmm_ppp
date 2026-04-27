@@ -21,7 +21,6 @@ $brand_label      = $brand_label      ?? 'Demo';
 $marca_id         = $marca_id         ?? null;
 $back_url         = $back_url         ?? '/marcas';
 $show_detail_link = $show_detail_link ?? true;
-$tool_links       = $tool_links       ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -31,6 +30,7 @@ $tool_links       = $tool_links       ?? [];
     <title><?= htmlspecialchars($tool_title) ?> — Mapita Marcas</title>
     <link rel="stylesheet" href="/css/map-styles.css">
     <link rel="stylesheet" href="/css/tool-panels.css">
+    <link rel="stylesheet" href="/css/brand.css">
 </head>
 <body>
 <div class="tp-wrap">
@@ -93,17 +93,8 @@ $tool_links       = $tool_links       ?? [];
             para conocer todos los servicios de asesoría de marcas disponibles.
         </div>
 
-        <!-- Tools links (optional, shown when $tool_links is provided) -->
-        <?php if (!empty($tool_links)): ?>
-        <h3 class="tp-section-title">🔬 Herramientas de Análisis</h3>
-        <div class="tp-tools-grid">
-            <?php foreach ($tool_links as $tl): ?>
-            <a href="<?= htmlspecialchars($tl['url']) ?>" class="tp-tool-link">
-                <?= htmlspecialchars($tl['label']) ?>
-            </a>
-            <?php endforeach; ?>
-        </div>
-        <?php endif; ?>
+        <!-- Tools grid (herramientas de análisis) -->
+        <?php $tools_wrap_card = false; require __DIR__ . '/_tools_grid.php'; unset($tools_wrap_card); ?>
 
         <!-- Navigation -->
         <nav class="tp-nav" aria-label="Navegación del módulo">
