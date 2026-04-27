@@ -1,0 +1,278 @@
+/* =============================================================================
+   SIDEBAR ENHANCED — UI/UX, Accessibility, Search improvements
+   Complementa map-styles.css sin sobreescribir reglas de layout.
+   ============================================================================= */
+
+/* ── Highlight de término buscado ─────────────────────────────────────────── */
+.sb-highlight {
+    background: #fff176;
+    color: #1a1a1a;
+    border-radius: 2px;
+    padding: 0 1px;
+    font-style: normal;
+    font-weight: inherit;
+}
+
+/* ── Loading indicator de búsqueda ───────────────────────────────────────── */
+#search-loading {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 0 2px;
+    font-size: 12px;
+    color: #667eea;
+    font-weight: 600;
+}
+#search-loading.visible { display: flex; }
+
+/* Spinner SVG animation */
+@keyframes sb-spin {
+    to { transform: rotate(360deg); }
+}
+.sb-spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #d0d5dd;
+    border-top-color: #667eea;
+    border-radius: 50%;
+    animation: sb-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+/* ── Estado "Sin resultados" ───────────────────────────────────────────────── */
+.sb-empty-state {
+    padding: 18px 12px;
+    text-align: center;
+    color: #6b7280;
+    font-size: 13px;
+    line-height: 1.55;
+}
+.sb-empty-state .sb-empty-icon {
+    font-size: 28px;
+    display: block;
+    margin-bottom: 8px;
+    opacity: 0.7;
+}
+.sb-empty-state strong {
+    color: #374151;
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* ── Estado "Error" ────────────────────────────────────────────────────────── */
+.sb-error-state {
+    padding: 12px;
+    background: #fef2f2;
+    border-left: 3px solid #e74c3c;
+    border-radius: 0 6px 6px 0;
+    font-size: 12px;
+    color: #b91c1c;
+    line-height: 1.5;
+}
+
+/* ── Botón "Mostrar más" (lazy render) ────────────────────────────────────── */
+.sb-load-more-btn {
+    width: 100%;
+    padding: 8px 12px;
+    background: #f0f4ff;
+    border: 1.5px solid #c7d2fe;
+    border-radius: 8px;
+    color: #4338ca;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 6px;
+    transition: background 0.15s, border-color 0.15s;
+    font-family: inherit;
+}
+.sb-load-more-btn:hover {
+    background: #e0e7ff;
+    border-color: #818cf8;
+}
+.sb-load-more-btn:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+/* ── Foco visible mejorado (keyboard navigation) ──────────────────────────── */
+
+/* Links y botones dentro del sidebar */
+#sidebar a:focus-visible,
+#sidebar button:focus-visible,
+#sidebar input:focus-visible,
+#sidebar select:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Items de la lista de resultados */
+#lista .negocio:focus,
+#lista .negocio:focus-visible,
+#lista .marca:focus,
+#lista .marca:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 1px;
+}
+
+/* Input de búsqueda: foco visible prominente */
+#busqueda:focus-visible {
+    outline: 2px solid #667eea !important;
+    outline-offset: 2px !important;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.18) !important;
+    border-color: #667eea !important;
+}
+
+/* ── Indicador activo en lista de resultados ──────────────────────────────── */
+#lista .negocio.sb-item-active,
+#lista .marca.sb-item-active {
+    border-left: 3px solid #667eea;
+    background: #f0f4ff;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.15);
+}
+#lista .negocio.sb-item-active strong,
+#lista .marca.sb-item-active strong {
+    color: #4338ca;
+}
+
+/* ── Indicador activo en secciones del sidebar ────────────────────────────── */
+.sb-section-hdr.open {
+    background: #f5f7ff !important;
+}
+.sb-section-hdr.open .sb-section-hdr-label {
+    color: #4338ca;
+}
+
+/* ── Tooltips para secciones colapsadas ───────────────────────────────────── */
+/* Visible en hover/focus cuando la sección está cerrada */
+.sb-section-hdr[data-tooltip]:not(.open) {
+    position: relative;
+}
+.sb-section-hdr[data-tooltip]:not(.open)::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    left: calc(100% + 8px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(17, 24, 39, 0.92);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 5px 9px;
+    border-radius: 6px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.18s;
+    z-index: 2000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+.sb-section-hdr[data-tooltip]:not(.open):hover::after,
+.sb-section-hdr[data-tooltip]:not(.open):focus-visible::after {
+    opacity: 1;
+}
+
+/* ── Contraste de texto mejorado en el sidebar ────────────────────────────── */
+.sb-section-hdr-label {
+    color: #374151 !important; /* mejorado desde #556 */
+}
+.sidebar-card-label {
+    color: #6b7280 !important; /* mejorado desde #999 */
+}
+.section-header {
+    color: #6b7280 !important; /* mejorado desde #999 */
+}
+/* Stats counter: mejor contraste */
+#stats .stats-total {
+    color: #1e3a5f;
+    font-weight: 700;
+}
+#stats .stats-sep {
+    color: #9ca3af;
+}
+#stats .stats-badge {
+    color: #1e40af;
+    font-weight: 700;
+}
+
+/* ── Items de la lista: mejor accesibilidad ───────────────────────────────── */
+#lista .negocio,
+#lista .marca {
+    /* Asegurar que el cursor y tabindex sean correctos */
+    outline: none;
+}
+#lista .negocio strong,
+#lista .marca strong {
+    color: #1e293b; /* antes #222 / heredado — mejorado para contraste */
+}
+#lista .negocio small,
+#lista .marca small {
+    color: #6b7280; /* antes #aaa — mejora contraste (era ratio ~2.3:1, ahora ~4.7:1) */
+}
+
+/* ── Transmisiones: antenna SVG icon color ─────────────────────────────────── */
+.tx-antenna-icon {
+    display: inline-block;
+    vertical-align: middle;
+    flex-shrink: 0;
+}
+
+/* ── Sidebar scroll smooth ─────────────────────────────────────────────────── */
+#sidebar {
+    scroll-behavior: smooth;
+}
+
+/* ── Search input wrapper ──────────────────────────────────────────────────── */
+.sb-search-wrap {
+    position: relative;
+    margin-bottom: 12px;
+}
+.sb-search-wrap #busqueda {
+    width: 100%;
+    padding: 10px 36px 10px 12px; /* right padding for clear btn */
+    border: 1px solid #d0d5dd;
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: inherit;
+    color: #374151;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    margin-bottom: 0; /* reset, margin handled by wrapper */
+}
+.sb-search-clear {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 16px;
+    line-height: 1;
+    padding: 2px 4px;
+    border-radius: 50%;
+    transition: color 0.15s, background 0.15s;
+    display: none; /* shown via JS when input has value */
+    width: 22px;
+    height: 22px;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+.sb-search-clear:hover {
+    color: #374151;
+    background: #f1f5f9;
+}
+.sb-search-clear.visible {
+    display: flex;
+}
+
+/* ── Mobile sidebar: transition smoother ──────────────────────────────────── */
+@media (max-width: 768px) {
+    #sidebar {
+        transition: transform 0.28s cubic-bezier(.4, 0, .2, 1) !important;
+    }
+}
