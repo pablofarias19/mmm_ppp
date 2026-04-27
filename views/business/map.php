@@ -1415,8 +1415,6 @@ try {
                 <span style="font-size:10px;">▼</span>
             </button>
             <div class="accordion-content">
-                <input type="text" id="filter-sector-search" class="filter-location-autocomplete"
-                       placeholder="Buscar sector..." oninput="filtrar()" style="margin-bottom:8px;">
                 <div id="filter-sector-list" style="max-height:200px;overflow-y:auto;">
                     <!-- Se llena dinámicamente -->
                 </div>
