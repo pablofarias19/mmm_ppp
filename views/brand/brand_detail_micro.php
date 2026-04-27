@@ -129,14 +129,6 @@ foreach ([
         'Panel gestionado bajo consulta profesional por Farias Ortiz.',
     ];
     $tool_edit_note   = 'Si el detalle de marca no está disponible, puede acceder igualmente a las herramientas de análisis usando los enlaces más abajo.';
-    $tool_links       = $marca_id ? [
-        ['url' => "/brand_analysis?id=$marca_id",      'label' => '📊 Análisis Marcario'],
-        ['url' => "/niza_classification?id=$marca_id", 'label' => '📋 Clasificación Niza'],
-        ['url' => "/business_model?id=$marca_id",      'label' => '♟️ Modelos de Negocio'],
-        ['url' => "/monetization?id=$marca_id",        'label' => '💰 Monetización'],
-        ['url' => "/legal_risk?id=$marca_id",          'label' => '⚖️ Riesgo Legal'],
-        ['url' => "/brand_report?id=$marca_id",        'label' => '📑 Reporte Ejecutivo'],
-    ] : [];
     require __DIR__ . '/_tool_panel.php';
     exit;
 }
