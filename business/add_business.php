@@ -1350,6 +1350,12 @@ $descriptionPlaceholders = [
                         <label style="font-size:.82em;font-weight:600;">Contacto (teléfono o email)</label>
                         <input type="text" id="inm-contacto" maxlength="255" placeholder="Teléfono o email de contacto" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
                     </div>
+                    <!-- Fila 10: Link externo del inmueble -->
+                    <div style="margin-bottom:12px;">
+                        <label for="inm-web-url" style="font-size:.82em;font-weight:600;">🔗 Link del inmueble</label>
+                        <input type="url" id="inm-web-url" maxlength="500" placeholder="https://www.inmobiliaria.com/propiedad/123" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
+                        <p style="font-size:.75em;color:#6b7280;margin:3px 0 0;">URL de la página del inmueble en la web de la inmobiliaria (opcional). Aparecerá como botón "Detalles" en el popup.</p>
+                    </div>
                     <div id="inmueble-msg" style="margin-bottom:8px;font-size:.82em;"></div>
                     <div style="display:flex;gap:8px;">
                         <button type="button" class="btn-save" style="width:auto;padding:8px 14px;" onclick="guardarInmueble()">💾 Guardar</button>
@@ -1359,6 +1365,22 @@ $descriptionPlaceholders = [
 
                 <!-- Adjuntos (planos / proyecto de inversión) – se muestra al editar un inmueble -->
                 <div id="inm-adjuntos-section" style="display:none;margin-top:16px;padding:14px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;">
+                    <!-- Foto de portada del popup (max 120 KB) -->
+                    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid #bfdbfe;">
+                        <div style="font-weight:700;font-size:.9em;margin-bottom:8px;color:#1e40af;">🖼️ Foto del popup (máx. 120 KB)</div>
+                        <div id="inm-foto-preview" style="margin-bottom:8px;display:none;">
+                            <img id="inm-foto-img" src="" alt="Foto del inmueble" style="max-width:100%;max-height:160px;border-radius:8px;border:1px solid #bfdbfe;object-fit:cover;">
+                        </div>
+                        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
+                            <div>
+                                <label for="inm-foto-file" style="font-size:.78em;font-weight:600;">Archivo (JPG/PNG/WebP, máx 120 KB)</label>
+                                <input type="file" id="inm-foto-file" accept=".jpg,.jpeg,.png,.webp" style="font-size:.82em;">
+                            </div>
+                            <button type="button" onclick="subirFotoInmueble()" style="padding:7px 14px;background:#16a34a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:.85em;">📤 Subir foto</button>
+                            <button type="button" id="inm-foto-del-btn" onclick="eliminarFotoInmueble()" style="display:none;padding:7px 14px;background:#dc2626;color:white;border:none;border-radius:6px;cursor:pointer;font-size:.85em;">🗑️ Eliminar</button>
+                        </div>
+                        <div id="inm-foto-msg" style="margin-top:6px;font-size:.78em;"></div>
+                    </div>
                     <div style="font-weight:700;font-size:.9em;margin-bottom:8px;color:#1e40af;">📎 Adjuntos del inmueble</div>
                     <div id="inm-adjuntos-list" style="margin-bottom:10px;"></div>
                     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
@@ -2789,10 +2811,14 @@ function onCountryChange(cc) {
         document.getElementById('inm-financiado').checked = false;
         document.getElementById('inm-ambientes').value = '';
         document.getElementById('inm-superficie').value = '';
+        const webUrlEl = document.getElementById('inm-web-url');
+        if (webUrlEl) webUrlEl.value = '';
         // Reset tipo
         const tipoR = document.getElementById('inm-tipo-casa');
         if (tipoR) tipoR.checked = true;
         inmMsg('', true);
+        // Reset foto preview
+        _setInmFotoPreview(null);
 
         // Adjuntos section
         const adjSec = document.getElementById('inm-adjuntos-section');
@@ -2816,8 +2842,12 @@ function onCountryChange(cc) {
                         document.getElementById('inm-financiado').checked = !!parseInt(n.financiado, 10);
                         document.getElementById('inm-ambientes').value = n.ambientes || '';
                         document.getElementById('inm-superficie').value = n.superficie_m2 || '';
+                        const webUrlEl2 = document.getElementById('inm-web-url');
+                        if (webUrlEl2) webUrlEl2.value = n.web_url || '';
                         const tipoEl = document.getElementById('inm-tipo-' + (n.tipo || 'casa'));
                         if (tipoEl) tipoEl.checked = true;
+                        // Foto de portada
+                        _setInmFotoPreview(n.foto_url || null);
                         // Cargar adjuntos
                         renderAdjuntos(n.adjuntos || []);
                     }
@@ -2923,11 +2953,74 @@ function onCountryChange(cc) {
         if (adjSec) adjSec.style.display = 'none';
         _currentInmId = null;
     };
+
+    function fotoInmMsg(text, ok) {
+        const el = document.getElementById('inm-foto-msg');
+        if (!el) return;
+        el.textContent = text;
+        el.style.color = ok ? '#065f46' : '#991b1b';
+        el.style.display = text ? 'block' : 'none';
+    }
+
+    function _setInmFotoPreview(url) {
+        const preview = document.getElementById('inm-foto-preview');
+        const img     = document.getElementById('inm-foto-img');
+        const delBtn  = document.getElementById('inm-foto-del-btn');
+        if (!preview || !img) return;
+        if (url) {
+            img.src = url;
+            preview.style.display = 'block';
+            if (delBtn) delBtn.style.display = 'inline-block';
+        } else {
+            img.src = '';
+            preview.style.display = 'none';
+            if (delBtn) delBtn.style.display = 'none';
+        }
+    }
+
+    window.subirFotoInmueble = async function() {
+        if (!_currentInmId) { fotoInmMsg('Guardá primero el inmueble para poder subir la foto.', false); return; }
+        const fileInput = document.getElementById('inm-foto-file');
+        if (!fileInput || !fileInput.files.length) { fotoInmMsg('Seleccioná un archivo.', false); return; }
+        const file = fileInput.files[0];
+        if (file.size > 120 * 1024) { fotoInmMsg('El archivo supera 120 KB. Reducí el tamaño de la imagen.', false); return; }
+        const fd = new FormData();
+        fd.append('inmueble_id', _currentInmId);
+        fd.append('action', 'upload');
+        fd.append('file', file);
+        fotoInmMsg('Subiendo…', true);
+        try {
+            const r = await fetch('/api/upload_inmueble_foto.php', { method: 'POST', body: fd });
+            const d = await r.json();
+            if (d.success) {
+                fotoInmMsg('✅ ' + (d.message || 'Foto subida'), true);
+                _setInmFotoPreview(d.url);
+                fileInput.value = '';
+            } else {
+                fotoInmMsg('❌ ' + (d.message || 'Error'), false);
+            }
+        } catch (e) { fotoInmMsg('Error de conexión.', false); }
+    };
+
+    window.eliminarFotoInmueble = async function() {
+        if (!_currentInmId || !confirm('¿Eliminar la foto de portada?')) return;
+        const fd = new FormData();
+        fd.append('inmueble_id', _currentInmId);
+        fd.append('action', 'delete');
+        fotoInmMsg('Eliminando…', true);
+        try {
+            const r = await fetch('/api/upload_inmueble_foto.php', { method: 'POST', body: fd });
+            const d = await r.json();
+            if (d.success) { fotoInmMsg('✅ Eliminada', true); _setInmFotoPreview(null); }
+            else fotoInmMsg('❌ ' + (d.message || 'Error'), false);
+        } catch (e) { fotoInmMsg('Error de conexión.', false); }
+    };
     window.guardarInmueble = async function() {
         const id      = document.getElementById('inm-id').value;
         const titulo  = document.getElementById('inm-titulo').value.trim();
         if (!titulo) { inmMsg('El título es obligatorio.', false); return; }
         const tipoSel = document.querySelector('input[name="inm_tipo"]:checked');
+        const webUrlEl = document.getElementById('inm-web-url');
         const payload = {
             business_id:  BIZ,
             operacion:    document.getElementById('inm-operacion').value,
@@ -2943,6 +3036,7 @@ function onCountryChange(cc) {
             financiado:   document.getElementById('inm-financiado').checked ? 1 : 0,
             ambientes:    document.getElementById('inm-ambientes').value || null,
             superficie_m2: document.getElementById('inm-superficie').value || null,
+            web_url:      webUrlEl ? (webUrlEl.value.trim() || null) : null,
         };
         if (id) payload.id = parseInt(id, 10);
         try {
