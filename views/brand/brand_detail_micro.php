@@ -114,7 +114,7 @@ foreach ([
 }
 
 } catch (\Throwable $e) {
-    $brand_label      = $marca_id ? "Marca #$marca_id" : 'Demo';
+    $brand_label      = $marca_id ? "Marca #$marca_id" : 'Marca';
     $back_url         = '/marcas';
     $show_detail_link = false;
     $tool_title       = 'Detalle de Marca';
@@ -128,7 +128,7 @@ foreach ([
         'Acceso a herramientas de análisis: Niza, modelo de negocio, legal y reporte.',
         'Panel gestionado bajo consulta profesional por Farias Ortiz.',
     ];
-    $tool_edit_note   = 'Si el detalle de marca no está disponible, puede acceder igualmente a las herramientas de análisis usando los botones más abajo.';
+    $tool_edit_note   = 'Si el detalle de marca no está disponible, puede acceder igualmente a las herramientas de análisis usando los enlaces más abajo.';
     $tool_links       = $marca_id ? [
         ['url' => "/brand_analysis?id=$marca_id",      'label' => '📊 Análisis Marcario'],
         ['url' => "/niza_classification?id=$marca_id", 'label' => '📋 Clasificación Niza'],
