@@ -3,17 +3,19 @@
  * API de CONSULTAS MASIVAS
  *
  * Acciones GET:
- *   preview          — cuántos negocios recibirían la consulta (sin guardar)
- *   thread           — hilo completo de una consulta (texto + respuestas)
- *   my_consultas     — consultas enviadas por el usuario actual
- *   pending          — consultas recibidas sin respuesta (para propietarios)
- *   reply_count      — número de respuestas nuevas desde un id dado (polling)
- *   rubros_proveedor — lista de business_type que tienen negocios "P"
+ *   preview               — cuántos negocios recibirían la consulta (sin guardar)
+ *   thread                — hilo completo de una consulta (texto + respuestas)
+ *   my_consultas          — consultas enviadas por el usuario actual (filtra status=active por defecto)
+ *   pending               — consultas recibidas sin respuesta (para propietarios; excluye cerradas)
+ *   reply_count           — número de respuestas nuevas desde un id dado (polling)
+ *   rubros_proveedor      — lista de business_type que tienen negocios "P"
+ *   influence_query       — busca inmobiliarias por zona de influencia
  *
  * Acciones POST:
  *   send                    — crea y envía una consulta masiva
  *   reply                   — el propietario de un negocio responde
  *   mark_read               — marca una consulta como leída por el negocio
+ *   close_consulta          — cierra/archiva una consulta (remitente o admin)
  *   toggle_proveedor        — activa/desactiva flag es_proveedor (dueño)
  *   toggle_consulta_habilitada — activa/desactiva flag consulta_habilitada (admin)
  *   toggle_consulta_siempre    — admin marca negocio para siempre incluido en masivas
@@ -28,6 +30,7 @@ session_start();
 
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/helpers.php';
+require_once __DIR__ . '/../includes/db_helper.php';
 require_once __DIR__ . '/../includes/rate_limiter.php';
 require_once __DIR__ . '/../includes/audit_logger.php';
 
@@ -333,10 +336,15 @@ function cq_resolve_recipients(\PDO $db, array $input): array {
             if (!$bounds || !isset($bounds['north'], $bounds['south'], $bounds['east'], $bounds['west'])) {
                 cq_err('geo_bounds requerido para consulta envío.');
             }
+            // Incluye tipos de transporte clásicos y nuevo subtipo 'envios' (transport_subtype)
+            $hasSubtype = mapitaColumnExists($db, 'businesses', 'transport_subtype');
+            $subtypeFilter = $hasSubtype
+                ? " AND (b.business_type IN ('transporte','transportista','logistica','flota') OR (b.business_type IN ('transporte','transportista') AND (b.transport_subtype IS NULL OR b.transport_subtype = 'envios')))"
+                : " AND b.business_type IN ('transporte','transportista','logistica','flota')";
             $stmt = $db->prepare(
                 "SELECT b.id, b.name, b.business_type FROM businesses b
                   WHERE b.visible = 1
-                    AND b.business_type IN ('transporte','transportista','logistica','flota')
+                    $subtypeFilter
                     AND b.lat BETWEEN ? AND ?
                     AND b.lng BETWEEN ? AND ?
                   LIMIT " . CQ_MAX_MASIVA
@@ -476,15 +484,33 @@ if ($method === 'GET') {
     }
 
     // ── my_consultas: consultas enviadas por el usuario ────────────────────────
+    // Parámetro opcional ?filter=active (default) o ?filter=all o ?filter=closed
     if ($action === 'my_consultas') {
         $uid = cq_require_login();
+        $filter = trim($_GET['filter'] ?? 'active');
+
+        // Incluir status en el SELECT solo si la columna existe
+        $hasStatus = mapitaColumnExists($db, 'consultas_masivas', 'status');
+        $statusCol = $hasStatus ? ", cm.status, DATE_FORMAT(cm.closed_at,'%d/%m/%Y %H:%i') AS closed_at_fmt" : "";
+        $statusWhere = '';
+        if ($hasStatus) {
+            if ($filter === 'active') {
+                $statusWhere = " AND cm.status IN ('open','answered')";
+            } elseif ($filter === 'closed') {
+                $statusWhere = " AND cm.status IN ('closed','archived')";
+            }
+            // filter='all' → sin filtro adicional
+        }
+
         $stmt = $db->prepare(
             "SELECT cm.id, cm.tipo, cm.rubro, cm.texto,
                     DATE_FORMAT(cm.created_at,'%d/%m/%Y %H:%i') AS created_at,
                     (SELECT COUNT(*) FROM consultas_destinatarios WHERE consulta_id = cm.id) AS total_dest,
                     (SELECT COUNT(*) FROM consultas_respuestas    WHERE consulta_id = cm.id) AS total_resp
+                    $statusCol
                FROM consultas_masivas cm
               WHERE cm.user_id = ?
+                $statusWhere
               ORDER BY cm.id DESC
               LIMIT 50"
         );
@@ -493,8 +519,11 @@ if ($method === 'GET') {
     }
 
     // ── pending: consultas recibidas sin respuesta (para propietarios) ─────────
+    // Excluye consultas que el remitente ya cerró/archivó
     if ($action === 'pending') {
         $uid = cq_require_login();
+        $hasStatus    = mapitaColumnExists($db, 'consultas_masivas', 'status');
+        $statusFilter = $hasStatus ? " AND cm.status IN ('open','answered')" : '';
         $stmt = $db->prepare(
             "SELECT cm.id, cm.tipo, cm.rubro, cm.texto,
                     DATE_FORMAT(cm.created_at,'%d/%m/%Y %H:%i') AS created_at,
@@ -509,6 +538,7 @@ if ($method === 'GET') {
                      WHERE cr.consulta_id  = cd.consulta_id
                        AND cr.business_id  = cd.business_id
                 )
+                $statusFilter
               ORDER BY cm.id DESC
               LIMIT 50"
         );
@@ -520,20 +550,24 @@ if ($method === 'GET') {
     if ($action === 'reply_count') {
         $uid     = cq_require_login();
         $sinceId = (int)($_GET['since_id'] ?? 0);
-        // Contar respuestas nuevas a consultas enviadas por el usuario
+        // Contar respuestas nuevas a consultas enviadas por el usuario (excluye cerradas)
+        $hasStatus    = mapitaColumnExists($db, 'consultas_masivas', 'status');
+        $statusFilter = $hasStatus ? " AND cm.status IN ('open','answered')" : '';
         $stmt = $db->prepare(
             "SELECT COUNT(*) FROM consultas_respuestas cr
               JOIN consultas_masivas cm ON cm.id = cr.consulta_id
-             WHERE cm.user_id = ? AND cr.id > ?"
+             WHERE cm.user_id = ? AND cr.id > ? $statusFilter"
         );
         $stmt->execute([$uid, $sinceId]);
         $count = (int)$stmt->fetchColumn();
 
-        // También contar consultas recibidas no leídas (para propietarios)
+        // También contar consultas recibidas no leídas (para propietarios; excluye cerradas)
+        $pendingStatusFilter = $hasStatus ? " AND cm.status IN ('open','answered')" : '';
         $stmtPending = $db->prepare(
             "SELECT COUNT(*) FROM consultas_destinatarios cd
               JOIN businesses b ON b.id = cd.business_id
-             WHERE b.user_id = ? AND cd.leido_en IS NULL"
+              JOIN consultas_masivas cm ON cm.id = cd.consulta_id
+             WHERE b.user_id = ? AND cd.leido_en IS NULL $pendingStatusFilter"
         );
         $stmtPending->execute([$uid]);
         $pendingCount = (int)$stmtPending->fetchColumn();
@@ -584,6 +618,42 @@ if ($method === 'GET') {
         );
         $stmt->execute($restricted);
         cq_ok($stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    // ── influence_query: busca inmobiliarias por zona de influencia ───────────
+    // GET ?action=influence_query&zona=barrio_o_ciudad
+    // Devuelve inmobiliarias que tienen la zona en su influence_zones
+    if ($action === 'influence_query') {
+        cq_require_login();
+        $zona = trim($_GET['zona'] ?? '');
+        if ($zona === '') cq_err('Se requiere el parámetro zona.');
+        if (strlen($zona) > 120) $zona = substr($zona, 0, 120);
+
+        $hasInfluence = mapitaColumnExists($db, 'businesses', 'influence_zones');
+        if (!$hasInfluence) {
+            cq_ok([], 'Módulo de zonas de influencia no disponible aún.');
+        }
+
+        $inmTypes = ['inmobiliaria', 'inmobiliaria_venta', 'inmobiliaria_alquiler'];
+        $ph       = implode(',', array_fill(0, count($inmTypes), '?'));
+
+        // Búsqueda flexible: LIKE sobre influence_zones
+        $stmt = $db->prepare(
+            "SELECT b.id, b.name, b.address, b.lat, b.lng, b.phone, b.email,
+                    b.og_image_url, b.business_type, b.influence_zones
+               FROM businesses b
+              WHERE b.visible = 1
+                AND b.business_type IN ($ph)
+                AND b.influence_zones IS NOT NULL
+                AND b.influence_zones != ''
+                AND b.influence_zones LIKE ?
+              ORDER BY b.name ASC
+              LIMIT 30"
+        );
+        $params = array_merge($inmTypes, ['%' . $zona . '%']);
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        cq_ok($rows, count($rows) . ' inmobiliarias encontradas para zona "' . htmlspecialchars($zona, ENT_QUOTES) . '".');
     }
 }
 
@@ -719,6 +789,14 @@ if ($method === 'POST') {
               WHERE consulta_id = ? AND business_id = ? AND leido_en IS NULL"
         )->execute([$consultaId, $businessId]);
 
+        // Actualizar status de la consulta a 'answered' si todavía está 'open'
+        if (mapitaColumnExists($db, 'consultas_masivas', 'status')) {
+            $db->prepare(
+                "UPDATE consultas_masivas SET status = 'answered', answered_at = NOW()
+                  WHERE id = ? AND status = 'open'"
+            )->execute([$consultaId]);
+        }
+
         cq_ok(['reply_id' => $replyId], 'Respuesta enviada.');
     }
 
@@ -816,6 +894,42 @@ if ($method === 'POST') {
         $msg = $newVal ? 'Proveedor marcado como SIEMPRE incluido.' : 'Proveedor vuelve a modo aleatorio.';
         auditLog('toggle_proveedor_siempre', 'business', $businessId, ['proveedor_siempre' => $newVal]);
         cq_ok(['proveedor_siempre' => $newVal], $msg);
+    }
+
+    // ── close_consulta: cierra o archiva una consulta (remitente o admin) ──────
+    // POST {action:'close_consulta', consulta_id:N, mode:'close'|'archive'}
+    // Solo el remitente original o un admin puede cerrar/archivar la consulta.
+    if ($action === 'close_consulta') {
+        $uid        = cq_require_login();
+        $consultaId = (int)($input['consulta_id'] ?? 0);
+        $mode       = in_array($input['mode'] ?? 'close', ['close','archive'], true)
+                      ? ($input['mode'] ?? 'close') : 'close';
+        if ($consultaId <= 0) cq_err('consulta_id requerido.');
+
+        if (!mapitaColumnExists($db, 'consultas_masivas', 'status')) {
+            cq_err('El módulo de ciclo de vida aún no está disponible.', 503);
+        }
+
+        // Verificar que existe y que pertenece al usuario (o es admin)
+        $stmtCm = $db->prepare("SELECT user_id, status FROM consultas_masivas WHERE id = ? LIMIT 1");
+        $stmtCm->execute([$consultaId]);
+        $cm = $stmtCm->fetch(\PDO::FETCH_ASSOC);
+        if (!$cm) cq_err('Consulta no encontrada.', 404);
+        if ((int)$cm['user_id'] !== $uid && !isAdmin()) {
+            cq_err('Solo el remitente o un administrador puede cerrar esta consulta.', 403);
+        }
+        if (in_array($cm['status'], ['closed','archived'], true)) {
+            cq_ok(['status' => $cm['status']], 'La consulta ya estaba cerrada/archivada.');
+        }
+
+        $newStatus = ($mode === 'archive') ? 'archived' : 'closed';
+        $db->prepare(
+            "UPDATE consultas_masivas SET status = ?, closed_at = NOW(), closed_by = ? WHERE id = ?"
+        )->execute([$newStatus, $uid, $consultaId]);
+
+        $msg = ($newStatus === 'archived') ? 'Consulta archivada.' : 'Consulta cerrada correctamente.';
+        auditLog('close_consulta', 'consulta_masiva', $consultaId, ['status' => $newStatus]);
+        cq_ok(['status' => $newStatus], $msg);
     }
 }
 

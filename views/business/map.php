@@ -1505,6 +1505,20 @@ try {
                                 style="background:none;border:1px solid #9ca3af;border-radius:50%;width:22px;height:22px;cursor:pointer;font-size:12px;color:#6b7280;padding:0;display:flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;"
                                 aria-label="Ayuda sobre CERCA">?</button>
                     </div>
+                    <!-- Consulta por zona de influencia -->
+                    <div style="margin-top:6px;display:flex;gap:5px;align-items:center;">
+                        <input type="text" id="influencia-zona-input" maxlength="80"
+                               placeholder="Barrio o zona (ej: Palermo)"
+                               style="flex:1;padding:7px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:12px;"
+                               onkeydown="if(event.key==='Enter')buscarInmobiliariasPorZona()">
+                        <button type="button" onclick="buscarInmobiliariasPorZona()"
+                                class="cq-btn"
+                                title="Buscar inmobiliarias por zona de influencia (sin requerir cercanía)"
+                                style="white-space:nowrap;min-width:0;padding:7px 10px;">
+                            🗺️ Por Zona
+                        </button>
+                    </div>
+                    <div id="influencia-zona-results" style="margin-top:6px;font-size:11px;color:#374151;"></div>
                 </div>
 
                 <!-- Sección: Arte & Cultura -->
@@ -7692,6 +7706,54 @@ function cerrarVerInmuebles() {
     if (banner) banner.style.display = 'none';
 }
 
+// ─── Búsqueda de inmobiliarias por zona de influencia ────────────────────────
+async function buscarInmobiliariasPorZona() {
+    <?php if (empty($_SESSION['user_id'])): ?>
+    alert('Debés iniciar sesión para usar esta función.');
+    return;
+    <?php endif; ?>
+
+    const input   = document.getElementById('influencia-zona-input');
+    const results = document.getElementById('influencia-zona-results');
+    const zona    = input ? input.value.trim() : '';
+    if (!zona) {
+        if (results) results.textContent = '⚠️ Ingresá un barrio o zona para buscar.';
+        return;
+    }
+    if (results) results.textContent = '⏳ Buscando…';
+
+    try {
+        const res  = await fetch('/api/consultas.php?action=influence_query&zona=' + encodeURIComponent(zona));
+        const data = await res.json();
+        if (!data.success) {
+            if (results) results.textContent = '❌ ' + (data.error || 'Error al buscar.');
+            return;
+        }
+        const rows = data.data;
+        if (!rows.length) {
+            if (results) results.innerHTML = '<span style="color:#6b7280;">Sin inmobiliarias para esa zona.</span>';
+            return;
+        }
+        if (results) {
+            results.innerHTML = rows.map(b =>
+                `<div style="padding:4px 0;border-bottom:1px solid #e5e7eb;cursor:pointer;" onclick="enfocarInmobiliaria(${b.id}, ${b.lat || 'null'}, ${b.lng || 'null'})">
+                    🏠 <strong>${escapeHtml(b.name)}</strong>
+                    <span style="color:#6b7280;font-size:10px;"> · ${escapeHtml(b.address || '')}</span>
+                 </div>`
+            ).join('') + `<div style="margin-top:4px;color:#6b7280;font-size:10px;">${rows.length} inmobiliaria${rows.length !== 1 ? 's' : ''} con zona "${escapeHtml(zona)}"</div>`;
+        }
+        // Centrar en el primer resultado si tiene coords
+        const first = rows.find(b => b.lat && b.lng);
+        if (first) mapa.setView([parseFloat(first.lat), parseFloat(first.lng)], Math.max(mapa.getZoom(), 13));
+    } catch {
+        if (results) results.textContent = '❌ Error de red.';
+    }
+}
+
+function enfocarInmobiliaria(bizId, lat, lng) {
+    if (lat && lng) mapa.setView([lat, lng], Math.max(mapa.getZoom(), 15));
+}
+
 // ─── CONVOCAR: Obra de Arte ─────────────────────────────────────────────────
 function abrirConvocar() {
     <?php if (empty($_SESSION['user_id'])): ?>
@@ -8461,7 +8523,9 @@ window.BUSINESS_TYPE_LABELS = window.BUSINESS_TYPE_LABELS || {
     'carpinteria':'Carpintería','modista':'Modista / Costura','construccion':'Construcción',
     'centro_vecinal':'Centro Vecinal / ONG','remate':'Remates / Subastas','academia':'Academia / Instituto',
     'idiomas':'Instituto de Idiomas','escuela':'Escuela / Jardín','hotel':'Hotel / Alojamiento',
-    'turismo':'Turismo / Agencia','cine':'Cine / Teatro / Arte','transporte':'Transporte',
+    'turismo':'Turismo / Agencia','cine':'Cine / Teatro / Arte',
+    'transporte':'Transporte','transporte_envios':'Transporte – Envíos',
+    'transporte_pasajeros':'Transporte – Pasajeros','transporte_carga':'Transporte – Carga',
     'transportista':'Transportista','logistica':'Logística','flota':'Flota',
     'otros':'Otro tipo'
 };
