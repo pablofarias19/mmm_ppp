@@ -1929,6 +1929,15 @@ const UI_STRINGS = {
         filter_open_now: 'Solo abiertos ahora', filter_country: 'País de la entidad',
         filter_language: 'Idioma de operación', ui_language_selector: 'Idioma de interfaz',
         msg_loading: 'Cargando...', msg_no_results: 'Sin resultados', btn_close: 'Cerrar',
+        home_label: 'Guía inicial', home_title: 'Panel de Inicio',
+        home_intro: 'Este panel te orienta rápidamente sobre lo básico del sistema y cómo empezar.',
+        home_explorar: 'Ver y elegir negocios y marcas en el mapa.',
+        home_contacto: 'Contactarte con sus titulares y hacer pedidos.',
+        home_novedades: 'Ver novedades, ofertas y contenidos recientes.',
+        home_registrar: 'Registrarte para ubicar tu negocio y marca en el mapa.',
+        home_wt: 'Crear canales de comunicación selectivos (WT).',
+        home_franquicias: 'Mostrar franquicias y generar oportunidades para todos.',
+        home_empleados: 'Publicar y gestionar ofertas laborales (Busco Empleados/as).',
     },
     en: {
         lbl_hours: 'Hours', lbl_phone: 'Phone', lbl_address: 'Address',
@@ -1942,6 +1951,15 @@ const UI_STRINGS = {
         filter_open_now: 'Open now only', filter_country: 'Entity country',
         filter_language: 'Operating language', ui_language_selector: 'Interface language',
         msg_loading: 'Loading...', msg_no_results: 'No results', btn_close: 'Close',
+        home_label: 'Quick Guide', home_title: 'Start Panel',
+        home_intro: 'This panel gives you a quick overview of the system basics and how to get started.',
+        home_explorar: 'Browse and choose businesses and brands on the map.',
+        home_contacto: 'Contact their owners and place orders.',
+        home_novedades: 'View news, offers and recent content.',
+        home_registrar: 'Register to place your business and brand on the map.',
+        home_wt: 'Create selective communication channels (WT).',
+        home_franquicias: 'Showcase franchises and generate opportunities for everyone.',
+        home_empleados: 'Post and manage job offers (Looking for Employees).',
     },
     pt: {
         lbl_hours: 'Horário', lbl_phone: 'Telefone', lbl_address: 'Endereço',
@@ -1955,6 +1973,15 @@ const UI_STRINGS = {
         filter_open_now: 'Somente abertos agora', filter_country: 'País da entidade',
         filter_language: 'Idioma de operação', ui_language_selector: 'Idioma da interface',
         msg_loading: 'Carregando...', msg_no_results: 'Sem resultados', btn_close: 'Fechar',
+        home_label: 'Guia rápido', home_title: 'Painel Inicial',
+        home_intro: 'Este painel orienta você rapidamente sobre o básico do sistema e como começar.',
+        home_explorar: 'Ver e escolher negócios e marcas no mapa.',
+        home_contacto: 'Entrar em contato com seus proprietários e fazer pedidos.',
+        home_novedades: 'Ver novidades, ofertas e conteúdos recentes.',
+        home_registrar: 'Cadastre-se para colocar seu negócio e marca no mapa.',
+        home_wt: 'Criar canais de comunicação seletivos (WT).',
+        home_franquicias: 'Mostrar franquias e gerar oportunidades para todos.',
+        home_empleados: 'Publicar e gerenciar vagas de emprego (Procuro Funcionários).',
     },
     fr: {
         lbl_hours: 'Horaires', lbl_phone: 'Téléphone', lbl_address: 'Adresse',
@@ -1968,6 +1995,15 @@ const UI_STRINGS = {
         filter_open_now: 'Ouverts maintenant', filter_country: "Pays de l'entité",
         filter_language: "Langue d'exploitation", ui_language_selector: "Langue de l'interface",
         msg_loading: 'Chargement...', msg_no_results: 'Aucun résultat', btn_close: 'Fermer',
+        home_label: 'Guide rapide', home_title: 'Panneau de démarrage',
+        home_intro: "Ce panneau vous guide rapidement sur les bases du système et comment commencer.",
+        home_explorar: 'Parcourir et choisir des entreprises et des marques sur la carte.',
+        home_contacto: 'Contacter leurs propriétaires et passer des commandes.',
+        home_novedades: 'Voir les actualités, offres et contenus récents.',
+        home_registrar: 'Inscrivez-vous pour placer votre entreprise et marque sur la carte.',
+        home_wt: 'Créer des canaux de communication sélectifs (WT).',
+        home_franquicias: 'Présenter des franchises et créer des opportunités pour tous.',
+        home_empleados: "Publier et gérer des offres d'emploi (Recherche d'employés).",
     },
     de: {
         lbl_hours: 'Öffnungszeiten', lbl_phone: 'Telefon', lbl_address: 'Adresse',
@@ -1981,6 +2017,15 @@ const UI_STRINGS = {
         filter_open_now: 'Jetzt geöffnet', filter_country: 'Land der Entität',
         filter_language: 'Betriebssprache', ui_language_selector: 'Anzeigesprache',
         msg_loading: 'Wird geladen...', msg_no_results: 'Keine Ergebnisse', btn_close: 'Schließen',
+        home_label: 'Schnellführung', home_title: 'Startbereich',
+        home_intro: 'Dieses Panel führt Sie schnell durch die Grundlagen des Systems.',
+        home_explorar: 'Unternehmen und Marken auf der Karte erkunden.',
+        home_contacto: 'Inhaber kontaktieren und Bestellungen aufgeben.',
+        home_novedades: 'Neuigkeiten, Angebote und aktuelle Inhalte ansehen.',
+        home_registrar: 'Registrieren, um Ihr Unternehmen auf der Karte einzutragen.',
+        home_wt: 'Selektive Kommunikationskanäle erstellen (WT).',
+        home_franquicias: 'Franchises präsentieren und Chancen für alle schaffen.',
+        home_empleados: 'Stellenangebote veröffentlichen und verwalten.',
     },
     no: {
         lbl_hours: 'Åpningstider', lbl_phone: 'Telefon', lbl_address: 'Adresse',
@@ -1994,6 +2039,15 @@ const UI_STRINGS = {
         filter_open_now: 'Kun åpne nå', filter_country: 'Enhetens land',
         filter_language: 'Driftsspråk', ui_language_selector: 'Grensesnittspråk',
         msg_loading: 'Laster...', msg_no_results: 'Ingen resultater', btn_close: 'Lukk',
+        home_label: 'Hurtigguide', home_title: 'Startpanel',
+        home_intro: 'Dette panelet gir deg en rask oversikt over det grunnleggende i systemet.',
+        home_explorar: 'Bla gjennom og velg bedrifter og merker på kartet.',
+        home_contacto: 'Kontakt eierne og legg inn bestillinger.',
+        home_novedades: 'Se nyheter, tilbud og nylig innhold.',
+        home_registrar: 'Registrer deg for å plassere bedriften din på kartet.',
+        home_wt: 'Opprett selektive kommunikasjonskanaler (WT).',
+        home_franquicias: 'Vis franchiser og skap muligheter for alle.',
+        home_empleados: 'Publiser og administrer stillingsannonser.',
     },
     zh: {
         lbl_hours: '营业时间', lbl_phone: '电话', lbl_address: '地址',
@@ -2007,6 +2061,15 @@ const UI_STRINGS = {
         filter_open_now: '仅显示营业中', filter_country: '实体所在国',
         filter_language: '运营语言', ui_language_selector: '界面语言',
         msg_loading: '加载中...', msg_no_results: '无结果', btn_close: '关闭',
+        home_label: '快速指南', home_title: '开始面板',
+        home_intro: '此面板帮助您快速了解系统的基础知识。',
+        home_explorar: '在地图上浏览和选择企业和品牌。',
+        home_contacto: '联系所有者并下订单。',
+        home_novedades: '查看新闻、优惠和最新内容。',
+        home_registrar: '注册以将您的企业和品牌放在地图上。',
+        home_wt: '创建选择性通信渠道（WT）。',
+        home_franquicias: '展示特许经营权，为大家创造机会。',
+        home_empleados: '发布和管理招聘信息。',
     },
     ar: {
         lbl_hours: 'ساعات العمل', lbl_phone: 'الهاتف', lbl_address: 'العنوان',
@@ -2020,6 +2083,15 @@ const UI_STRINGS = {
         filter_open_now: 'المفتوحة الآن فقط', filter_country: 'دولة الكيان',
         filter_language: 'لغة التشغيل', ui_language_selector: 'لغة الواجهة',
         msg_loading: 'جارٍ التحميل...', msg_no_results: 'لا توجد نتائج', btn_close: 'إغلاق',
+        home_label: 'دليل سريع', home_title: 'لوحة البداية',
+        home_intro: 'تساعدك هذه اللوحة على التعرف بسرعة على أساسيات النظام.',
+        home_explorar: 'تصفح واختر الشركات والعلامات التجارية على الخريطة.',
+        home_contacto: 'تواصل مع أصحابها وقدم الطلبات.',
+        home_novedades: 'اطلع على الأخبار والعروض والمحتوى الحديث.',
+        home_registrar: 'سجّل لوضع نشاطك التجاري وعلامتك على الخريطة.',
+        home_wt: 'إنشاء قنوات اتصال انتقائية (WT).',
+        home_franquicias: 'عرض الامتيازات وخلق فرص للجميع.',
+        home_empleados: 'نشر وإدارة عروض العمل.',
     },
     it: {
         lbl_hours: 'Orario', lbl_phone: 'Telefono', lbl_address: 'Indirizzo',
@@ -2033,6 +2105,15 @@ const UI_STRINGS = {
         filter_open_now: 'Solo aperti ora', filter_country: "Paese dell'entità",
         filter_language: 'Lingua operativa', ui_language_selector: "Lingua dell'interfaccia",
         msg_loading: 'Caricamento...', msg_no_results: 'Nessun risultato', btn_close: 'Chiudi',
+        home_label: 'Guida rapida', home_title: 'Pannello di avvio',
+        home_intro: 'Questo pannello ti orienta rapidamente sulle basi del sistema.',
+        home_explorar: 'Sfoglia e scegli aziende e marchi sulla mappa.',
+        home_contacto: 'Contatta i loro titolari e fai ordini.',
+        home_novedades: 'Visualizza novità, offerte e contenuti recenti.',
+        home_registrar: 'Registrati per mettere la tua attività sulla mappa.',
+        home_wt: 'Creare canali di comunicazione selettivi (WT).',
+        home_franquicias: 'Mostrare franchising e generare opportunità per tutti.',
+        home_empleados: 'Pubblicare e gestire offerte di lavoro.',
     },
     ru: {
         lbl_hours: 'Часы работы', lbl_phone: 'Телефон', lbl_address: 'Адрес',
@@ -2046,6 +2127,15 @@ const UI_STRINGS = {
         filter_open_now: 'Только открытые', filter_country: 'Страна объекта',
         filter_language: 'Рабочий язык', ui_language_selector: 'Язык интерфейса',
         msg_loading: 'Загрузка...', msg_no_results: 'Нет результатов', btn_close: 'Закрыть',
+        home_label: 'Краткое руководство', home_title: 'Стартовая панель',
+        home_intro: 'Эта панель быстро знакомит вас с основами системы.',
+        home_explorar: 'Просматривайте и выбирайте компании и бренды на карте.',
+        home_contacto: 'Свяжитесь с их владельцами и сделайте заказы.',
+        home_novedades: 'Смотрите новости, предложения и последний контент.',
+        home_registrar: 'Зарегистрируйтесь, чтобы разместить свой бизнес на карте.',
+        home_wt: 'Создавайте избирательные каналы связи (WT).',
+        home_franquicias: 'Демонстрируйте франшизы и создавайте возможности для всех.',
+        home_empleados: 'Публикуйте вакансии и управляйте ими.',
     },
     el: {
         lbl_hours: 'Ώρες', lbl_phone: 'Τηλέφωνο', lbl_address: 'Διεύθυνση',
@@ -2059,6 +2149,15 @@ const UI_STRINGS = {
         filter_open_now: 'Μόνο ανοιχτά', filter_country: 'Χώρα οντότητας',
         filter_language: 'Γλώσσα λειτουργίας', ui_language_selector: 'Γλώσσα διεπαφής',
         msg_loading: 'Φόρτωση...', msg_no_results: 'Κανένα αποτέλεσμα', btn_close: 'Κλείσιμο',
+        home_label: 'Γρήγορος Οδηγός', home_title: 'Πίνακας Έναρξης',
+        home_intro: 'Αυτός ο πίνακας σας κατευθύνει γρήγορα στα βασικά του συστήματος.',
+        home_explorar: 'Περιηγηθείτε και επιλέξτε επιχειρήσεις και εμπορικά σήματα στον χάρτη.',
+        home_contacto: 'Επικοινωνήστε με τους ιδιοκτήτες και κάντε παραγγελίες.',
+        home_novedades: 'Δείτε νέα, προσφορές και πρόσφατο περιεχόμενο.',
+        home_registrar: 'Εγγραφείτε για να τοποθετήσετε την επιχείρησή σας στον χάρτη.',
+        home_wt: 'Δημιουργήστε επιλεκτικά κανάλια επικοινωνίας (WT).',
+        home_franquicias: 'Παρουσιάστε franchises και δημιουργήστε ευκαιρίες για όλους.',
+        home_empleados: 'Δημοσιεύστε και διαχειριστείτε αγγελίες εργασίας.',
     },
     tr: {
         lbl_hours: 'Çalışma saatleri', lbl_phone: 'Telefon', lbl_address: 'Adres',
@@ -2072,6 +2171,15 @@ const UI_STRINGS = {
         filter_open_now: 'Yalnızca açık olanlar', filter_country: 'Kuruluş ülkesi',
         filter_language: 'Çalışma dili', ui_language_selector: 'Arayüz dili',
         msg_loading: 'Yükleniyor...', msg_no_results: 'Sonuç yok', btn_close: 'Kapat',
+        home_label: 'Hızlı Kılavuz', home_title: 'Başlangıç Paneli',
+        home_intro: 'Bu panel, sistemin temellerini ve nasıl başlayacağınızı hızlıca anlatır.',
+        home_explorar: 'Haritada işletmeleri ve markaları keşfedin ve seçin.',
+        home_contacto: 'Sahipleriyle iletişime geçin ve sipariş verin.',
+        home_novedades: 'Haberleri, teklifleri ve son içerikleri görüntüleyin.',
+        home_registrar: 'İşletmenizi haritaya eklemek için kaydolun.',
+        home_wt: 'Seçici iletişim kanalları oluşturun (WT).',
+        home_franquicias: 'Franchise gösterin ve herkes için fırsatlar yaratın.',
+        home_empleados: 'İş ilanlarını yayınlayın ve yönetin.',
     },
     ja: {
         lbl_hours: '営業時間', lbl_phone: '電話', lbl_address: '住所',
@@ -2085,6 +2193,15 @@ const UI_STRINGS = {
         filter_open_now: '営業中のみ', filter_country: '事業者の国',
         filter_language: '業務言語', ui_language_selector: 'インターフェース言語',
         msg_loading: '読み込み中...', msg_no_results: '結果なし', btn_close: '閉じる',
+        home_label: 'クイックガイド', home_title: 'スタートパネル',
+        home_intro: 'このパネルはシステムの基本を素早く紹介します。',
+        home_explorar: '地図でビジネスやブランドを探して選択します。',
+        home_contacto: 'オーナーに連絡して注文します。',
+        home_novedades: 'ニュース、オファー、最近のコンテンツを見ます。',
+        home_registrar: '登録してビジネスを地図に掲載します。',
+        home_wt: '選択的なコミュニケーションチャンネルを作成します（WT）。',
+        home_franquicias: 'フランチャイズを紹介し、全員のチャンスを生み出します。',
+        home_empleados: '求人情報を公開・管理します。',
     },
     ko: {
         lbl_hours: '영업시간', lbl_phone: '전화', lbl_address: '주소',
@@ -2098,6 +2215,15 @@ const UI_STRINGS = {
         filter_open_now: '영업 중만', filter_country: '사업체 국가',
         filter_language: '업무 언어', ui_language_selector: '인터페이스 언어',
         msg_loading: '로딩 중...', msg_no_results: '결과 없음', btn_close: '닫기',
+        home_label: '빠른 가이드', home_title: '시작 패널',
+        home_intro: '이 패널은 시스템의 기본 사항을 빠르게 안내합니다.',
+        home_explorar: '지도에서 비즈니스와 브랜드를 검색하고 선택합니다.',
+        home_contacto: '소유자에게 연락하고 주문합니다.',
+        home_novedades: '뉴스, 제안 및 최근 콘텐츠를 봅니다.',
+        home_registrar: '등록하여 지도에 비즈니스를 등재합니다.',
+        home_wt: '선택적 커뮤니케이션 채널을 만듭니다(WT).',
+        home_franquicias: '프랜차이즈를 소개하고 모두를 위한 기회를 창출합니다.',
+        home_empleados: '채용 공고를 게시하고 관리합니다.',
     },
     hi: {
         lbl_hours: 'समय', lbl_phone: 'फ़ोन', lbl_address: 'पता',
@@ -2111,6 +2237,15 @@ const UI_STRINGS = {
         filter_open_now: 'केवल अभी खुले', filter_country: 'इकाई देश',
         filter_language: 'संचालन भाषा', ui_language_selector: 'इंटरफ़ेस भाषा',
         msg_loading: 'लोड हो रहा है...', msg_no_results: 'कोई परिणाम नहीं', btn_close: 'बंद करें',
+        home_label: 'त्वरित मार्गदर्शिका', home_title: 'स्टार्ट पैनल',
+        home_intro: 'यह पैनल आपको सिस्टम की मूल बातें और शुरुआत कैसे करें, इस बारे में तुरंत मार्गदर्शन देता है।',
+        home_explorar: 'मानचित्र पर व्यवसायों और ब्रांडों को देखें और चुनें।',
+        home_contacto: 'उनके मालिकों से संपर्क करें और ऑर्डर दें।',
+        home_novedades: 'समाचार, ऑफ़र और हाल की सामग्री देखें।',
+        home_registrar: 'अपने व्यवसाय को मानचित्र पर रखने के लिए पंजीकरण करें।',
+        home_wt: 'चयनात्मक संचार चैनल बनाएं (WT)।',
+        home_franquicias: 'फ्रैंचाइज़ दिखाएं और सभी के लिए अवसर बनाएं।',
+        home_empleados: 'नौकरी के ऑफ़र प्रकाशित और प्रबंधित करें।',
     },
 };
 
@@ -2173,6 +2308,18 @@ function applyI18n() {
 
     // RTL layout for Arabic
     document.documentElement.dir = (MAPITA_UI_LANG === 'ar') ? 'rtl' : 'ltr';
+
+    // ── Panel de Inicio translations ─────────────────────────────────────────
+    const homeLabel = document.getElementById('home-panel-label');
+    if (homeLabel) homeLabel.textContent = s.home_label || 'Guía inicial';
+    const homeTitle = document.getElementById('home-panel-title');
+    if (homeTitle) homeTitle.textContent = '🧭 ' + (s.home_title || 'Panel de Inicio');
+    const homeIntro = document.getElementById('home-panel-intro');
+    if (homeIntro) homeIntro.textContent = s.home_intro || homeIntro.textContent;
+    document.querySelectorAll('[data-home-item]').forEach(function(el) {
+        const key = 'home_' + el.dataset.homeItem;
+        if (s[key]) el.textContent = s[key];
+    });
 
     // Highlight the active language button inside the picker
     document.querySelectorAll('.lang-btn-option').forEach(function(el) {
@@ -8261,20 +8408,20 @@ document.addEventListener('DOMContentLoaded', function() {
 <div id="mapita-home-panel" role="dialog" aria-modal="false" aria-label="Panel de Inicio">
     <div class="mapita-home-panel__header">
         <div>
-            <span class="sidebar-card-label">Guía inicial</span>
-            <h3 class="quickstart-panel__title" style="margin-bottom:0;">🧭 Panel de Inicio</h3>
+            <span id="home-panel-label" class="sidebar-card-label">Guía inicial</span>
+            <h3 id="home-panel-title" class="quickstart-panel__title" style="margin-bottom:0;">🧭 Panel de Inicio</h3>
         </div>
         <button id="mapita-home-panel-close" class="mapita-home-panel__close" type="button" aria-label="Cerrar panel de inicio">✕</button>
     </div>
-    <p class="quickstart-panel__intro">Este panel te orienta rápidamente sobre lo básico del sistema y cómo empezar.</p>
+    <p id="home-panel-intro" class="quickstart-panel__intro">Este panel te orienta rápidamente sobre lo básico del sistema y cómo empezar.</p>
     <ul class="quickstart-panel__list">
-        <li><span>Ver y elegir negocios y marcas en el mapa.</span><button type="button" class="quickstart-help-btn" data-help-key="explorar" aria-label="Ayuda sobre explorar el mapa">?</button></li>
-        <li><span>Contactarte con sus titulares y hacer pedidos.</span><button type="button" class="quickstart-help-btn" data-help-key="contacto" aria-label="Ayuda sobre contacto con titulares">?</button></li>
-        <li><span>Ver novedades, ofertas y contenidos recientes.</span><button type="button" class="quickstart-help-btn" data-help-key="novedades" aria-label="Ayuda sobre novedades y ofertas">?</button></li>
-        <li><span>Registrarte para ubicar tu negocio y marca en el mapa.</span><button type="button" class="quickstart-help-btn" data-help-key="registrar" aria-label="Ayuda sobre registro en el mapa">?</button></li>
-        <li><span>Crear canales de comunicación selectivos (WT).</span><button type="button" class="quickstart-help-btn" data-help-key="wt" aria-label="Ayuda sobre canales WT selectivos">?</button></li>
-        <li><span>Mostrar franquicias y generar oportunidades para todos.</span><button type="button" class="quickstart-help-btn" data-help-key="franquicias" aria-label="Ayuda sobre franquicias y oportunidades">?</button></li>
-        <li><span>Publicar y gestionar ofertas laborales (Busco Empleados/as).</span><button type="button" class="quickstart-help-btn" data-help-key="empleados" aria-label="Ayuda sobre Busco Empleados/as">?</button></li>
+        <li><span data-home-item="explorar">Ver y elegir negocios y marcas en el mapa.</span><button type="button" class="quickstart-help-btn" data-help-key="explorar" aria-label="Ayuda sobre explorar el mapa">?</button></li>
+        <li><span data-home-item="contacto">Contactarte con sus titulares y hacer pedidos.</span><button type="button" class="quickstart-help-btn" data-help-key="contacto" aria-label="Ayuda sobre contacto con titulares">?</button></li>
+        <li><span data-home-item="novedades">Ver novedades, ofertas y contenidos recientes.</span><button type="button" class="quickstart-help-btn" data-help-key="novedades" aria-label="Ayuda sobre novedades y ofertas">?</button></li>
+        <li><span data-home-item="registrar">Registrarte para ubicar tu negocio y marca en el mapa.</span><button type="button" class="quickstart-help-btn" data-help-key="registrar" aria-label="Ayuda sobre registro en el mapa">?</button></li>
+        <li><span data-home-item="wt">Crear canales de comunicación selectivos (WT).</span><button type="button" class="quickstart-help-btn" data-help-key="wt" aria-label="Ayuda sobre canales WT selectivos">?</button></li>
+        <li><span data-home-item="franquicias">Mostrar franquicias y generar oportunidades para todos.</span><button type="button" class="quickstart-help-btn" data-help-key="franquicias" aria-label="Ayuda sobre franquicias y oportunidades">?</button></li>
+        <li><span data-home-item="empleados">Publicar y gestionar ofertas laborales (Busco Empleados/as).</span><button type="button" class="quickstart-help-btn" data-help-key="empleados" aria-label="Ayuda sobre Busco Empleados/as">?</button></li>
     </ul>
 </div>
 <div id="quickstart-help-modal" class="quickstart-help-modal" role="dialog" aria-modal="true" aria-labelledby="quickstart-help-modal-title" aria-hidden="true">

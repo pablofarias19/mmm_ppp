@@ -72,6 +72,30 @@ function respondError($message = "Ha ocurrido un error") {
     }
 }
 
+if (!function_exists('mapitaEnsureSettingsTable')) {
+    /**
+     * Crea la tabla mapita_settings si no existe (idempotente).
+     * Llamado automáticamente desde mapitaGetSetting y mapitaSetSetting.
+     */
+    function mapitaEnsureSettingsTable(PDO $db): bool {
+        try {
+            $db->exec("
+                CREATE TABLE IF NOT EXISTS mapita_settings (
+                    setting_key   VARCHAR(100)  NOT NULL,
+                    setting_value TEXT          NOT NULL DEFAULT '',
+                    updated_at    TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                                ON UPDATE CURRENT_TIMESTAMP,
+                    PRIMARY KEY (setting_key)
+                ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+            ");
+            return true;
+        } catch (Throwable $e) {
+            error_log('mapitaEnsureSettingsTable error: ' . $e->getMessage());
+            return false;
+        }
+    }
+}
+
 if (!function_exists('mapitaGetSetting')) {
     /**
      * Obtiene el valor de una configuración global desde la tabla mapita_settings.
@@ -80,7 +104,7 @@ if (!function_exists('mapitaGetSetting')) {
     function mapitaGetSetting(PDO $db, string $key, $default = null) {
         try {
             if (!mapitaTableExists($db, 'mapita_settings')) {
-                return $default;
+                mapitaEnsureSettingsTable($db);
             }
             $stmt = $db->prepare('SELECT setting_value FROM mapita_settings WHERE setting_key = ? LIMIT 1');
             $stmt->execute([$key]);
@@ -95,11 +119,14 @@ if (!function_exists('mapitaGetSetting')) {
 if (!function_exists('mapitaSetSetting')) {
     /**
      * Guarda (INSERT o UPDATE) una configuración global en mapita_settings.
+     * Crea la tabla si no existe (auto-migración idempotente).
      */
     function mapitaSetSetting(PDO $db, string $key, string $value): void {
         try {
             if (!mapitaTableExists($db, 'mapita_settings')) {
-                return;
+                if (!mapitaEnsureSettingsTable($db)) {
+                    return;
+                }
             }
             $db->prepare("
                 INSERT INTO mapita_settings (setting_key, setting_value)
@@ -107,7 +134,7 @@ if (!function_exists('mapitaSetSetting')) {
                 ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)
             ")->execute([$key, $value]);
         } catch (Throwable $e) {
-            // silencioso – la tabla puede no existir aún
+            error_log('mapitaSetSetting error: ' . $e->getMessage());
         }
     }
 }
