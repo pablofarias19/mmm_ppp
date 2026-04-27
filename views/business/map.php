@@ -101,6 +101,37 @@ try {
             transition: box-shadow 0.2s, transform 0.15s;
         }
         #map-legend-btn:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.22); transform: translateY(-1px); }
+
+        /* ── FAB UBICARME: solo visible en responsive (≤768px) ──────── */
+        #map-ubicarme-fab {
+            display: none;
+        }
+        @media (max-width: 768px) {
+            #map-ubicarme-fab {
+                display: flex;
+                position: fixed;
+                bottom: 74px;
+                right: 10px;
+                z-index: 1001;
+                width: 40px;
+                height: 40px;
+                align-items: center;
+                justify-content: center;
+                background: rgba(255,255,255,0.97);
+                border: none;
+                border-radius: 10px;
+                font-size: 22px;
+                line-height: 1;
+                cursor: pointer;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.18);
+                transition: box-shadow 0.2s, transform 0.15s;
+                padding: 0;
+            }
+            #map-ubicarme-fab:hover  { box-shadow: 0 4px 16px rgba(0,0,0,0.22); transform: translateY(-1px); }
+            #map-ubicarme-fab:active { transform: scale(0.93); }
+            #map-ubicarme-fab:focus-visible { outline: 2px solid #667eea; outline-offset: 2px; }
+        }
+
         #map-legend {
             position: absolute;
             bottom: 70px;
@@ -1935,6 +1966,11 @@ try {
         </div>
     </div>
 </div>
+
+<!-- ── FAB Ubicarme: pin rojo flotante, solo en responsive ─────── -->
+<button id="map-ubicarme-fab" onclick="ubicarme()" aria-label="Ubicarme" title="Ubicarme">
+    <span aria-hidden="true">📍</span>
+</button>
 
 <!-- ── Leyenda dinámica del mapa ───────────────────────────────── -->
 <button id="map-legend-btn" aria-expanded="false" aria-controls="map-legend" onclick="toggleMapLegend()" title="Mostrar leyenda del mapa">
