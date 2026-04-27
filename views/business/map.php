@@ -2448,7 +2448,7 @@ let negocios  = [];
 let marcas    = [];
 let industriaMarkers = [];
 let mapa, marcadores = [], miUbicacion = null;
-let currentVer = 'negocios';
+let currentVer = 'ambos';
 let followMe = false;
 let watchID = null;
 const SIDEBAR_LIST_LIMIT = 200;
@@ -4119,7 +4119,7 @@ function filtrar() {
     if (currentVer === 'marcas' || currentVer === 'ambos') {
         marcas_filtered = marcas.filter(m => {
             // Basic filter
-            if (texto && !(m.nombre||'').toLowerCase().includes(texto)) return false;
+            if (texto && !(m.nombre||m.name||'').toLowerCase().includes(texto)) return false;
 
             // FRANQUICIAS filter: solo marcas con crear_franquicia=1
             if (franquiciasFilter && !(m.crear_franquicia == 1 || m.crear_franquicia === true || m.crear_franquicia === '1')) return false;
@@ -4152,7 +4152,8 @@ function filtrar() {
     const cntM = items.filter(i => i.tipo === 'marca').length;
     const sbRadius = parseInt(document.getElementById('sb-radius-select')?.value) || 5;
 
-    // Sidebar: requires geolocation; filter by radius and sort by distance ascending
+    // Sidebar: filter by proximity when geo available; show all filtered items when actively searching
+    const isActiveSearch = !!(texto || tipo);
     let sidebarItems = [];
     if (miUbicacion) {
         sidebarItems = items.filter(i => {
@@ -4163,15 +4164,23 @@ function filtrar() {
             calcularDistancia(miUbicacion.lat, miUbicacion.lng, a.lat, a.lng) -
             calcularDistancia(miUbicacion.lat, miUbicacion.lng, b.lat, b.lng)
         );
+    } else if (isActiveSearch) {
+        // Sin geo pero el usuario está buscando: mostrar todos los resultados filtrados
+        sidebarItems = items.filter(i => i.lat && i.lng);
+        sidebarItems.sort((a, b) => (a.nombre||a.name||'').localeCompare(b.nombre||b.name||''));
     }
 
     /* Mejora UX: usar innerHTML con badges para mejor separación visual de datos */
     document.getElementById('stats').innerHTML =
         `<span class="stats-total">Total:&nbsp;${cntN + cntM}</span>`
         + `<span class="stats-sep">|</span>`
-        + `<span class="stats-badge">📍&nbsp;${sidebarItems.length}&nbsp;cerca&nbsp;(${sbRadius}&nbsp;km)</span>`;
+        + (miUbicacion
+            ? `<span class="stats-badge">📍&nbsp;${sidebarItems.length}&nbsp;cerca&nbsp;(${sbRadius}&nbsp;km)</span>`
+            : isActiveSearch
+                ? `<span class="stats-badge">🔍&nbsp;${sidebarItems.length}&nbsp;resultados</span>`
+                : `<span class="stats-badge">📍&nbsp;0&nbsp;cerca&nbsp;(${sbRadius}&nbsp;km)</span>`);
 
-    mostrarLista(sidebarItems, { geoRequired: true, sbRadius });
+    mostrarLista(sidebarItems, { geoRequired: !isActiveSearch, sbRadius });
     mostrarMarcadores(items);
 }
 
