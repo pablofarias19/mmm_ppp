@@ -1214,7 +1214,7 @@ try {
     <div class="sb-search-wrap">
         <input type="text" id="busqueda"
                placeholder="🔍 <?= htmlspecialchars(t('filter_search'), ENT_QUOTES, 'UTF-8') ?>"
-               aria-label="<?= htmlspecialchars(t('filter_search'), ENT_QUOTES, 'UTF-8') ?>"
+               aria-label="Buscar negocios y marcas"
                autocomplete="off"
                oninput="filtrarConDebounce()"
                onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)'"
@@ -1223,7 +1223,7 @@ try {
                 onclick="limpiarBusqueda()" aria-label="Limpiar búsqueda" title="Limpiar búsqueda">✕</button>
     </div>
     <!-- Indicador de carga de búsqueda -->
-    <div id="search-loading" role="status" aria-live="polite" aria-label="Buscando…">
+    <div id="search-loading" role="status" aria-live="polite">
         <span class="sb-spinner" aria-hidden="true"></span>
         <span>Buscando…</span>
     </div>
@@ -4060,22 +4060,26 @@ function initWTPanelsInPopup(popupEl) {
 // ── Debounce para el buscador ─────────────────────────────────────────────────
 // Evita disparar filtrar() en cada keystroke; espera 300ms tras la última tecla.
 let _filtrarTimer = null;
+// ── Debounce delay and cache constants ───────────────────────────────────────
+const SEARCH_DEBOUNCE_MS    = 300; // ms to wait after last keystroke before filtering
+const FILTER_CACHE_MAX_SIZE = 50;  // max cache entries before eviction
+
 function filtrarConDebounce() {
     const loading = document.getElementById('search-loading');
     const clearBtn = document.getElementById('busqueda-clear');
     const val = document.getElementById('busqueda')?.value || '';
-    // Mostrar/ocultar botón de limpiar búsqueda
+    // Show/hide clear button based on input value
     if (clearBtn) clearBtn.classList.toggle('visible', val.length > 0);
-    // Mostrar spinner mientras se espera
+    // Show spinner while waiting for debounce
     if (loading) loading.classList.add('visible');
     clearTimeout(_filtrarTimer);
     _filtrarTimer = setTimeout(() => {
         filtrar();
         if (loading) loading.classList.remove('visible');
-    }, 300);
+    }, SEARCH_DEBOUNCE_MS);
 }
 
-/** Limpia el campo de búsqueda y actualiza resultados. */
+/** Clears the search input and updates results. */
 function limpiarBusqueda() {
     const input = document.getElementById('busqueda');
     if (input) { input.value = ''; input.focus(); }
@@ -4084,11 +4088,11 @@ function limpiarBusqueda() {
     filtrar();
 }
 
-// ── Cache simple de resultados de búsqueda ────────────────────────────────────
-// Reduce la CPU en consultas idénticas repetidas dentro del mismo contexto.
-// Se invalida automáticamente con un TTL de 30 s.
+// ── Simple search result cache ────────────────────────────────────────────────
+// Reduces CPU on repeated identical queries within the same data session.
+// Expires automatically via TTL and is invalidated when data loads from API.
 const _filterCache  = new Map();
-const _FILTER_TTL   = 30 * 1000; // 30 segundos
+const _FILTER_TTL   = 30 * 1000; // 30-second TTL
 
 function _filterCacheKey() {
     const texto  = (document.getElementById('busqueda')?.value || '').toLowerCase();
@@ -4109,8 +4113,8 @@ function _filterCacheGet(key) {
 }
 
 function _filterCacheSet(key, data) {
-    // Limitar tamaño del cache para no acumular memoria
-    if (_filterCache.size > 50) {
+    // FIFO eviction: Map preserves insertion order, so the first key is the oldest
+    if (_filterCache.size >= FILTER_CACHE_MAX_SIZE) {
         const oldestKey = _filterCache.keys().next().value;
         _filterCache.delete(oldestKey);
     }
@@ -4324,7 +4328,8 @@ function mostrarLista(lista, opts) {
     const contenedor = document.getElementById('lista');
     contenedor.innerHTML = '';
 
-    const geoRequired = opts && opts.geoRequired !== false;
+    // Preservar la lógica original: geo requerida a menos que explícitamente opts.geoRequired===false
+    const geoRequired = !opts || opts.geoRequired !== false;
     const sbRadius = (opts && opts.sbRadius) || 5;
 
     if (geoRequired && !miUbicacion) {
@@ -4437,7 +4442,12 @@ function addListItem(container, n, searchTerm) {
 
     // A7: open popup on click and on Enter/Space (keyboard)
     if (n.lat && n.lng) {
-        const action = () => { focusMarker(n.lat, n.lng); div.classList.add('sb-item-active'); };
+        const action = () => {
+            // Remove active state from all other items before marking this one
+            document.querySelectorAll('#lista .sb-item-active').forEach(el => el.classList.remove('sb-item-active'));
+            div.classList.add('sb-item-active');
+            focusMarker(n.lat, n.lng);
+        };
         div.onclick = action;
         div.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); action(); } };
     }
@@ -5806,12 +5816,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load data
     try {
         const rn = await fetch('/api/api_comercios.php').then(r => r.json());
-        if (rn.success) { negocios = rn.data; _filterCache.clear(); } // invalidar cache al cargar datos
+        if (rn.success) { negocios = rn.data; _filterCache.clear(); } // invalidate cache when loading fresh data
     } catch (e) { console.error('Error cargando negocios', e); }
 
     try {
         const rm = await fetch('/api/brands.php').then(r => r.json());
-        if (rm.success) { marcas = rm.data; _filterCache.clear(); } // invalidar cache al cargar datos
+        if (rm.success) { marcas = rm.data; _filterCache.clear(); } // invalidate cache when loading fresh data
         populateSectorFilter();
     } catch (e) { console.error('Error cargando marcas', e); }
 
