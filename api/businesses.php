@@ -151,6 +151,27 @@ if ($method === 'PUT') {
     }
 
     $input  = json_decode(file_get_contents('php://input'), true) ?? [];
+
+    // Patch parcial: solo influence_zones (inmobiliarias)
+    if (array_key_exists('influence_zones', $input) && count($input) === 1) {
+        $db     = getDbConnection();
+        $userId = (int)$_SESSION['user_id'];
+        // Verificar propietario o admin
+        $stmtB = $db->prepare("SELECT user_id, business_type FROM businesses WHERE id = ? LIMIT 1");
+        $stmtB->execute([$id]);
+        $biz = $stmtB->fetch(\PDO::FETCH_ASSOC);
+        if (!$biz) respond_error('Negocio no encontrado.', 404);
+        if ((int)$biz['user_id'] !== $userId && !isAdmin()) respond_error('Sin permisos.', 403);
+
+        if (!mapitaColumnExists($db, 'businesses', 'influence_zones')) {
+            respond_error('El módulo de zonas de influencia aún no está disponible.', 503);
+        }
+        $zones = mb_substr(trim($input['influence_zones'] ?? ''), 0, 1000);
+        $db->prepare("UPDATE businesses SET influence_zones = ?, updated_at = NOW() WHERE id = ?")
+           ->execute([$zones ?: null, $id]);
+        respond_success(null, 'Zonas de influencia guardadas.');
+    }
+
     $result = updateBusiness($id, $input, $_SESSION['user_id']);
 
     if ($result['success']) {

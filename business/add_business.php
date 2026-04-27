@@ -209,6 +209,15 @@ $tipos = [
         'centro_vecinal' => ['🏘️', 'Centro Vecinal / ONG'],
         'remate'         => ['🔨', 'Remates / Subastas'],
     ],
+    'Transporte' => [
+        'transporte'          => ['🚛', 'Transporte (general)'],
+        'transporte_envios'   => ['📦', 'Transporte – Envíos'],
+        'transporte_pasajeros'=> ['🚌', 'Transporte – Pasajeros'],
+        'transporte_carga'    => ['🏗️', 'Transporte – Carga'],
+        'transportista'       => ['🚚', 'Transportista'],
+        'logistica'           => ['🏭', 'Logística'],
+        'flota'               => ['🚐', 'Flota'],
+    ],
     'Educación & Turismo' => [
         'academia'  => ['🎓', 'Academia / Instituto'],
         'idiomas'   => ['🌐', 'Instituto de Idiomas'],
@@ -311,6 +320,13 @@ $subtypeLabels = [
     'musicalizador'       => 'Contexto (ej: teatro, cine, eventos, radio…)',
     'editor_grafico'      => 'Especialidad (ej: identidad visual, editorial, multimedia…)',
     'asistente_artistico' => 'Área de asistencia (ej: producción, escenografía, dirección…)',
+    'transporte'           => 'Tipo de servicio (ej: cargas, mudanzas, mensajería, distribución…)',
+    'transporte_envios'    => 'Tipo de envío (ej: paquetería, mensajería, distribución, correspondencia…)',
+    'transporte_pasajeros' => 'Modalidad (ej: escolar, turístico, corporativo, transfer aeropuerto…)',
+    'transporte_carga'     => 'Tipo de carga (ej: materiales de construcción, mudanzas, agrícola, refrigerada…)',
+    'transportista'        => 'Especialidad (ej: larga distancia, regional, urbano…)',
+    'logistica'            => 'Servicio (ej: almacenamiento, distribución, última milla…)',
+    'flota'                => 'Tipo de flota (ej: autos, combis, camiones, motos…)',
 ];
 
 $diasSemana = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
@@ -1384,6 +1400,40 @@ $descriptionPlaceholders = [
         </style>
         <?php endif; ?>
         <!-- ══ FIN MÓDULO INMUEBLES ══════════════════════════════════════════════ -->
+
+        <!-- ══ MÓDULO ZONAS DE INFLUENCIA (solo inmobiliaria) ════════════════════ -->
+        <?php
+        $hasInfluenceZones = mapitaColumnExists(getDbConnection(), 'businesses', 'influence_zones');
+        if ($editing && $selectedType === 'inmobiliaria' && $hasInfluenceZones):
+        $currentInfluenceZones = htmlspecialchars($business['influence_zones'] ?? '', ENT_QUOTES, 'UTF-8');
+        ?>
+        <div class="form-section" id="section-zonas-influencia">
+            <div class="section-head">
+                <span class="section-icon">🗺️</span>
+                <div>
+                    <div class="section-title">Zonas de Influencia</div>
+                    <div class="section-desc">Definí los barrios, zonas o áreas que atendés. Esto permite que usuarios te contacten directamente aunque no estés en su radio de cercanía.</div>
+                </div>
+            </div>
+            <div class="section-body">
+                <div style="margin-bottom:10px;">
+                    <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:4px;">Barrios / Zonas atendidas</label>
+                    <textarea id="influence-zones-input" rows="3" maxlength="800"
+                        placeholder="Ej: Palermo, Belgrano, Villa Urquiza, Recoleta, Nuñez (separados por coma)"
+                        style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;resize:vertical;font-family:inherit;font-size:.9em;"
+                    ><?php echo $currentInfluenceZones; ?></textarea>
+                    <div style="font-size:.75em;color:#6b7280;margin-top:4px;">
+                        Ingresá los barrios o zonas separados por coma. Los usuarios podrán encontrarte por zona incluso si están lejos.
+                    </div>
+                </div>
+                <div id="influence-zones-msg" style="font-size:.82em;min-height:16px;"></div>
+                <button type="button" id="influence-zones-save-btn" class="btn-save" style="width:auto;padding:10px 16px;" onclick="guardarZonasInfluencia()">
+                    💾 Guardar zonas de influencia
+                </button>
+            </div>
+        </div>
+        <?php endif; ?>
+        <!-- ══ FIN MÓDULO ZONAS DE INFLUENCIA ════════════════════════════════════ -->
 
         <!-- ══ MÓDULO OBRA DE ARTE ══════════════════════════════════════════════ -->
         <?php if ($editing && $selectedType === 'obra_de_arte'): ?>
@@ -3033,6 +3083,42 @@ function onCountryChange(cc) {
 
     document.addEventListener('DOMContentLoaded', cargarInmuebles);
 })();
+<?php endif; ?>
+
+// ── MÓDULO ZONAS DE INFLUENCIA (inmobiliaria) ─────────────────────────────────
+<?php
+$_hasInfluenceZonesJs = function_exists('mapitaColumnExists') && mapitaColumnExists(getDbConnection(), 'businesses', 'influence_zones');
+if ($editing && $selectedType === 'inmobiliaria' && $_hasInfluenceZonesJs):
+?>
+async function guardarZonasInfluencia() {
+    const input  = document.getElementById('influence-zones-input');
+    const msgEl  = document.getElementById('influence-zones-msg');
+    const btn    = document.getElementById('influence-zones-save-btn');
+    if (!input) return;
+
+    btn.disabled    = true;
+    btn.textContent = '⏳ Guardando…';
+    if (msgEl) msgEl.textContent = '';
+
+    try {
+        const res = await fetch('/api/businesses.php?id=<?php echo (int)$businessId; ?>', {
+            method:  'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ influence_zones: input.value.trim() }),
+        });
+        const data = await res.json();
+        if (data.success) {
+            if (msgEl) { msgEl.style.color = '#065f46'; msgEl.textContent = '✅ Zonas de influencia guardadas.'; }
+        } else {
+            if (msgEl) { msgEl.style.color = '#c0392b'; msgEl.textContent = '❌ ' + (data.error || 'Error al guardar.'); }
+        }
+    } catch {
+        if (msgEl) { msgEl.style.color = '#c0392b'; msgEl.textContent = '❌ Error de red.'; }
+    } finally {
+        btn.disabled    = false;
+        btn.textContent = '💾 Guardar zonas de influencia';
+    }
+}
 <?php endif; ?>
 
 // ── MÓDULO OBRA DE ARTE ──────────────────────────────────────────────────────

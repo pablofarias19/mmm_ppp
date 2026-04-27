@@ -495,13 +495,23 @@
         const el = document.getElementById('cq-sent-list');
         if (!el) return;
         try {
-            const res  = await fetch('/api/consultas.php?action=my_consultas');
+            const res  = await fetch('/api/consultas.php?action=my_consultas&filter=active');
             const data = await res.json();
             if (!data.success) { el.innerHTML = '<div class="cq-empty">Error al cargar.</div>'; return; }
-            if (!data.data.length) { el.innerHTML = '<div class="cq-empty">No enviaste consultas aún.</div>'; return; }
+            if (!data.data.length) { el.innerHTML = '<div class="cq-empty">No tenés consultas activas enviadas.</div>'; return; }
             el.innerHTML = data.data.map(renderConsultaItem).join('');
-            el.querySelectorAll('.cq-item').forEach(item => {
-                item.addEventListener('click', () => openThread(item.dataset.id, null));
+            el.querySelectorAll('.cq-item[data-id]').forEach(item => {
+                item.addEventListener('click', function(e) {
+                    if (e.target.closest('.cq-close-btn')) return; // no abrir hilo al cerrar
+                    openThread(item.dataset.id, null);
+                });
+            });
+            // Wiring de botones cerrar
+            el.querySelectorAll('.cq-close-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    cqCloseConsulta(parseInt(this.dataset.id, 10));
+                });
             });
         } catch { el.innerHTML = '<div class="cq-empty">Error de red.</div>'; }
     }
@@ -525,12 +535,33 @@
         return { masiva:'Masiva', general:'General', global_proveedor:'Proveedor', envio:'Envío' }[tipo] || tipo;
     }
 
+    function statusBadge(status) {
+        if (!status) return '';
+        const map = {
+            open:     { color:'#2563eb', bg:'#dbeafe', label:'Abierta' },
+            answered: { color:'#065f46', bg:'#d1fae5', label:'Respondida' },
+            closed:   { color:'#6b7280', bg:'#f3f4f6', label:'Cerrada' },
+            archived: { color:'#92400e', bg:'#fef3c7', label:'Archivada' },
+        };
+        const s = map[status];
+        if (!s) return '';
+        return `<span style="font-size:10px;padding:1px 7px;border-radius:50px;background:${s.bg};color:${s.color};font-weight:700;margin-left:4px;">${s.label}</span>`;
+    }
+
     function renderConsultaItem(c) {
-        return `<div class="cq-item" data-id="${c.id}" role="button" tabindex="0">
+        const canClose = c.status === 'answered' || (c.total_resp > 0 && c.status === 'open');
+        const closeBtn = canClose
+            ? `<button class="cq-close-btn" data-id="${c.id}" title="Cerrar consulta (ya fue respondida)" 
+                       style="background:none;border:1px solid #dc2626;border-radius:4px;color:#dc2626;font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;white-space:nowrap;" 
+                       onclick="event.stopPropagation()">✕ Cerrar</button>`
+            : '';
+        return `<div class="cq-item" data-id="${c.id}" role="button" tabindex="0" style="${c.status === 'closed' || c.status === 'archived' ? 'opacity:.55;' : ''}">
             <div class="cq-item-header">
                 <span class="cq-item-tipo tipo-${esc(c.tipo)}">${tipoLabel(c.tipo)}</span>
                 ${c.rubro ? `<span style="font-size:11px;color:#6b7280;">${esc(c.rubro)}</span>` : ''}
                 <span class="cq-item-date">${esc(c.created_at)}</span>
+                ${statusBadge(c.status)}
+                ${closeBtn}
             </div>
             <div class="cq-item-texto">"${esc(c.texto)}"</div>
             <div class="cq-item-stats">
@@ -554,6 +585,29 @@
             <div class="cq-item-texto">"${esc(c.texto)}"</div>
         </div>`;
     }
+
+    /**
+     * Cierra una consulta (modo 'close'). Llamado desde el botón "✕ Cerrar".
+     */
+    window.cqCloseConsulta = async function(consultaId) {
+        if (!confirm('¿Cerrar esta consulta? Ya no aparecerá como pendiente.')) return;
+        try {
+            const res  = await fetch('/api/consultas.php', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ action: 'close_consulta', consulta_id: consultaId, mode: 'close' }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                showMapToast('✅ ' + data.message);
+                loadSentList();
+            } else {
+                showMapToast('❌ ' + (data.error || 'No se pudo cerrar.'));
+            }
+        } catch {
+            showMapToast('❌ Error de red.');
+        }
+    };
 
     async function openThread(consultaId, businessId) {
         state.threadConsultaId = parseInt(consultaId, 10);
