@@ -182,3 +182,10 @@
     opacity: 0.45;
     cursor: not-allowed;
 }
+
+/* ─── RESPONSIVE: hide WT panel on mobile (section toggle already hidden) ─── */
+@media (max-width: 480px) {
+    .wt-panel {
+        display: none !important;
+    }
+}
