@@ -41,10 +41,14 @@ Aplicación PHP/MySQL para registrar y visualizar negocios locales en un mapa in
    source config/migration.sql
    ```
 
-4. **Instalar dependencias de Composer (opcional):**
+4. **Instalar dependencias de Composer (requerido para exportación PDF):**
    ```bash
    composer install
    ```
+   Esto instala [Dompdf](https://github.com/dompdf/dompdf) (generación de PDF en `brand_report.php`)
+   y demás dependencias declaradas en `composer.json`.
+   Sin este paso, el botón **Descargar PDF** del Reporte Ejecutivo devuelve un aviso de error;
+   los demás formatos (HTML, TXT, JSON) funcionan sin Composer.
 
 5. **Instalar dependencias de desarrollo (tests):**
    ```bash
