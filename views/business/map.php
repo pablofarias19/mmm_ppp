@@ -4291,7 +4291,7 @@ function buildWTPopupSection(entityType, entityId, title) {
         .join('');
 
     const toggleBtn =
-        '<div style="margin:6px 0 2px;">' +
+        '<div class="popup-wt-section" style="margin:6px 0 2px;">' +
             '<button type="button"' +
             ' onclick="(function(b){' +
                 'var p=document.getElementById(\'' + panelId + '\');' +

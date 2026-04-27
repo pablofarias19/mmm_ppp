@@ -200,17 +200,56 @@
 
 /* ─── RESPONSIVE ──────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
+    /* Prevent popup overflow on narrow screens */
     .leaflet-popup-content {
-        max-width: 280px !important;
+        max-width: calc(100vw - 40px) !important;
+    }
+
+    /* Compact header */
+    .leaflet-popup .popup-header {
+        padding: 10px 12px;
+    }
+
+    /* Compact body */
+    .popup-body {
+        padding: 8px 10px 6px !important;
     }
 
     .popup-footer {
         flex-direction: column;
+        gap: 5px;
+        padding: 8px 10px;
     }
 
     .popup-action {
         width: 100%;
-        min-width: auto;
+        min-width: 0;
+        padding: 9px 10px;
+        font-size: 12px;
+        text-align: center;
+    }
+
+    /* ── Hide WT (Walkie Talkie) system section on mobile ── */
+    /* Phone / WhatsApp actions in the footer are sufficient */
+    .popup-wt-section {
+        display: none !important;
+    }
+
+    /* ── Hide verbose brand details on mobile ── */
+    /* INPI registration grid: too detailed for small screens */
+    .brand-inpi-grid {
+        display: none !important;
+    }
+
+    /* Legal info tooltip: hide on mobile */
+    .brand-legal-tooltip,
+    .brand-legal-hint-btn {
+        display: none !important;
+    }
+
+    /* Protection / risk row: hide on mobile */
+    .brand-protection-row {
+        display: none !important;
     }
 }
 
