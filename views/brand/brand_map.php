@@ -46,6 +46,12 @@ try {
         .sidebar-header h2 { margin: 0 0 10px; font-size: 1.05em; font-weight: 700; color: white; }
 
         /* Búsqueda */
+        #search-count {
+            display: none;
+            font-size: 11px;
+            color: #c8d4f5;
+            margin-top: 5px;
+        }
         #busqueda {
             width: 100%; padding: 8px 10px; border: none; border-radius: 6px;
             font-size: 13px; outline: none;
@@ -205,6 +211,7 @@ try {
     <div class="sidebar-header">
         <h2>🏷️ Mapa de Marcas</h2>
         <input type="text" id="busqueda" placeholder="🔍 Buscar marca por nombre o rubro..." oninput="filtrar()">
+        <span id="search-count"></span>
     </div>
 
     <!-- Controles de selección -->
@@ -336,14 +343,32 @@ function actualizarSelCount() {
     el.className   = n > 0 ? '' : 'none';
 }
 
+// ── Normalizar texto (minúsculas + sin tildes/acentos) ───────────────────────
+function normalizar(s) {
+    return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
 // ── Filtrar por búsqueda ─────────────────────────────────────────────────────
 function filtrar() {
-    const texto = document.getElementById('busqueda').value.toLowerCase().trim();
-    listaFiltrada = marcas.filter(m =>
-        !texto ||
-        (m.name  && m.name.toLowerCase().includes(texto)) ||
-        (m.rubro   && m.rubro.toLowerCase().includes(texto))
-    );
+    const texto = normalizar(document.getElementById('busqueda').value);
+    listaFiltrada = marcas.filter(m => {
+        if (!texto) return true;
+        const nombre = normalizar(m.name || m.nombre);
+        const rubro  = normalizar(m.rubro);
+        const ubic   = normalizar(m.ubicacion);
+        return nombre.includes(texto) || rubro.includes(texto) || ubic.includes(texto);
+    });
+
+    const counter = document.getElementById('search-count');
+    if (counter) {
+        if (texto) {
+            counter.textContent = `${listaFiltrada.length} resultado${listaFiltrada.length !== 1 ? 's' : ''}`;
+            counter.style.display = 'block';
+        } else {
+            counter.style.display = 'none';
+        }
+    }
+
     renderLista();
     actualizarMapa();
     mostrarDataPanel();
@@ -374,7 +399,7 @@ function renderLista() {
             <input type="checkbox" ${esSel ? 'checked' : ''}
                    onclick="event.stopPropagation(); toggleSeleccion(${m.id}, this)">
             <div class="marca-info">
-                <div class="marca-nombre">${m.name}</div>
+                <div class="marca-nombre">${m.name || m.nombre || ''}</div>
                 ${m.rubro ? `<div class="marca-rubro">${m.rubro}${m.ubicacion ? ' · ' + m.ubicacion : ''}</div>` : ''}
                 ${tags ? `<div class="marca-tags">${tags}</div>` : ''}
             </div>
@@ -512,7 +537,7 @@ function mostrarDataPanel() {
     let html = '';
 
     seleccionadas.forEach(m => {
-        let lineas = [`<strong>${m.name}</strong>`];
+        let lineas = [`<strong>${m.name || m.nombre || ''}</strong>`];
         if (showValor  && m.valor_activo) lineas.push(`💰 Valor: <strong>$${Number(m.valor_activo).toLocaleString()}</strong>`);
         if (showRiesgo && m.riesgo_oposicion) lineas.push(`⚠️ Riesgo legal: <strong>${m.riesgo_oposicion}</strong>`);
         if (showRiesgo && m.extended_description) lineas.push(`<span style="color:#888">${m.extended_description}</span>`);
