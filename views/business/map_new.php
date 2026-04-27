@@ -170,6 +170,10 @@ const nizaColors = {'1':'#e74c3c','2':'#e67e22','3':'#f1c40f','4':'#2ecc71','5':
 function getIcon(tipo) { return iconos[tipo] || iconos.default; }
 function getColor(clase) { return nizaColors[clase ? clase.split(',')[0].trim() : '5'] || '#3498db'; }
 
+function normalizar(s) {
+    return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
 function setVer(val) {
     verActual = val;
     document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
@@ -179,20 +183,23 @@ function setVer(val) {
 
 function filtrar() {
     const tipo = document.getElementById('tipo').value;
-    const texto = document.getElementById('busqueda').value.toLowerCase();
+    const texto = normalizar(document.getElementById('busqueda').value);
     
     let items = [];
     
     if (verActual === 'negocios' || verActual === 'ambos') {
         items = items.concat(negocios.filter(n => 
             (!tipo || n.business_type === tipo) && 
-            (!texto || (n.name||'').toLowerCase().includes(texto) || (n.address||'').toLowerCase().includes(texto))
+            (!texto || normalizar(n.name).includes(texto) || normalizar(n.address).includes(texto))
         ).map(n => ({...n, tipo: 'negocio'})));
     }
     
     if (verActual === 'marcas' || verActual === 'ambos') {
         items = items.concat(marcas.filter(m => 
-            !texto || (m.nombre||'').toLowerCase().includes(texto)
+            !texto ||
+            normalizar(m.name || m.nombre).includes(texto) ||
+            normalizar(m.rubro).includes(texto) ||
+            normalizar(m.ubicacion).includes(texto)
         ).map(m => ({...m, tipo: 'marca'})));
     }
     
