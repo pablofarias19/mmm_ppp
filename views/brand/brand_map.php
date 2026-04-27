@@ -348,6 +348,13 @@ function normalizar(s) {
     return (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 }
 
+// ── Formatear valor activo de marca (evita doble símbolo "$$") ───────────────
+function fmtValor(v) {
+    const s = String(v).replace(/^\s*\$\s*/, '');
+    const n = Number(s);
+    return '$' + (isNaN(n) || s === '' ? s : n.toLocaleString());
+}
+
 // ── Filtrar por búsqueda ─────────────────────────────────────────────────────
 function filtrar() {
     const texto = normalizar(document.getElementById('busqueda').value);
@@ -392,7 +399,7 @@ function renderLista() {
 
         let tags = '';
         if (m.clase_principal) tags += `<span class="tag tag-niza">Niza ${m.clase_principal}</span>`;
-        if (m.valor_activo)    tags += `<span class="tag tag-valor">$${Number(m.valor_activo).toLocaleString()}</span>`;
+        if (m.valor_activo)    tags += `<span class="tag tag-valor">${fmtValor(m.valor_activo)}</span>`;
         if (m.riesgo_oposicion)    tags += `<span class="tag tag-riesgo">⚠ ${m.riesgo_oposicion}</span>`;
 
         div.innerHTML = `
@@ -491,17 +498,21 @@ function actualizarMapa() {
 
         const canEdit = IS_ADMIN || (SESSION_USER_ID && SESSION_USER_ID == m.user_id);
 
-        let popup = `<div style="min-width:180px;font-family:inherit">`;
-        popup += `<strong style="font-size:14px">${m.name || m.nombre}</strong>`;
-        if (m.rubro)             popup += `<br><span style="color:#666;font-size:12px">${m.rubro}</span>`;
-        if (m.clase_principal)   popup += `<br><span style="font-size:12px">📋 Niza: ${m.clase_principal}</span>`;
-        if (m.valor_activo)      popup += `<br><span style="font-size:12px">💰 Valor: $${Number(m.valor_activo).toLocaleString()}</span>`;
-        if (m.riesgo_oposicion)  popup += `<br><span style="font-size:12px">⚠️ Riesgo: ${m.riesgo_oposicion}</span>`;
-        if (m.ubicacion)         popup += `<br><span style="font-size:12px">📍 ${m.ubicacion}</span>`;
-        popup += `<div style="margin-top:10px;display:flex;gap:6px;flex-wrap:wrap">`;
-        popup += `<a href="/brand_detail?id=${m.id}" style="padding:5px 10px;background:#667eea;color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">🔍 Ver</a>`;
+        let popup = `<div style="min-width:190px;max-width:240px;font-family:inherit">`;
+        popup += `<strong style="font-size:14px;display:block;margin-bottom:4px">${m.name || m.nombre}</strong>`;
+        if (m.rubro || m.clase_principal) {
+            popup += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px">`;
+            if (m.rubro)           popup += `<span style="background:#f0ecff;color:#6a2fa2;padding:2px 7px;border-radius:8px;font-size:11px;font-weight:600">🏷️ ${m.rubro}</span>`;
+            if (m.clase_principal) popup += `<span style="background:#e0f2fe;color:#0369a1;padding:2px 7px;border-radius:8px;font-size:11px;font-weight:600">📋 Niza ${m.clase_principal}</span>`;
+            popup += `</div>`;
+        }
+        if (m.valor_activo)      popup += `<div style="font-size:12px;color:#059669;font-weight:700;margin-bottom:3px">💰 ${fmtValor(m.valor_activo)}</div>`;
+        if (m.riesgo_oposicion)  popup += `<div style="font-size:12px;margin-bottom:3px">⚠️ Riesgo: ${m.riesgo_oposicion}</div>`;
+        if (m.ubicacion)         popup += `<div style="font-size:12px;color:#666;margin-bottom:6px">📍 ${m.ubicacion}</div>`;
+        popup += `<div style="display:flex;gap:5px;margin-top:6px">`;
+        popup += `<a href="/brand_detail?id=${m.id}" style="padding:6px 8px;background:#667eea;color:white;border-radius:7px;font-size:16px;text-decoration:none;line-height:1" title="Ver detalle de la marca" aria-label="Ver detalle de la marca">📋</a>`;
         if (canEdit) {
-            popup += `<a href="/brand_edit?id=${m.id}" style="padding:5px 10px;background:#0ea5e9;color:white;border-radius:8px;font-size:12px;font-weight:600;text-decoration:none">✏️ Editar</a>`;
+            popup += `<a href="/brand_edit?id=${m.id}" style="padding:6px 8px;background:#0ea5e9;color:white;border-radius:7px;font-size:16px;text-decoration:none;line-height:1" title="Editar marca" aria-label="Editar marca">✏️</a>`;
         }
         popup += `</div></div>`;
         marker.bindPopup(popup, { maxWidth: 240 });
@@ -538,7 +549,7 @@ function mostrarDataPanel() {
 
     seleccionadas.forEach(m => {
         let lineas = [`<strong>${m.name || m.nombre || ''}</strong>`];
-        if (showValor  && m.valor_activo) lineas.push(`💰 Valor: <strong>$${Number(m.valor_activo).toLocaleString()}</strong>`);
+        if (showValor  && m.valor_activo) lineas.push(`💰 Valor: <strong>${fmtValor(m.valor_activo)}</strong>`);
         if (showRiesgo && m.riesgo_oposicion) lineas.push(`⚠️ Riesgo legal: <strong>${m.riesgo_oposicion}</strong>`);
         if (showRiesgo && m.extended_description) lineas.push(`<span style="color:#888">${m.extended_description}</span>`);
         html += `<div class="data-row" style="flex-direction:column;border-bottom:1px solid #dde0ee;padding-bottom:6px;margin-bottom:6px;">${lineas.join('<br>')}</div>`;
