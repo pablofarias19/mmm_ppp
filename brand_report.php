@@ -10,13 +10,7 @@ try {
 
     if (!$marca_id) {
         // Respond with a clear error instead of silently falling through
-        if ($format === 'txt') {
-            header('Content-Type: text/plain; charset=utf-8');
-            http_response_code(400);
-            echo "Error: el parámetro 'id' es obligatorio.";
-            exit;
-        }
-        if ($format === 'pdf') {
+        if ($format === 'txt' || $format === 'pdf') {
             header('Content-Type: text/plain; charset=utf-8');
             http_response_code(400);
             echo "Error: el parámetro 'id' es obligatorio.";
@@ -232,7 +226,7 @@ try {
         'Consolidación de datos de clasificación Niza y análisis marcario.',
         'Síntesis de modelos de negocio y estrategias de monetización.',
         'Evaluación integrada de riesgos legales y recomendaciones.',
-        'Exportación en formatos PDF y TXT.',
+        'Exportación en formatos PDF, TXT y JSON para uso externo.',
     ];
     $tool_edit_note = 'Próximamente personalizable. Para editar el contenido de este panel, modificá el archivo brand_report.php y views/brand/_tool_panel.php.';
 
