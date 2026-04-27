@@ -71,6 +71,7 @@ try {
     <link rel="stylesheet" href="/css/wt-panel.css">
     <link rel="stylesheet" href="/css/disponibles.css">
     <link rel="stylesheet" href="/css/consultas-panel.css">
+    <link rel="stylesheet" href="/css/sidebar-enhanced.css">
     <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -1209,12 +1210,26 @@ try {
         </div>
     </div>
 
-    <input type="text" id="busqueda" placeholder="🔍 <?= htmlspecialchars(t('filter_search'), ENT_QUOTES, 'UTF-8') ?>" oninput="filtrar()"
-           style="width:100%;padding:10px 12px;border:1px solid #d0d5dd;border-radius:8px;margin-bottom:12px;font-size:13px;font-family:inherit;color:#374151;transition:all 0.2s ease;"
-           onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)'"
-           onblur="this.style.borderColor='#d0d5dd';this.style.boxShadow='none'">
+    <!-- Buscador con debounce, clear y estado de carga -->
+    <div class="sb-search-wrap">
+        <input type="text" id="busqueda"
+               placeholder="🔍 <?= htmlspecialchars(t('filter_search'), ENT_QUOTES, 'UTF-8') ?>"
+               aria-label="Buscar negocios y marcas"
+               autocomplete="off"
+               oninput="filtrarConDebounce()"
+               onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)'"
+               onblur="this.style.borderColor='#d0d5dd';this.style.boxShadow='none'">
+        <button type="button" id="busqueda-clear" class="sb-search-clear"
+                onclick="limpiarBusqueda()" aria-label="Limpiar búsqueda" title="Limpiar búsqueda">✕</button>
+    </div>
+    <!-- Indicador de carga de búsqueda -->
+    <div id="search-loading" role="status" aria-live="polite">
+        <span class="sb-spinner" aria-hidden="true"></span>
+        <span>Buscando…</span>
+    </div>
 
     <select id="tipo" onchange="filtrar()"
+            aria-label="Filtrar por tipo de negocio"
             style="width:100%;padding:10px 12px;border:1px solid #d0d5dd;border-radius:8px;margin-bottom:12px;font-size:13px;font-family:inherit;color:#374151;background-color:white;cursor:pointer;transition:all 0.2s ease;"
             onfocus="this.style.borderColor='#667eea';this.style.boxShadow='0 0 0 3px rgba(102, 126, 234, 0.1)'"
             onblur="this.style.borderColor='#d0d5dd';this.style.boxShadow='none'">
@@ -1316,7 +1331,7 @@ try {
     <!-- ADVANCED FILTERS ACCORDION -->
     <div class="sb-section" id="sb-sec-filters">
         <div class="sb-section-hdr open" onclick="toggleSbSection(this)"
-             aria-expanded="true" title="Filtros avanzados">
+             aria-expanded="true" title="Filtros avanzados" data-tooltip="Filtros Avanzados">
             <span class="sb-section-hdr-label">
                 <span aria-hidden="true">🔍</span> Filtros Avanzados
             </span>
@@ -1470,7 +1485,7 @@ try {
     <!-- Utility buttons -->
     <div class="sb-section" id="sb-sec-tools">
         <div class="sb-section-hdr" onclick="toggleSbSection(this)"
-             aria-expanded="false" title="Herramientas del mapa">
+             aria-expanded="false" title="Herramientas del mapa" data-tooltip="Herramientas">
             <span class="sb-section-hdr-label">
                 <span aria-hidden="true">🛠️</span> Herramientas
             </span>
@@ -1484,10 +1499,12 @@ try {
             <div class="sb-section-body-inner">
                 <div style="display:flex;gap:5px;">
                     <button onclick="ubicarme()"
+                            aria-label="Ubicar mi posición en el mapa"
                             style="flex:1;padding:10px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
                         📍 Ubicarme
                     </button>
                     <button onclick="exportarPDF()"
+                            aria-label="Exportar lista como PDF"
                             style="flex:1;padding:10px;background:#667eea;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
                         🧾 PDF
                     </button>
@@ -1495,6 +1512,7 @@ try {
                 <div style="display:flex;gap:5px;margin-top:5px;">
                     <button id="btn-follow-me" onclick="toggleFollowMe()"
                             aria-pressed="false"
+                            aria-label="Seguir mi posición en el mapa"
                             style="flex:1;padding:10px;background:#95a5a6;color:white;border:none;border-radius:6px;cursor:pointer;font-size:12px;width:auto;margin:0;">
                         📡 Seguirme
                     </button>
@@ -1505,7 +1523,9 @@ try {
 
     <div class="sb-section" id="sb-sec-selection">
         <div class="sb-section-hdr" onclick="toggleSbSection(this)"
-             aria-expanded="false" title="Selección múltiple de marcadores" style="border-left:4px solid #00d4ff;">
+             aria-expanded="false" title="Selección múltiple de marcadores"
+             data-tooltip="Selector MetaData"
+             style="border-left:4px solid #00d4ff;">
             <span class="sb-section-hdr-label" style="color:#1565c0;">
                 <span aria-hidden="true">🧾</span> Selector MetaData
             </span>
@@ -1699,7 +1719,19 @@ try {
     <div id="transmisiones-container" class="sidebar-card" style="display:none;border-left:4px solid #c0392b;padding:0;overflow:hidden;">
         <div class="sb-mod-hdr open" onclick="toggleSbModule(this)">
             <h3 style="margin:0;font-size:13px;color:#c0392b;font-weight:700;display:flex;align-items:center;gap:5px;">
-                📡 <span style="display:inline-block;width:7px;height:7px;background:#c0392b;border-radius:50%;animation:blink 1s infinite;"></span> En Vivo
+                <!-- Antena SVG: reemplaza el emoji 📡 para mayor consistencia visual -->
+                <svg class="tx-antenna-icon" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                     stroke="#c0392b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     aria-hidden="true" title="Transmisiones en vivo">
+                    <line x1="12" y1="2" x2="12" y2="12"/>
+                    <path d="M4.9 6.9a8 8 0 0 0 0 10.2"/>
+                    <path d="M19.1 6.9a8 8 0 0 1 0 10.2"/>
+                    <path d="M7.8 9.8a4 4 0 0 0 0 4.4"/>
+                    <path d="M16.2 9.8a4 4 0 0 1 0 4.4"/>
+                    <circle cx="12" cy="12" r="1.5" fill="#c0392b"/>
+                </svg>
+                <span style="display:inline-block;width:7px;height:7px;background:#c0392b;border-radius:50%;animation:blink 1s infinite;" aria-hidden="true"></span>
+                En Vivo
             </h3>
             <svg class="sb-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="6 9 12 15 18 9"/></svg>
         </div>
@@ -1779,7 +1811,8 @@ try {
 
     <!-- Stats + Results list -->
     <div class="sb-section" id="sb-sec-results">
-        <div class="sb-section-hdr open" onclick="toggleSbSection(this)" aria-expanded="true">
+        <div class="sb-section-hdr open" onclick="toggleSbSection(this)" aria-expanded="true"
+             data-tooltip="Resultados">
             <span class="sb-section-hdr-label">
                 RES:
             </span>
@@ -1798,7 +1831,7 @@ try {
                     <option value="10">10 km</option>
                 </select>
             </div>
-            <div id="lista" style="max-height:320px;overflow-y:auto;padding:4px 0 8px;"></div>
+            <div id="lista" style="max-height:320px;overflow-y:auto;padding:4px 0 8px;" aria-live="polite" aria-label="Resultados de búsqueda"></div>
         </div>
     </div>
 
@@ -4023,6 +4056,85 @@ function initWTPanelsInPopup(popupEl) {
 }
 
 // ─── Filtering (ENHANCED with accordion filters) ────────────────────────────────
+
+// ── Debounce para el buscador ─────────────────────────────────────────────────
+// Evita disparar filtrar() en cada keystroke; espera 300ms tras la última tecla.
+let _filtrarTimer = null;
+// ── Debounce delay and cache constants ───────────────────────────────────────
+const SEARCH_DEBOUNCE_MS    = 300; // ms to wait after last keystroke before filtering
+const FILTER_CACHE_MAX_SIZE = 50;  // max cache entries before eviction
+
+function filtrarConDebounce() {
+    const loading = document.getElementById('search-loading');
+    const clearBtn = document.getElementById('busqueda-clear');
+    const val = document.getElementById('busqueda')?.value || '';
+    // Show/hide clear button based on input value
+    if (clearBtn) clearBtn.classList.toggle('visible', val.length > 0);
+    // Show spinner while waiting for debounce
+    if (loading) loading.classList.add('visible');
+    clearTimeout(_filtrarTimer);
+    _filtrarTimer = setTimeout(() => {
+        filtrar();
+        if (loading) loading.classList.remove('visible');
+    }, SEARCH_DEBOUNCE_MS);
+}
+
+/** Clears the search input and updates results. */
+function limpiarBusqueda() {
+    const input = document.getElementById('busqueda');
+    if (input) { input.value = ''; input.focus(); }
+    const clearBtn = document.getElementById('busqueda-clear');
+    if (clearBtn) clearBtn.classList.remove('visible');
+    filtrar();
+}
+
+// ── Simple search result cache ────────────────────────────────────────────────
+// Reduces CPU on repeated identical queries within the same data session.
+// Expires automatically via TTL and is invalidated when data loads from API.
+const _filterCache  = new Map();
+const _FILTER_TTL   = 30 * 1000; // 30-second TTL
+
+function _filterCacheKey() {
+    const texto  = (document.getElementById('busqueda')?.value || '').toLowerCase();
+    const tipo   = (document.getElementById('tipo')?.value || '').toLowerCase();
+    const loc    = document.getElementById('filter-location-enable')?.checked ? document.getElementById('filter-location-radius')?.value : '';
+    const city   = (document.getElementById('filter-location-city')?.value || '').toLowerCase();
+    const open   = document.getElementById('filter-open-now')?.checked ? '1' : '';
+    const ctry   = document.getElementById('filter-country-code')?.value || '';
+    const lang   = document.getElementById('filter-language-code')?.value || '';
+    return `${texto}|${tipo}|${loc}|${city}|${open}|${ctry}|${lang}`;
+}
+
+function _filterCacheGet(key) {
+    const entry = _filterCache.get(key);
+    if (!entry) return null;
+    if (Date.now() - entry.ts > _FILTER_TTL) { _filterCache.delete(key); return null; }
+    return entry.data;
+}
+
+function _filterCacheSet(key, data) {
+    // FIFO eviction: Map preserves insertion order, so the first key is the oldest
+    if (_filterCache.size >= FILTER_CACHE_MAX_SIZE) {
+        const oldestKey = _filterCache.keys().next().value;
+        _filterCache.delete(oldestKey);
+    }
+    _filterCache.set(key, { data, ts: Date.now() });
+}
+
+// ── XSS-safe text highlight ───────────────────────────────────────────────────
+/**
+ * Escapa `rawText` y envuelve las coincidencias de `searchTerm` en <mark>.
+ * Al trabajar sobre HTML ya escapado el resultado es seguro ante XSS.
+ */
+function _highlightMatch(rawText, searchTerm) {
+    const escaped = _escHtml(rawText);
+    if (!searchTerm) return escaped;
+    // Escapar caracteres especiales de regex en el término buscado
+    const reEsc = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return escaped.replace(new RegExp('(' + reEsc + ')', 'gi'),
+        '<mark class="sb-highlight">$1</mark>');
+}
+
 function filtrar() {
     [...circles, ...licenseMarkers, ...franchiseMarkers, ...exclusiveMarkers,
      ...myBusinessMarkers, ...propertyZoneMarkers].forEach(l => mapa.removeLayer(l));
@@ -4050,6 +4162,18 @@ function filtrar() {
     const sectorFilter = getSectorFilter();
     const countryFilter = (document.getElementById('filter-country-code')?.value || '').trim();
     const languageFilter = (document.getElementById('filter-language-code')?.value || '').trim().toLowerCase();
+
+    // ── Cache: evitar refilter si el query es idéntico al último ─────────────────
+    // Nota: el cache solo aplica a la misma sesión de datos (negocios/marcas cargados).
+    const _cacheKey = _filterCacheKey();
+    const _cached   = _filterCacheGet(_cacheKey);
+    if (_cached) {
+        // Reutilizar resultado cacheado para reducir CPU en consultas repetidas
+        mostrarLista(_cached.sidebarItems, { geoRequired: _cached.geoRequired, sbRadius: _cached.sbRadius });
+        mostrarMarcadores(_cached.items);
+        document.getElementById('stats').innerHTML = _cached.statsHTML;
+        return;
+    }
 
     // Update UI visibility for brand/business-only filters
     const showBrandFilters = (currentVer === 'marcas' || currentVer === 'ambos') || franquiciasFilter;
@@ -4171,7 +4295,7 @@ function filtrar() {
     }
 
     /* Mejora UX: usar innerHTML con badges para mejor separación visual de datos */
-    document.getElementById('stats').innerHTML =
+    const statsHTML =
         `<span class="stats-total">Total:&nbsp;${cntN + cntM}</span>`
         + `<span class="stats-sep">|</span>`
         + (miUbicacion
@@ -4179,16 +4303,32 @@ function filtrar() {
             : isActiveSearch
                 ? `<span class="stats-badge">🔍&nbsp;${sidebarItems.length}&nbsp;resultados</span>`
                 : `<span class="stats-badge">📍&nbsp;0&nbsp;cerca&nbsp;(${sbRadius}&nbsp;km)</span>`);
+    document.getElementById('stats').innerHTML = statsHTML;
+
+    // Guardar en cache para consultas idénticas repetidas
+    _filterCacheSet(_cacheKey, { sidebarItems, items, statsHTML, sbRadius, geoRequired: !isActiveSearch });
 
     mostrarLista(sidebarItems, { geoRequired: !isActiveSearch, sbRadius });
     mostrarMarcadores(items);
 }
 
 // ─── List rendering ──────────────────────────────────────────────────────────────
+// Lazy render: se muestran inicialmente SIDEBAR_PAGE_SIZE items.
+// El botón "Mostrar más" añade el siguiente bloque sin reemplazar el DOM existente.
+const SIDEBAR_PAGE_SIZE = 30; // ítems por página/bloque
+let _listaActual = [];        // lista completa del filtro activo
+let _listaOpts   = {};        // opciones del último mostrarLista()
+let _listaOffset = 0;         // cuántos ítems ya se han renderizado
+
 function mostrarLista(lista, opts) {
+    _listaActual = lista;
+    _listaOpts   = opts || {};
+    _listaOffset = 0;
+
     const contenedor = document.getElementById('lista');
     contenedor.innerHTML = '';
 
+    // Preservar la lógica original: geo requerida a menos que explícitamente opts.geoRequired===false
     const geoRequired = !opts || opts.geoRequired !== false;
     const sbRadius = (opts && opts.sbRadius) || 5;
 
@@ -4197,26 +4337,63 @@ function mostrarLista(lista, opts) {
         return;
     }
 
-    const total = lista.length;
-    const limited = lista.slice(0, SIDEBAR_LIST_LIMIT);
-
-    const negs = limited.filter(i => i.tipo === 'negocio');
-    const mrks = limited.filter(i => i.tipo === 'marca');
-
-    if (currentVer === 'ambos' && negs.length && mrks.length) {
-        addListHeader(contenedor, '🏪 Negocios (' + negs.length + ')');
-        negs.forEach(n => addListItem(contenedor, n));
-        addListHeader(contenedor, '🏷️ Marcas (' + mrks.length + ')');
-        mrks.forEach(m => addListItem(contenedor, m));
-    } else {
-        limited.forEach(n => addListItem(contenedor, n));
+    if (lista.length === 0) {
+        // Estado "sin resultados": solo cuando hay una búsqueda activa
+        const texto = (document.getElementById('busqueda')?.value || '').trim();
+        const tipo  = document.getElementById('tipo')?.value || '';
+        if (texto || tipo) {
+            contenedor.innerHTML = `
+                <div class="sb-empty-state">
+                    <span class="sb-empty-icon">🔍</span>
+                    <strong>Sin resultados</strong>
+                    No se encontraron resultados para
+                    <em>"${_escHtml(texto || tipo)}"</em>.
+                    Intentá con otro término o quitá filtros.
+                </div>`;
+        }
+        return;
     }
 
-    if (total > SIDEBAR_LIST_LIMIT) {
-        const hint = document.createElement('div');
-        hint.style.cssText = 'padding:8px 12px;text-align:center;color:#888;font-size:11px;border-top:1px solid #eef0f5;margin-top:4px;';
-        hint.textContent = `Mostrando ${SIDEBAR_LIST_LIMIT} de ${total} dentro de ${sbRadius} km. Refiná con filtros para ver más.`;
-        contenedor.appendChild(hint);
+    _renderListPage(false);
+}
+
+/** Renderiza el siguiente bloque de SIDEBAR_PAGE_SIZE items. */
+function _renderListPage(append) {
+    const contenedor = document.getElementById('lista');
+    const sbRadius   = (_listaOpts && _listaOpts.sbRadius) || 5;
+    const texto      = (document.getElementById('busqueda')?.value || '').toLowerCase().trim();
+
+    // Eliminar botón "Mostrar más" previo si existe
+    const prevBtn = contenedor.querySelector('.sb-load-more-btn');
+    if (prevBtn) prevBtn.remove();
+
+    const batch = _listaActual.slice(_listaOffset, _listaOffset + SIDEBAR_PAGE_SIZE);
+    _listaOffset += batch.length;
+
+    if (!append) {
+        // Primera página: agrupar por tipo cuando aplica
+        const negs = batch.filter(i => i.tipo === 'negocio');
+        const mrks = batch.filter(i => i.tipo === 'marca');
+        if (currentVer === 'ambos' && negs.length && mrks.length) {
+            addListHeader(contenedor, '🏪 Negocios (' + negs.length + ')');
+            negs.forEach(n => addListItem(contenedor, n, texto));
+            addListHeader(contenedor, '🏷️ Marcas (' + mrks.length + ')');
+            mrks.forEach(m => addListItem(contenedor, m, texto));
+        } else {
+            batch.forEach(n => addListItem(contenedor, n, texto));
+        }
+    } else {
+        // Páginas adicionales: agregar sin cabeceras de grupo
+        batch.forEach(n => addListItem(contenedor, n, texto));
+    }
+
+    const remaining = _listaActual.length - _listaOffset;
+    if (remaining > 0) {
+        const btn = document.createElement('button');
+        btn.className = 'sb-load-more-btn';
+        btn.textContent = `Mostrar más (${remaining} restantes)`;
+        btn.onclick = () => _renderListPage(true);
+        contenedor.appendChild(btn);
     }
 }
 
@@ -4227,10 +4404,17 @@ function addListHeader(container, text) {
     container.appendChild(h);
 }
 
-function addListItem(container, n) {
+/**
+ * Crea y agrega un ítem de la lista con highlight del término buscado.
+ * Usa _escHtml + _highlightMatch para garantizar seguridad XSS.
+ */
+function addListItem(container, n, searchTerm) {
     const isMarca = n.tipo === 'marca';
     const div = document.createElement('div');
     div.classList.add(isMarca ? 'marca' : 'negocio');
+    // Hacer focusable para navegación por teclado
+    div.setAttribute('tabindex', '0');
+    div.setAttribute('role', 'button');
 
     let dText = '';
     if (miUbicacion && n.lat && n.lng) {
@@ -4243,17 +4427,30 @@ function addListItem(container, n) {
 
     // Open/closed mini indicator for list items
     const openStatus = (!isMarca && !isVehicleSaleType(n) && !isRemateType(n)) ? estaAbierto(n) : null;
-    const dot = openStatus === true  ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#2ecc71;margin-left:4px;vertical-align:middle;"></span>'
-              : openStatus === false ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#e74c3c;margin-left:4px;vertical-align:middle;"></span>'
+    const dot = openStatus === true  ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#2ecc71;margin-left:4px;vertical-align:middle;" aria-label="Abierto"></span>'
+              : openStatus === false ? '<span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#e74c3c;margin-left:4px;vertical-align:middle;" aria-label="Cerrado"></span>'
               : '';
 
-    div.innerHTML =
-        '<strong>' + name + '</strong>' + dot +
-        '<br><span style="color:#666;font-size:12px;">' + address + '</span>' +
-        '<br><small style="color:#aaa;">' + type + dText + '</small>';
+    // Highlight XSS-safe: texto escapado → coincidencias envueltas en <mark>
+    const highlightedName    = _highlightMatch(name,    searchTerm || '');
+    const highlightedAddress = _highlightMatch(address, searchTerm || '');
 
-    // A7: open popup automatically when clicking list item
-    if (n.lat && n.lng) div.onclick = () => focusMarker(n.lat, n.lng);
+    div.innerHTML =
+        '<strong>' + highlightedName + '</strong>' + dot +
+        '<br><span style="color:#555;font-size:12px;">' + highlightedAddress + '</span>' +
+        '<br><small style="color:#6b7280;">' + _escHtml(type) + _escHtml(dText) + '</small>';
+
+    // A7: open popup on click and on Enter/Space (keyboard)
+    if (n.lat && n.lng) {
+        const action = () => {
+            // Remove active state from all other items before marking this one
+            document.querySelectorAll('#lista .sb-item-active').forEach(el => el.classList.remove('sb-item-active'));
+            div.classList.add('sb-item-active');
+            focusMarker(n.lat, n.lng);
+        };
+        div.onclick = action;
+        div.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); action(); } };
+    }
     container.appendChild(div);
 }
 
@@ -5206,6 +5403,8 @@ function openSidebar() {
     sidebar.classList.add('active');
     if (backdrop) backdrop.classList.add('active');
     if (toggle)   toggle.style.opacity = '0', toggle.style.pointerEvents = 'none';
+    // Persistir estado en mobile
+    try { localStorage.setItem(LS_KEY_SIDEBAR, '1'); } catch { /* silencioso */ }
 }
 
 function closeSidebar() {
@@ -5215,6 +5414,8 @@ function closeSidebar() {
     sidebar.classList.remove('active');
     if (backdrop) backdrop.classList.remove('active');
     if (toggle)   toggle.style.opacity = '', toggle.style.pointerEvents = '';
+    // Persistir estado en mobile
+    try { localStorage.setItem(LS_KEY_SIDEBAR, '0'); } catch { /* silencioso */ }
 }
 
 function toggleSidebar() {
@@ -5357,6 +5558,42 @@ function toggleAccordion(btn) {
 }
 
 // ─── Collapsible sidebar sections (sb-section system) ────────────────────────────
+
+// ── localStorage keys para persistencia de UI ────────────────────────────────
+const LS_KEY_SECTIONS  = 'mapita_sb_sections_v1'; // estado de secciones acordeón
+const LS_KEY_SIDEBAR   = 'mapita_sb_open_v1';     // sidebar abierto/cerrado en mobile
+
+/** Lee el estado guardado de secciones (objeto {sectionId: bool}). */
+function _sbSectionsLoad() {
+    try { return JSON.parse(localStorage.getItem(LS_KEY_SECTIONS) || '{}'); } catch { return {}; }
+}
+
+/** Guarda el estado de una sección. */
+function _sbSectionSave(sectionId, isOpen) {
+    try {
+        const state = _sbSectionsLoad();
+        state[sectionId] = isOpen;
+        localStorage.setItem(LS_KEY_SECTIONS, JSON.stringify(state));
+    } catch { /* silencioso si no hay acceso a localStorage */ }
+}
+
+/** Restaura el estado de todas las secciones desde localStorage al cargar. */
+function _sbSectionsRestore() {
+    const state = _sbSectionsLoad();
+    if (!Object.keys(state).length) return; // primera visita: usar defaults del HTML
+    document.querySelectorAll('#sidebar .sb-section').forEach(section => {
+        const id = section.id;
+        if (!id || !(id in state)) return;
+        const hdr  = section.querySelector(':scope > .sb-section-hdr');
+        const body = section.querySelector(':scope > .sb-section-body');
+        if (!hdr || !body) return;
+        const shouldOpen = state[id];
+        hdr.classList.toggle('open', shouldOpen);
+        body.classList.toggle('open', shouldOpen);
+        hdr.setAttribute('aria-expanded', String(shouldOpen));
+    });
+}
+
 function toggleSbSection(hdr) {
     const section = hdr.closest('.sb-section');
     if (!section) return;
@@ -5366,6 +5603,8 @@ function toggleSbSection(hdr) {
     hdr.classList.toggle('open', willOpen);
     body.classList.toggle('open', willOpen);
     hdr.setAttribute('aria-expanded', String(willOpen));
+    // Persistir estado en localStorage
+    if (section.id) _sbSectionSave(section.id, willOpen);
 }
 
 function toggleSbModule(hdr) {
@@ -5386,6 +5625,8 @@ function toggleAllSbSections(e) {
         const section = hdr.closest('.sb-section');
         const body = section ? section.querySelector(':scope > .sb-section-body') : hdr.nextElementSibling;
         if (body) body.classList.toggle('open', _sbAllOpen);
+        // Persistir cada sección
+        if (section && section.id) _sbSectionSave(section.id, _sbAllOpen);
     });
     const icon = document.getElementById('sb-all-icon');
     if (icon) {
@@ -5540,6 +5781,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Apply the active UI language to key DOM elements on page load
     applyI18n();
 
+    // ── Restaurar estado del sidebar desde localStorage ────────────────────────
+    // Secciones del acordeón (desktop y mobile)
+    _sbSectionsRestore();
+    // En mobile: restaurar si el sidebar estaba abierto
+    try {
+        if (window.innerWidth <= 768 && localStorage.getItem(LS_KEY_SIDEBAR) === '1') {
+            openSidebar();
+        }
+    } catch { /* silencioso */ }
+
     // Setup radius slider: update display and circle in real-time
     const radiusInput = document.getElementById('filter-location-radius');
     const radiusValue = document.getElementById('filter-location-radius-value');
@@ -5565,12 +5816,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Load data
     try {
         const rn = await fetch('/api/api_comercios.php').then(r => r.json());
-        if (rn.success) negocios = rn.data;
+        if (rn.success) { negocios = rn.data; _filterCache.clear(); } // invalidate cache when loading fresh data
     } catch (e) { console.error('Error cargando negocios', e); }
 
     try {
         const rm = await fetch('/api/brands.php').then(r => r.json());
-        if (rm.success) marcas = rm.data;
+        if (rm.success) { marcas = rm.data; _filterCache.clear(); } // invalidate cache when loading fresh data
         populateSectorFilter();
     } catch (e) { console.error('Error cargando marcas', e); }
 
