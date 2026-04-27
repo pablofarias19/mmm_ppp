@@ -4854,9 +4854,10 @@ function buildPopup(n, isMarca) {
             p += '</div>';
         }
 
-        // Valor activo
+        // Valor activo (strip any leading "$" to avoid "$$" when value already contains the symbol)
         if (n.valor_activo) {
-            p += '<p style="margin:6px 0 8px;color:#27ae60;font-weight:700;font-size:13px;">💰 Valor activo: $' + escapeHtml(String(n.valor_activo)) + '</p>';
+            const valorActivoDisplay = String(n.valor_activo).replace(/^\s*\$\s*/, '');
+            p += '<p style="margin:6px 0 8px;color:#27ae60;font-weight:700;font-size:13px;">💰 Valor activo: $' + escapeHtml(valorActivoDisplay) + '</p>';
         }
 
         // Founded year
@@ -4872,17 +4873,17 @@ function buildPopup(n, isMarca) {
             p += '</div>';
         }
 
-        // Map visualization buttons
+        // Map visualization buttons (compact: emoji-only with title tooltip)
         const hasConds = n.tiene_zona || n.tiene_licencia || esFranq || n.zona_exclusiva;
         if (hasConds) {
             p += '<div style="margin:8px 0;border-top:1px solid #eee;padding-top:7px;">';
             p += '<p style="margin:0 0 5px;font-size:10px;color:#999;text-transform:uppercase;letter-spacing:.5px;">Ver en mapa</p>';
             p += '<div style="display:flex;flex-wrap:wrap;gap:4px;">';
-            const bs = 'padding:5px 10px;border:none;border-radius:12px;cursor:pointer;font-size:11px;color:white;font-family:sans-serif;';
-            if (n.tiene_zona)     p += '<button onclick="toggleZonaSingle(' + n.lat + ',' + n.lng + ',' + (n.zona_radius_km||10) + ')" style="' + bs + 'background:#3498db;">🌐 Zona</button>';
-            if (n.tiene_licencia) p += '<button onclick="toggleLicenciaSingle(' + n.lat + ',' + n.lng + ')" style="' + bs + 'background:#27ae60;">📜 Licencia</button>';
-            if (esFranq)          p += '<button onclick="toggleFranquiciaSingle(' + n.lat + ',' + n.lng + ')" style="' + bs + 'background:#9c27b0;">🏢 Franquicia</button>';
-            if (n.zona_exclusiva) p += '<button onclick="toggleExclusivaSingle(' + n.lat + ',' + n.lng + ',' + (n.zona_exclusiva_radius_km||2) + ')" style="' + bs + 'background:#e74c3c;">🎯 Exclusiva</button>';
+            const bs = 'padding:5px 8px;border:none;border-radius:12px;cursor:pointer;font-size:16px;color:white;font-family:sans-serif;line-height:1;';
+            if (n.tiene_zona)     p += '<button onclick="toggleZonaSingle(' + n.lat + ',' + n.lng + ',' + (n.zona_radius_km||10) + ')" style="' + bs + 'background:#3498db;" title="Ver zona de influencia" aria-label="Ver zona de influencia">🌐</button>';
+            if (n.tiene_licencia) p += '<button onclick="toggleLicenciaSingle(' + n.lat + ',' + n.lng + ')" style="' + bs + 'background:#27ae60;" title="Ver zona de licencia" aria-label="Ver zona de licencia">📜</button>';
+            if (esFranq)          p += '<button onclick="toggleFranquiciaSingle(' + n.lat + ',' + n.lng + ')" style="' + bs + 'background:#9c27b0;" title="Ver zona de franquicia" aria-label="Ver zona de franquicia">🏢</button>';
+            if (n.zona_exclusiva) p += '<button onclick="toggleExclusivaSingle(' + n.lat + ',' + n.lng + ',' + (n.zona_exclusiva_radius_km||2) + ')" style="' + bs + 'background:#e74c3c;" title="Ver zona exclusiva" aria-label="Ver zona exclusiva">🎯</button>';
             p += '</div></div>';
         }
 
@@ -4891,23 +4892,23 @@ function buildPopup(n, isMarca) {
 
         p += '</div>'; // Close popup-body
 
-        // Footer actions
+        // Footer actions (emoji-only icon buttons with title tooltip for accessibility)
         p += '<div class="popup-footer">';
         var detalleUrl = (n.fuente === 'marcas')
             ? '/brand_form?id=' + n.id
             : '/brand_detail?id=' + n.id;
-        p += '<a href="' + detalleUrl + '" class="popup-action" style="background:#6a2fa2;">📋 Detalle</a>';
+        p += '<a href="' + detalleUrl + '" class="popup-action" style="background:#6a2fa2;" title="Ver detalle de la marca" aria-label="Ver detalle de la marca">📋</a>';
         if (n.website) {
             let safeWebsite = null;
             try {
                 const u = new URL(String(n.website));
                 if (u.protocol === 'https:' || u.protocol === 'http:') safeWebsite = escapeHtml(u.href);
             } catch (_) { /* URL inválida, ignorar */ }
-            if (safeWebsite) p += '<a href="' + safeWebsite + '" target="_blank" rel="noopener" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
+            if (safeWebsite) p += '<a href="' + safeWebsite + '" target="_blank" rel="noopener" class="popup-action" style="background:#e67e22;" title="Visitar sitio web" aria-label="Visitar sitio web">🌐</a>';
         }
         if (n.whatsapp) {
             const waNum = String(n.whatsapp).replace(/\D/g, '');
-            p += '<a href="https://wa.me/' + escapeHtml(waNum) + '" target="_blank" rel="noopener" class="popup-action" style="background:#25d366;">💬 WA</a>';
+            p += '<a href="https://wa.me/' + escapeHtml(waNum) + '" target="_blank" rel="noopener" class="popup-action" style="background:#25d366;" title="Contactar por WhatsApp" aria-label="Contactar por WhatsApp">💬</a>';
         }
         p += '</div>';
 
