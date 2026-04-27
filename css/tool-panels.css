@@ -1,0 +1,210 @@
+/* =====================================================
+   Tool Panels - Paneles Genéricos de Herramientas
+   Estilos para los módulos: Análisis Marcario,
+   Clasificación Niza, Modelos de Negocio,
+   Monetización, Riesgo Legal, Reporte Ejecutivo.
+   ===================================================== */
+
+.tp-wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 32px 20px 60px;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #222;
+}
+
+/* Header bar */
+.tp-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+    background: #1a365d;
+    color: #fff;
+    border-radius: 10px 10px 0 0;
+    padding: 20px 28px;
+    margin-bottom: 0;
+}
+
+.tp-header h1 {
+    font-size: 1.55rem;
+    font-weight: 700;
+    margin: 0;
+    color: #fff;
+}
+
+.tp-header-meta {
+    font-size: 0.88rem;
+    color: #c7d8f0;
+}
+
+/* Card body */
+.tp-card {
+    background: #fff;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0 4px 18px rgba(26,54,93,0.09);
+    padding: 28px 32px 32px;
+    margin-bottom: 22px;
+}
+
+/* Notice / disclaimer box */
+.tp-notice {
+    background: #fffbeb;
+    border-left: 4px solid #d97706;
+    border-radius: 6px;
+    padding: 14px 18px;
+    font-size: 0.93rem;
+    color: #78350f;
+    margin-bottom: 24px;
+    line-height: 1.6;
+}
+
+.tp-notice strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 0.95rem;
+}
+
+/* Description */
+.tp-description {
+    font-size: 1rem;
+    color: #374151;
+    line-height: 1.7;
+    margin-bottom: 24px;
+}
+
+/* What will be included */
+.tp-section-title {
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #1a365d;
+    margin: 0 0 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.tp-bullets {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 26px;
+}
+
+.tp-bullets li {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+    font-size: 0.97rem;
+    color: #374151;
+    line-height: 1.5;
+}
+
+.tp-bullets li:last-child {
+    border-bottom: none;
+}
+
+.tp-bullets li::before {
+    content: "→";
+    color: #2563eb;
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: 1px;
+}
+
+/* Edit note */
+.tp-edit-note {
+    background: #f0fdf4;
+    border: 1px dashed #86efac;
+    border-radius: 6px;
+    padding: 12px 16px;
+    font-size: 0.88rem;
+    color: #166534;
+    margin-bottom: 28px;
+}
+
+/* More info / citation */
+.tp-more-info {
+    background: #f8fafc;
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 28px;
+    font-size: 0.93rem;
+    color: #374151;
+}
+
+.tp-more-info a {
+    color: #2563eb;
+    font-weight: 500;
+    text-decoration: underline;
+}
+
+.tp-more-info a:hover {
+    color: #1e40af;
+}
+
+/* Navigation */
+.tp-nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+}
+
+.tp-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 18px;
+    border-radius: 6px;
+    font-size: 0.93rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.18s, color 0.18s;
+}
+
+.tp-nav-back {
+    background: #e2e8f0;
+    color: #1a365d;
+}
+
+.tp-nav-back:hover {
+    background: #cbd5e1;
+    color: #0f2040;
+}
+
+.tp-nav-detail {
+    background: #2563eb;
+    color: #fff !important;
+}
+
+.tp-nav-detail:hover {
+    background: #1e40af;
+}
+
+/* Brand label badge */
+.tp-brand-badge {
+    display: inline-block;
+    background: #2563eb;
+    color: #fff;
+    border-radius: 20px;
+    padding: 3px 14px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    margin-bottom: 18px;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .tp-header {
+        padding: 16px 18px;
+    }
+    .tp-card {
+        padding: 18px 16px 22px;
+    }
+    .tp-header h1 {
+        font-size: 1.25rem;
+    }
+}

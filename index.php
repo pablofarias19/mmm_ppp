@@ -54,6 +54,7 @@ $routes = [
     '/niza_classification' => __DIR__ . '/niza_classification.php',
     '/brand_analysis' => __DIR__ . '/brand_analysis.php',
     '/business_model' => __DIR__ . '/business_model.php',
+    '/brand_report'   => __DIR__ . '/brand_report.php',
     '/panel-disponibles' => __DIR__ . '/business/panel_disponibles.php',
     '/panel-trabajo'     => __DIR__ . '/business/panel_trabajo.php',
     '/industrias'           => __DIR__ . '/views/industry/dashboard_industries.php',
