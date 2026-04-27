@@ -349,10 +349,19 @@ function normalizar(s) {
 }
 
 // ── Formatear valor activo de marca (evita doble símbolo "$$") ───────────────
+/**
+ * Formatea un valor de activo marcario para mostrar un único símbolo de peso.
+ * Elimina cualquier "$" inicial para evitar doble símbolo cuando el valor
+ * ya viene formateado desde la base de datos.
+ * @param {string|number} v - Valor del activo (ej: "50000", "$50000", 50000)
+ * @returns {string} Valor formateado con un solo "$" (ej: "$50,000"),
+ *                   o cadena vacía si el valor está vacío.
+ */
 function fmtValor(v) {
     const s = String(v).replace(/^\s*\$\s*/, '');
+    if (s === '') return '';
     const n = Number(s);
-    return '$' + (isNaN(n) || s === '' ? s : n.toLocaleString());
+    return '$' + (isNaN(n) ? s : n.toLocaleString());
 }
 
 // ── Filtrar por búsqueda ─────────────────────────────────────────────────────
