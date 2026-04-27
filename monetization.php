@@ -7,7 +7,7 @@ try {
     $controller = new MonetizationController();
 
     if (!$marca_id) {
-        throw new \RuntimeException('no_id');
+        throw new \RuntimeException('Missing marca_id parameter');
     }
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {

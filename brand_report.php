@@ -8,7 +8,7 @@ try {
     require_once __DIR__ . '/models/BrandAnalysis.php';
 
     if (!$marca_id) {
-        throw new \RuntimeException('no_id');
+        throw new \RuntimeException('Missing marca_id parameter');
     }
 
     $db       = \Core\Database::getInstance()->getConnection();

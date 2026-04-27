@@ -4,14 +4,14 @@
  *
  * Panel genérico reutilizable para los módulos de herramientas de marca.
  *
- * Variables esperadas (definidas antes de incluir este archivo):
- *   $tool_title       (string)  Título del módulo
- *   $tool_description (string)  Descripción breve de qué consiste el módulo
- *   $tool_bullets     (array)   Ítems de "qué incluirá" en el futuro
- *   $tool_edit_note   (string)  Nota de edición/personalización futura
- *   $brand_label      (string)  Etiqueta de la marca/proyecto (puede ser "demo")
- *   $marca_id         (int|null) ID de la marca
- *   $back_url         (string)  URL de "Volver"
+ * Variables opcionales (con valores por defecto) que pueden definirse antes de incluir:
+ *   $tool_title       (string)  Título del módulo                  (default: 'Módulo')
+ *   $tool_description (string)  Descripción breve del módulo       (default: '')
+ *   $tool_bullets     (array)   Ítems de "qué incluirá" el módulo  (default: [])
+ *   $tool_edit_note   (string)  Nota de edición/personalización    (default: mensaje genérico)
+ *   $brand_label      (string)  Etiqueta de la marca/proyecto      (default: 'Demo')
+ *   $marca_id         (int|null) ID de la marca                    (default: null)
+ *   $back_url         (string)  URL del botón "Volver"             (default: '/marcas')
  */
 $tool_title       = $tool_title       ?? 'Módulo';
 $tool_description = $tool_description ?? '';
@@ -92,12 +92,12 @@ $back_url         = $back_url         ?? '/marcas';
         </div>
 
         <!-- Navigation -->
-        <nav class="tp-nav">
-            <a class="tp-nav-back" href="<?= htmlspecialchars($back_url) ?>">← Volver</a>
+        <nav class="tp-nav" aria-label="Navegación del módulo">
+            <a class="tp-nav-back" href="<?= htmlspecialchars($back_url) ?>" aria-label="Volver a la página anterior">← Volver</a>
             <?php if ($marca_id): ?>
-            <a class="tp-nav-detail" href="/brand_detail?id=<?= (int)$marca_id ?>">Ver detalle de marca</a>
+            <a class="tp-nav-detail" href="/brand_detail?id=<?= (int)$marca_id ?>" aria-label="Ver detalle de la marca">Ver detalle de marca</a>
             <?php endif; ?>
-            <a class="tp-nav-back" href="/marcas">Listado de marcas</a>
+            <a class="tp-nav-back" href="/marcas" aria-label="Ir al listado de marcas">Listado de marcas</a>
         </nav>
 
     </div>
