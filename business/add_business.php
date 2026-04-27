@@ -1352,7 +1352,7 @@ $descriptionPlaceholders = [
                     </div>
                     <!-- Fila 10: Link externo del inmueble -->
                     <div style="margin-bottom:12px;">
-                        <label style="font-size:.82em;font-weight:600;">🔗 Link del inmueble</label>
+                        <label for="inm-web-url" style="font-size:.82em;font-weight:600;">🔗 Link del inmueble</label>
                         <input type="url" id="inm-web-url" maxlength="500" placeholder="https://www.inmobiliaria.com/propiedad/123" style="width:100%;padding:8px;border:1px solid #d1d5db;border-radius:6px;">
                         <p style="font-size:.75em;color:#6b7280;margin:3px 0 0;">URL de la página del inmueble en la web de la inmobiliaria (opcional). Aparecerá como botón "Detalles" en el popup.</p>
                     </div>
@@ -1373,7 +1373,7 @@ $descriptionPlaceholders = [
                         </div>
                         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;">
                             <div>
-                                <label style="font-size:.78em;font-weight:600;">Archivo (JPG/PNG/WebP, máx 120 KB)</label>
+                                <label for="inm-foto-file" style="font-size:.78em;font-weight:600;">Archivo (JPG/PNG/WebP, máx 120 KB)</label>
                                 <input type="file" id="inm-foto-file" accept=".jpg,.jpeg,.png,.webp" style="font-size:.82em;">
                             </div>
                             <button type="button" onclick="subirFotoInmueble()" style="padding:7px 14px;background:#16a34a;color:white;border:none;border-radius:6px;cursor:pointer;font-size:.85em;">📤 Subir foto</button>
