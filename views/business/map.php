@@ -4243,7 +4243,11 @@ function mostrarMarcadores(lista) {
 
         const name = n.nombre || n.name || 'Sin nombre';
 
-        marker.bindPopup(buildPopup(n, isMarca), { maxWidth: 290 });
+        marker.bindPopup(buildPopup(n, isMarca), {
+            maxWidth: 290,
+            autoPanPaddingTopLeft: [5, 80],
+            autoPanPaddingBottomRight: [5, 10]
+        });
 
         marker._selectionKey = getSelectionKey(itemKind, itemId);
         marker._selectionItem = {
@@ -4654,10 +4658,10 @@ function buildPopup(n, isMarca) {
             p += '</div>';
         }
 
-        // A6: Description excerpt
+        // A6: Description excerpt (hidden on mobile via .popup-desc CSS rule)
         if (n.description && n.description.trim()) {
             const exc = n.description.length > 120 ? n.description.substring(0, 120) + '…' : n.description;
-            p += '<p style="margin:6px 0;color:#555;font-size:12px;line-height:1.5;">' + exc + '</p>';
+            p += '<p class="popup-desc" style="margin:6px 0;color:#555;font-size:12px;line-height:1.5;">' + exc + '</p>';
         }
 
         // Details

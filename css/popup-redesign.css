@@ -200,9 +200,17 @@
 
 /* ─── RESPONSIVE ──────────────────────────────────────────────────────── */
 @media (max-width: 480px) {
-    /* Prevent popup overflow on narrow screens */
+    /* Prevent popup overflow on narrow screens and constrain total height
+       so Leaflet autoPan does not need to pan far (avoids the auto-close
+       glitch caused by autoPan-triggered touch events on mobile). */
+    .leaflet-popup-content-wrapper {
+        max-width: 92vw !important;
+        width: 92vw !important;
+    }
+
     .leaflet-popup-content {
-        max-width: calc(100vw - 40px) !important;
+        max-width: calc(92vw - 4px) !important;
+        overflow-x: hidden !important;
     }
 
     /* Compact header */
@@ -210,23 +218,38 @@
         padding: 10px 12px;
     }
 
-    /* Compact body */
+    /* Compact body: scrollable so long content does not push popup
+       beyond the viewport and trigger the autoPan→close cycle.
+       130px ≈ popup header (~65px) + popup footer (~65px) heights. */
     .popup-body {
+        max-height: calc(72vh - 130px) !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
         padding: 8px 10px 6px !important;
     }
 
+    /* ── Hide business description on mobile — saves space ── */
+    .popup-desc {
+        display: none !important;
+    }
+
+    /* ── Action buttons: 2-column grid instead of full-width column ── */
     .popup-footer {
-        flex-direction: column;
-        gap: 5px;
-        padding: 8px 10px;
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 5px !important;
+        padding: 8px 10px !important;
     }
 
     .popup-action {
-        width: 100%;
-        min-width: 0;
-        padding: 9px 10px;
-        font-size: 12px;
-        text-align: center;
+        min-width: 0 !important;
+        padding: 8px 6px !important;
+        font-size: 11px !important;
+        text-align: center !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        width: auto !important;
     }
 
     /* ── Hide WT (Walkie Talkie) system section on mobile ── */
