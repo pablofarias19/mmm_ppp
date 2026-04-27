@@ -14,11 +14,14 @@ require_once __DIR__ . '/../../includes/db_helper.php';
 
 setSecurityHeaders();
 
-$brandId = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$brandId  = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+$marca_id = $brandId ?: null;
 if ($brandId <= 0) {
     header('Location: /marcas');
     exit;
 }
+
+try {
 
 $db = getDbConnection();
 
@@ -37,9 +40,7 @@ if (!$brand && ($userId > 0 || $isAdmin)) {
 }
 
 if (!$brand) {
-    http_response_code(404);
-    echo '<p style="font-family:sans-serif;padding:40px;text-align:center;">Marca no encontrada. <a href="/marcas">Volver</a></p>';
-    exit;
+    throw new \RuntimeException('Marca no encontrada');
 }
 
 $canEdit = $userId > 0 && ((int)($brand['user_id'] ?? 0) === $userId || $isAdmin);
@@ -111,6 +112,35 @@ foreach ([
         $redesActivas[$k] = array_merge($r, ['handle' => $brand[$k]]);
     }
 }
+
+} catch (\Throwable $e) {
+    $brand_label      = $marca_id ? "Marca #$marca_id" : 'Demo';
+    $back_url         = '/marcas';
+    $show_detail_link = false;
+    $tool_title       = 'Detalle de Marca';
+    $tool_description = 'El Detalle de Marca centraliza toda la información registral, legal, financiera y estratégica de su marca. '
+        . 'Acceda a datos de clasificación NIZA, situación INPI, canales de distribución, redes sociales y herramientas de análisis avanzado.';
+    $tool_bullets     = [
+        'Información registral completa (nombre, rubro, fundación, estado).',
+        'Situación ante el INPI y vencimiento de registros.',
+        'Canales de distribución y alcance geográfico.',
+        'Presencia digital: redes sociales, web y WhatsApp.',
+        'Acceso a herramientas de análisis: Niza, modelo de negocio, legal y reporte.',
+        'Panel gestionado bajo consulta profesional por Farias Ortiz.',
+    ];
+    $tool_edit_note   = 'Si el detalle de marca no está disponible, puede acceder igualmente a las herramientas de análisis usando los botones más abajo.';
+    $tool_links       = $marca_id ? [
+        ['url' => "/brand_analysis?id=$marca_id",      'label' => '📊 Análisis Marcario'],
+        ['url' => "/niza_classification?id=$marca_id", 'label' => '📋 Clasificación Niza'],
+        ['url' => "/business_model?id=$marca_id",      'label' => '♟️ Modelos de Negocio'],
+        ['url' => "/monetization?id=$marca_id",        'label' => '💰 Monetización'],
+        ['url' => "/legal_risk?id=$marca_id",          'label' => '⚖️ Riesgo Legal'],
+        ['url' => "/brand_report?id=$marca_id",        'label' => '📑 Reporte Ejecutivo'],
+    ] : [];
+    require __DIR__ . '/_tool_panel.php';
+    exit;
+}
+
 ?>
 <!DOCTYPE html>
 <html lang="es">

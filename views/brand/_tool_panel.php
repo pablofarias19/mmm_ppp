@@ -20,6 +20,8 @@ $tool_edit_note   = $tool_edit_note   ?? 'Este panel es editable directamente de
 $brand_label      = $brand_label      ?? 'Demo';
 $marca_id         = $marca_id         ?? null;
 $back_url         = $back_url         ?? '/marcas';
+$show_detail_link = $show_detail_link ?? true;
+$tool_links       = $tool_links       ?? [];
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -91,10 +93,22 @@ $back_url         = $back_url         ?? '/marcas';
             para conocer todos los servicios de asesoría de marcas disponibles.
         </div>
 
+        <!-- Tools links (optional, shown when $tool_links is provided) -->
+        <?php if (!empty($tool_links)): ?>
+        <h3 class="tp-section-title">🔬 Herramientas de Análisis</h3>
+        <div class="tp-tools-grid">
+            <?php foreach ($tool_links as $tl): ?>
+            <a href="<?= htmlspecialchars($tl['url']) ?>" class="tp-tool-link">
+                <?= htmlspecialchars($tl['label']) ?>
+            </a>
+            <?php endforeach; ?>
+        </div>
+        <?php endif; ?>
+
         <!-- Navigation -->
         <nav class="tp-nav" aria-label="Navegación del módulo">
             <a class="tp-nav-back" href="<?= htmlspecialchars($back_url) ?>" aria-label="Volver a la página anterior">← Volver</a>
-            <?php if ($marca_id): ?>
+            <?php if ($marca_id && $show_detail_link): ?>
             <a class="tp-nav-detail" href="/brand_detail?id=<?= (int)$marca_id ?>" aria-label="Ver detalle de la marca">Ver detalle de marca</a>
             <?php endif; ?>
             <a class="tp-nav-back" href="/marcas" aria-label="Ir al listado de marcas">Listado de marcas</a>
