@@ -526,7 +526,16 @@
             if (!data.data.length) { el.innerHTML = '<div class="cq-empty">Sin consultas recibidas pendientes.</div>'; return; }
             el.innerHTML = data.data.map(renderReceivedItem).join('');
             el.querySelectorAll('.cq-item').forEach(item => {
-                item.addEventListener('click', () => openThread(item.dataset.id, item.dataset.bizId));
+                item.addEventListener('click', function(e) {
+                    if (e.target.closest('.cq-dismiss-btn')) return;
+                    openThread(item.dataset.id, item.dataset.bizId);
+                });
+            });
+            el.querySelectorAll('.cq-dismiss-btn').forEach(btn => {
+                btn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    cqDismissReceived(parseInt(this.dataset.id, 10), parseInt(this.dataset.bizId, 10));
+                });
             });
         } catch { el.innerHTML = '<div class="cq-empty">Error de red.</div>'; }
     }
@@ -549,9 +558,9 @@
     }
 
     function renderConsultaItem(c) {
-        const canClose = c.status === 'answered' || (c.total_resp > 0 && c.status === 'open');
+        const canClose = c.status === 'open' || c.status === 'answered';
         const closeBtn = canClose
-            ? `<button class="cq-close-btn" data-id="${c.id}" title="Cerrar consulta (ya fue respondida)" 
+            ? `<button class="cq-close-btn" data-id="${c.id}" title="Cerrar consulta" 
                        style="background:none;border:1px solid #dc2626;border-radius:4px;color:#dc2626;font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;white-space:nowrap;" 
                        onclick="event.stopPropagation()">✕ Cerrar</button>`
             : '';
@@ -581,6 +590,10 @@
                 <span style="font-size:11px;color:#6b7280;">→ ${esc(c.business_name)}</span>
                 <span class="cq-item-date">${esc(c.created_at)}</span>
                 ${nuevo}
+                <button class="cq-dismiss-btn" data-id="${c.id}" data-biz-id="${c.business_id}"
+                        title="Descartar esta consulta recibida"
+                        style="background:none;border:1px solid #9ca3af;border-radius:4px;color:#6b7280;font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;white-space:nowrap;"
+                        onclick="event.stopPropagation()">✕ Descartar</button>
             </div>
             <div class="cq-item-texto">"${esc(c.texto)}"</div>
         </div>`;
@@ -603,6 +616,29 @@
                 loadSentList();
             } else {
                 showMapToast('❌ ' + (data.error || 'No se pudo cerrar.'));
+            }
+        } catch {
+            showMapToast('❌ Error de red.');
+        }
+    };
+
+    /**
+     * Descarta una consulta recibida (modo 'dismiss'). Llamado desde el botón "✕ Descartar".
+     */
+    window.cqDismissReceived = async function(consultaId, businessId) {
+        if (!confirm('¿Descartar esta consulta recibida? Ya no aparecerá en tu bandeja.')) return;
+        try {
+            const res  = await fetch('/api/consultas.php', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({ action: 'dismiss_received', consulta_id: consultaId, business_id: businessId }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                showMapToast('✅ ' + data.message);
+                loadReceivedList();
+            } else {
+                showMapToast('❌ ' + (data.error || 'No se pudo descartar.'));
             }
         } catch {
             showMapToast('❌ Error de red.');

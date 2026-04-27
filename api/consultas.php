@@ -6,7 +6,7 @@
  *   preview               — cuántos negocios recibirían la consulta (sin guardar)
  *   thread                — hilo completo de una consulta (texto + respuestas)
  *   my_consultas          — consultas enviadas por el usuario actual (filtra status=active por defecto)
- *   pending               — consultas recibidas sin respuesta (para propietarios; excluye cerradas)
+ *   pending               — consultas recibidas sin respuesta (para propietarios; excluye cerradas y descartadas)
  *   reply_count           — número de respuestas nuevas desde un id dado (polling)
  *   rubros_proveedor      — lista de business_type que tienen negocios "P"
  *   influence_query       — busca inmobiliarias por zona de influencia
@@ -16,6 +16,7 @@
  *   reply                   — el propietario de un negocio responde
  *   mark_read               — marca una consulta como leída por el negocio
  *   close_consulta          — cierra/archiva una consulta (remitente o admin)
+ *   dismiss_received        — destinatario descarta una consulta recibida
  *   toggle_proveedor        — activa/desactiva flag es_proveedor (dueño)
  *   toggle_consulta_habilitada — activa/desactiva flag consulta_habilitada (admin)
  *   toggle_consulta_siempre    — admin marca negocio para siempre incluido en masivas
@@ -519,11 +520,13 @@ if ($method === 'GET') {
     }
 
     // ── pending: consultas recibidas sin respuesta (para propietarios) ─────────
-    // Excluye consultas que el remitente ya cerró/archivó
+    // Excluye consultas que el remitente ya cerró/archivó y las que el destinatario descartó
     if ($action === 'pending') {
         $uid = cq_require_login();
         $hasStatus    = mapitaColumnExists($db, 'consultas_masivas', 'status');
-        $statusFilter = $hasStatus ? " AND cm.status IN ('open','answered')" : '';
+        $hasDismissed = mapitaColumnExists($db, 'consultas_destinatarios', 'dismissed_at');
+        $statusFilter   = $hasStatus    ? " AND cm.status IN ('open','answered')" : '';
+        $dismissFilter  = $hasDismissed ? " AND cd.dismissed_at IS NULL" : '';
         $stmt = $db->prepare(
             "SELECT cm.id, cm.tipo, cm.rubro, cm.texto,
                     DATE_FORMAT(cm.created_at,'%d/%m/%Y %H:%i') AS created_at,
@@ -539,6 +542,7 @@ if ($method === 'GET') {
                        AND cr.business_id  = cd.business_id
                 )
                 $statusFilter
+                $dismissFilter
               ORDER BY cm.id DESC
               LIMIT 50"
         );
@@ -561,13 +565,15 @@ if ($method === 'GET') {
         $stmt->execute([$uid, $sinceId]);
         $count = (int)$stmt->fetchColumn();
 
-        // También contar consultas recibidas no leídas (para propietarios; excluye cerradas)
-        $pendingStatusFilter = $hasStatus ? " AND cm.status IN ('open','answered')" : '';
+        // También contar consultas recibidas no leídas (para propietarios; excluye cerradas y descartadas)
+        $pendingStatusFilter  = $hasStatus ? " AND cm.status IN ('open','answered')" : '';
+        $hasDismissedRc       = mapitaColumnExists($db, 'consultas_destinatarios', 'dismissed_at');
+        $pendingDismissFilter = $hasDismissedRc ? " AND cd.dismissed_at IS NULL" : '';
         $stmtPending = $db->prepare(
             "SELECT COUNT(*) FROM consultas_destinatarios cd
               JOIN businesses b ON b.id = cd.business_id
               JOIN consultas_masivas cm ON cm.id = cd.consulta_id
-             WHERE b.user_id = ? AND cd.leido_en IS NULL $pendingStatusFilter"
+             WHERE b.user_id = ? AND cd.leido_en IS NULL $pendingStatusFilter $pendingDismissFilter"
         );
         $stmtPending->execute([$uid]);
         $pendingCount = (int)$stmtPending->fetchColumn();
@@ -948,6 +954,50 @@ if ($method === 'POST') {
         $msg = ($newStatus === 'archived') ? 'Consulta archivada.' : 'Consulta cerrada correctamente.';
         auditLog('close_consulta', 'consulta_masiva', $consultaId, ['status' => $newStatus]);
         cq_ok(['status' => $newStatus], $msg);
+    }
+
+    // ── dismiss_received: el destinatario descarta una consulta recibida ────────
+    // POST {action:'dismiss_received', consulta_id:N, business_id:N}
+    // Solo el propietario del negocio destinatario puede descartar.
+    if ($action === 'dismiss_received') {
+        $uid        = cq_require_login();
+        $consultaId = (int)($input['consulta_id'] ?? 0);
+        $businessId = (int)($input['business_id'] ?? 0);
+        if ($consultaId <= 0) cq_err('consulta_id requerido.');
+        if ($businessId  <= 0) cq_err('business_id requerido.');
+
+        if (!mapitaColumnExists($db, 'consultas_destinatarios', 'dismissed_at')) {
+            cq_err('El módulo de descarte aún no está disponible.', 503);
+        }
+
+        // Verificar que el negocio pertenece al usuario autenticado
+        $stmtB = $db->prepare("SELECT user_id FROM businesses WHERE id = ? LIMIT 1");
+        $stmtB->execute([$businessId]);
+        $biz = $stmtB->fetch(\PDO::FETCH_ASSOC);
+        if (!$biz) cq_err('Negocio no encontrado.', 404);
+        if ((int)$biz['user_id'] !== $uid && !isAdmin()) {
+            cq_err('No tenés permiso para descartar esta consulta.', 403);
+        }
+
+        // Verificar que existe la entrada en consultas_destinatarios
+        $stmtCd = $db->prepare(
+            "SELECT id, dismissed_at FROM consultas_destinatarios
+              WHERE consulta_id = ? AND business_id = ? LIMIT 1"
+        );
+        $stmtCd->execute([$consultaId, $businessId]);
+        $cd = $stmtCd->fetch(\PDO::FETCH_ASSOC);
+        if (!$cd) cq_err('Consulta recibida no encontrada.', 404);
+        if ($cd['dismissed_at'] !== null) {
+            cq_ok([], 'La consulta ya había sido descartada.');
+        }
+
+        $db->prepare(
+            "UPDATE consultas_destinatarios SET dismissed_at = NOW()
+              WHERE consulta_id = ? AND business_id = ?"
+        )->execute([$consultaId, $businessId]);
+
+        auditLog('dismiss_received', 'consulta_destinatario', $consultaId, ['business_id' => $businessId]);
+        cq_ok([], 'Consulta descartada correctamente.');
     }
 }
 

@@ -1506,15 +1506,15 @@ try {
                                 aria-label="Ayuda sobre CERCA">?</button>
                     </div>
                     <!-- Consulta por zona de influencia -->
-                    <div style="margin-top:6px;display:flex;gap:5px;align-items:center;">
+                    <div style="margin-top:6px;display:flex;flex-direction:column;gap:5px;">
                         <input type="text" id="influencia-zona-input" maxlength="80"
                                placeholder="Barrio o zona (ej: Palermo)"
-                               style="flex:1;padding:7px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:12px;"
+                               style="width:100%;box-sizing:border-box;padding:7px 10px;border:1px solid #d1d5db;border-radius:7px;font-size:12px;"
                                onkeydown="if(event.key==='Enter')buscarInmobiliariasPorZona()">
                         <button type="button" onclick="buscarInmobiliariasPorZona()"
                                 class="cq-btn"
                                 title="Buscar inmobiliarias por zona de influencia (sin requerir cercanía)"
-                                style="white-space:nowrap;min-width:0;padding:7px 10px;">
+                                style="width:100%;padding:7px 10px;">
                             🗺️ Por Zona
                         </button>
                     </div>
