@@ -9,7 +9,7 @@ session_start();
 require_once __DIR__ . '/../core/Database.php';
 require_once __DIR__ . '/../core/helpers.php';
 
-$validTabs = ['negocios','marcas','noticias','eventos','trivias','encuestas','ofertas','transmisiones','moderacion','sectores','comercial','camaras','agencias','lineas','competencias','radar_legal'];
+$validTabs = ['negocios','marcas','noticias','eventos','trivias','encuestas','ofertas','transmisiones','moderacion','sectores','comercial','camaras','agencias','lineas','competencias','radar_legal','consultas_archivadas'];
 $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
 ?>
 <!DOCTYPE html>
@@ -319,6 +319,7 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
         <button id="tab-btn-lineas"         class="tab-btn <?php echo $tab==='lineas'         ? 'active' : ''; ?>" onclick="switchTab('lineas')">📋 Líneas de Política</button>
         <button id="tab-btn-competencias"   class="tab-btn <?php echo $tab==='competencias'   ? 'active' : ''; ?>" onclick="switchTab('competencias')">⚖️ Competencias</button>
         <button id="tab-btn-radar_legal"    class="tab-btn <?php echo $tab==='radar_legal'    ? 'active' : ''; ?>" onclick="switchTab('radar_legal')">🌐 Radar Legal</button>
+        <button id="tab-btn-consultas_archivadas" class="tab-btn <?php echo $tab==='consultas_archivadas' ? 'active' : ''; ?>" onclick="switchTab('consultas_archivadas')">🗄️ Consultas Archivadas</button>
     </div>
 
     <!-- NEGOCIOS -->
@@ -693,6 +694,45 @@ $tab = in_array($_GET['tab'] ?? '', $validTabs) ? $_GET['tab'] : 'negocios';
             <div id="radar-catalog-list"><p style="color:#6b7280;">⏳ Cargando catálogos...</p></div>
         </div>
     </div>
+
+    <!-- ── CONSULTAS ARCHIVADAS + WT EXPIRADOS ──────────────── -->
+    <div class="tab-content <?php echo $tab==='consultas_archivadas' ? 'active' : ''; ?>" id="tab-consultas_archivadas">
+        <div class="section-header">
+            <h2>🗄️ Consultas Archivadas &amp; Mensajes WT Expirados</h2>
+        </div>
+
+        <!-- Consultas archivadas -->
+        <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:18px;margin-bottom:24px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <h3 style="margin:0;">📩 Consultas Archivadas</h3>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-sm btn-secondary" onclick="loadArchivedConsultas()">🔄 Actualizar</button>
+                    <button class="btn btn-sm btn-danger"    onclick="deleteAllArchivedConsultas()">🗑 Eliminar todas</button>
+                </div>
+            </div>
+            <p style="font-size:12px;color:#6b7280;margin:0 0 12px;">
+                Las consultas se archivan automáticamente al superar su duración máxima:
+                <strong>General / Proveedores / Masiva / Envío → 30 minutos</strong>.
+            </p>
+            <div id="archived-consultas-list"><p style="color:#9ca3af;font-size:13px;">⏳ Cargando...</p></div>
+        </div>
+
+        <!-- Mensajes WT expirados -->
+        <div style="background:white;border-radius:10px;border:1px solid #e5e7eb;padding:18px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <h3 style="margin:0;">💬 Conversaciones WT Expiradas</h3>
+                <div style="display:flex;gap:8px;">
+                    <button class="btn btn-sm btn-secondary" onclick="loadExpiredWT()">🔄 Actualizar</button>
+                    <button class="btn btn-sm btn-danger"    onclick="purgeAllExpiredWT()">🗑 Purgar todos</button>
+                </div>
+            </div>
+            <p style="font-size:12px;color:#6b7280;margin:0 0 12px;">
+                Los mensajes WT se eliminan automáticamente pasadas <strong>2 horas</strong> desde su envío.
+                Aquí se muestran los aún pendientes de purgar y pueden eliminarse en lote.
+            </p>
+            <div id="expired-wt-list"><p style="color:#9ca3af;font-size:13px;">⏳ Cargando...</p></div>
+        </div>
+    </div>
 </div>
 
 
@@ -1056,6 +1096,7 @@ function switchTab(tab) {
     else if (tab === 'lineas')       loadLineas();
     else if (tab === 'competencias') loadCompetencias();
     else if (tab === 'radar_legal')  loadRadarLegal();
+    else if (tab === 'consultas_archivadas') { loadArchivedConsultas(); loadExpiredWT(); }
     else {
         loadData(tab);
         if (tab === 'encuestas') loadEncuestasStats();
@@ -2561,6 +2602,7 @@ window.addEventListener('load', () => {
     else if (tab === 'lineas')       loadLineas();
     else if (tab === 'competencias') loadCompetencias();
     else if (tab === 'radar_legal')  loadRadarLegal();
+    else if (tab === 'consultas_archivadas') { loadArchivedConsultas(); loadExpiredWT(); }
     else {
         loadData(tab);
         if (tab === 'encuestas') loadEncuestasStats();
@@ -3147,6 +3189,128 @@ async function guardarRadarConfig() {
     } catch(err) {
         resEl.innerHTML = '<span style="color:#ef4444;">❌ ' + escapeHtml(err.message) + '</span>';
     }
+}
+
+// ── Consultas Archivadas ─────────────────────────────────────────────────────
+async function loadArchivedConsultas(page = 1) {
+    const el = document.getElementById('archived-consultas-list');
+    if (!el) return;
+    el.innerHTML = '<p style="color:#9ca3af;font-size:13px;">⏳ Cargando...</p>';
+    try {
+        const res  = await fetch('/api/consultas.php?action=list_archived&page=' + page);
+        const data = await res.json();
+        if (!data.success) { el.innerHTML = '<p style="color:#ef4444;">❌ ' + escapeHtml(data.error||'Error') + '</p>'; return; }
+        const { items, total } = data.data;
+        if (!items || items.length === 0) {
+            el.innerHTML = '<p style="color:#6b7280;font-size:13px;">✅ No hay consultas archivadas.</p>';
+            return;
+        }
+        const tipoLabel = t => ({ masiva:'Masiva', general:'General', global_proveedor:'Proveedor', envio:'Envío' }[t] || t);
+        let html = `<p style="font-size:12px;color:#6b7280;margin:0 0 8px;">Total archivadas: <strong>${total}</strong></p>`;
+        html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+        html += '<thead><tr style="background:#f9fafb;"><th style="padding:6px 8px;text-align:left;">ID</th><th>Tipo</th><th>Rubro</th><th>Texto</th><th>Remitente</th><th>Creada</th><th>Archivada</th><th>Dest.</th><th>Resp.</th><th></th></tr></thead><tbody>';
+        items.forEach(c => {
+            html += `<tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:6px 8px;">#${c.id}</td>
+                <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11px;">${escapeHtml(tipoLabel(c.tipo))}</span></td>
+                <td>${escapeHtml(c.rubro||'—')}</td>
+                <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(c.texto)}">${escapeHtml(c.texto)}</td>
+                <td>${escapeHtml(c.sender_name||'—')}</td>
+                <td style="white-space:nowrap;">${escapeHtml(c.created_at)}</td>
+                <td style="white-space:nowrap;">${escapeHtml(c.closed_at_fmt||'—')}</td>
+                <td style="text-align:center;">${c.total_dest}</td>
+                <td style="text-align:center;">${c.total_resp}</td>
+                <td><button class="btn btn-sm btn-danger" onclick="deleteArchivedConsulta(${c.id})">🗑</button></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        el.innerHTML = html;
+    } catch(err) {
+        el.innerHTML = '<p style="color:#ef4444;font-size:13px;">❌ ' + escapeHtml(err.message) + '</p>';
+    }
+}
+
+async function deleteArchivedConsulta(id) {
+    if (!confirm('¿Eliminar la consulta archivada #' + id + '?')) return;
+    try {
+        const res  = await fetch('/api/consultas.php', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ action:'delete_archived', consulta_id: id })
+        });
+        const data = await res.json();
+        if (data.success) { showToast('✅ Consulta #' + id + ' eliminada.', 'success'); loadArchivedConsultas(); }
+        else               { showToast('❌ ' + (data.error||'Error'), 'error'); }
+    } catch(err) { showToast('❌ ' + err.message, 'error'); }
+}
+
+async function deleteAllArchivedConsultas() {
+    if (!confirm('¿Eliminar TODAS las consultas archivadas? Esta acción no se puede deshacer.')) return;
+    try {
+        const res  = await fetch('/api/consultas.php', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ action:'delete_archived', all: true })
+        });
+        const data = await res.json();
+        if (data.success) { showToast('✅ ' + (data.message||'Eliminadas.'), 'success'); loadArchivedConsultas(); }
+        else               { showToast('❌ ' + (data.error||'Error'), 'error'); }
+    } catch(err) { showToast('❌ ' + err.message, 'error'); }
+}
+
+// ── WT Expirados ─────────────────────────────────────────────────────────────
+async function loadExpiredWT() {
+    const el = document.getElementById('expired-wt-list');
+    if (!el) return;
+    el.innerHTML = '<p style="color:#9ca3af;font-size:13px;">⏳ Cargando...</p>';
+    try {
+        const res  = await fetch('/api/wt.php', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ action:'list_expired' })
+        });
+        const data = await res.json();
+        if (!data.success) { el.innerHTML = '<p style="color:#ef4444;">❌ ' + escapeHtml(data.error||'Error') + '</p>'; return; }
+        const items = data.data?.items || [];
+        if (items.length === 0) {
+            el.innerHTML = '<p style="color:#6b7280;font-size:13px;">✅ No hay mensajes WT expirados.</p>';
+            return;
+        }
+        let html = '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
+        html += '<thead><tr style="background:#f9fafb;"><th style="padding:6px 8px;text-align:left;">Tipo</th><th>ID Entidad</th><th>Mensajes</th><th>Más antiguo</th><th>Más reciente</th><th></th></tr></thead><tbody>';
+        items.forEach(c => {
+            html += `<tr style="border-bottom:1px solid #f3f4f6;">
+                <td style="padding:6px 8px;">${escapeHtml(c.entity_type)}</td>
+                <td>#${c.entity_id}</td>
+                <td style="text-align:center;">${c.total_messages}</td>
+                <td style="white-space:nowrap;">${escapeHtml(c.oldest_msg)}</td>
+                <td style="white-space:nowrap;">${escapeHtml(c.newest_msg)}</td>
+                <td><button class="btn btn-sm btn-danger" onclick="purgeExpiredWT('${escapeHtml(c.entity_type)}',${c.entity_id})">🗑</button></td>
+            </tr>`;
+        });
+        html += '</tbody></table>';
+        el.innerHTML = html;
+    } catch(err) {
+        el.innerHTML = '<p style="color:#ef4444;font-size:13px;">❌ ' + escapeHtml(err.message) + '</p>';
+    }
+}
+
+async function purgeExpiredWT(entityType, entityId) {
+    if (!confirm('¿Eliminar los mensajes WT expirados de esta entidad?')) return;
+    try {
+        const body = entityType && entityId
+            ? { action:'purge_expired', entity_type: entityType, entity_id: entityId }
+            : { action:'purge_expired' };
+        const res  = await fetch('/api/wt.php', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (data.success) { showToast('✅ ' + (data.message||'Eliminados.'), 'success'); loadExpiredWT(); }
+        else               { showToast('❌ ' + (data.error||'Error'), 'error'); }
+    } catch(err) { showToast('❌ ' + err.message, 'error'); }
+}
+
+async function purgeAllExpiredWT() {
+    if (!confirm('¿Eliminar TODOS los mensajes WT expirados? Esta acción no se puede deshacer.')) return;
+    await purgeExpiredWT(null, null);
 }
 </script>
 

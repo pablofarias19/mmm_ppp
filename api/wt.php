@@ -181,6 +181,8 @@ const WT_RATE_LIMIT_PER_MINUTE = 5;
 const WT_PRESENCE_TIMEOUT_SECONDS = 25;
 const WT_MAX_USERNAME_LEN = 80;
 const WT_MAX_ACTIVE_MESSAGES_PER_ENTITY = 3;
+/** Duración máxima de una conversación WT personal (en minutos) antes de expirar. */
+const WT_MAX_CONVERSATION_MINUTES = 120; // 2 horas
 
 if (!$db) {
     wt_success([
@@ -228,6 +230,14 @@ if ($method === 'GET') {
         $owner = wt_get_business_owner($db, $entityType, $entityId);
         $isOwnerViewer = $owner && $owner['user_id'] > 0 && $userId === $owner['user_id'];
         $canViewAllMessages = $isAdminViewer || ($entityType === 'negocio' && $isOwnerViewer);
+
+        // Auto-expirar mensajes WT de conversaciones que superaron la duración máxima (2 horas)
+        try {
+            $db->prepare(
+                "DELETE FROM wt_messages
+                  WHERE created_at <= DATE_SUB(NOW(), INTERVAL ? MINUTE)"
+            )->execute([WT_MAX_CONVERSATION_MINUTES]);
+        } catch (\Throwable $_e) { /* silencioso */ }
 
         $params = [$entityType, $entityId];
         $extraSql = '';
@@ -283,6 +293,62 @@ if ($method === 'POST') {
     if ($action === 'moderate') {
         if (!isAdmin()) wt_error('Solo admin', 403);
         wt_success([], 'Moderación WT pendiente');
+    }
+
+    // ── purge_expired: elimina mensajes WT caducados (admin) ─────────────────
+    // POST {action:'purge_expired'}                — elimina todos los mensajes expirados
+    // POST {action:'purge_expired', entity_type:X, entity_id:N} — elimina de una entidad
+    if ($action === 'purge_expired') {
+        if (!isAdmin()) wt_error('Solo admin', 403);
+        $purgeEntityType = trim((string)($input['entity_type'] ?? ''));
+        $purgeEntityId   = (int)($input['entity_id'] ?? 0);
+
+        try {
+            if ($purgeEntityType && $purgeEntityId > 0) {
+                // Purgar mensajes de una entidad específica
+                $stmt = $db->prepare(
+                    "DELETE FROM wt_messages
+                      WHERE entity_type = ? AND entity_id = ?
+                        AND created_at <= DATE_SUB(NOW(), INTERVAL ? MINUTE)"
+                );
+                $stmt->execute([$purgeEntityType, $purgeEntityId, WT_MAX_CONVERSATION_MINUTES]);
+                $deleted = $stmt->rowCount();
+            } else {
+                // Purgar todos los mensajes expirados
+                $stmt = $db->prepare(
+                    "DELETE FROM wt_messages
+                      WHERE created_at <= DATE_SUB(NOW(), INTERVAL ? MINUTE)"
+                );
+                $stmt->execute([WT_MAX_CONVERSATION_MINUTES]);
+                $deleted = $stmt->rowCount();
+            }
+            wt_success(['deleted' => $deleted], "Se eliminaron {$deleted} mensajes WT expirados.");
+        } catch (\Throwable $e) {
+            wt_error('Error al purgar mensajes WT: ' . $e->getMessage());
+        }
+    }
+
+    // ── list_expired: lista entidades con mensajes WT expirados (admin) ──────
+    if ($action === 'list_expired') {
+        if (!isAdmin()) wt_error('Solo admin', 403);
+        try {
+            $stmt = $db->prepare(
+                "SELECT entity_type, entity_id,
+                        COUNT(*) AS total_messages,
+                        MIN(created_at) AS oldest_msg,
+                        MAX(created_at) AS newest_msg
+                   FROM wt_messages
+                  WHERE created_at <= DATE_SUB(NOW(), INTERVAL ? MINUTE)
+                  GROUP BY entity_type, entity_id
+                  ORDER BY oldest_msg ASC
+                  LIMIT 200"
+            );
+            $stmt->execute([WT_MAX_CONVERSATION_MINUTES]);
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+            wt_success(['items' => $rows, 'limit_minutes' => WT_MAX_CONVERSATION_MINUTES]);
+        } catch (\Throwable $e) {
+            wt_error('Error al listar mensajes expirados: ' . $e->getMessage());
+        }
     }
 
     if (!wt_is_valid_entity($entityType, $entityId)) wt_error('Entidad inválida', 400);

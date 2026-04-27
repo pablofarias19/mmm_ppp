@@ -1108,9 +1108,13 @@ try {
             <button type="button" id="lang-globe-btn"
                     onclick="event.stopPropagation();toggleLangPicker()"
                     title="Idioma de la interfaz" aria-label="Cambiar idioma de la interfaz"
-                    style="background:none;border:1.5px solid rgba(27,59,111,.3);border-radius:8px;
-                           cursor:pointer;padding:5px 8px;font-size:14px;line-height:1;color:#1B3B6F;">
-                🌐
+                    style="background:#f0f4ff;border:1.5px solid #667eea;border-radius:8px;
+                           cursor:pointer;padding:4px 8px;font-size:13px;line-height:1;color:#1B3B6F;
+                           display:inline-flex;align-items:center;gap:4px;font-weight:600;
+                           transition:background .15s,box-shadow .15s;"
+                    onmouseover="this.style.background='#e0e8ff';this.style.boxShadow='0 2px 6px rgba(102,126,234,.25)'"
+                    onmouseout="this.style.background='#f0f4ff';this.style.boxShadow='none'">
+                🌐 <span id="lang-globe-label" style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;"><?= strtoupper(htmlspecialchars($_html_lang, ENT_QUOTES, 'UTF-8')) ?></span>
             </button>
             <div id="lang-picker" style="display:none;position:absolute;right:0;top:calc(100% + 6px);
                  background:white;border:1.5px solid #e2e8f0;border-radius:10px;
@@ -1124,11 +1128,12 @@ try {
                 <button type="button" class="lang-btn-option" data-lang="<?= $lc ?>"
                         onclick="setMapUILang('<?= $lc ?>')"
                         aria-label="<?= htmlspecialchars($lname, ENT_QUOTES, 'UTF-8') ?>"
-                        style="display:block;width:100%;text-align:left;background:none;border:none;
+                        style="display:block;width:100%;text-align:left;background:<?= $_html_lang === $lc ? '#f0f4ff' : 'none' ?>;border:none;
                                padding:9px 14px;font-size:13px;cursor:pointer;color:#374151;
+                               font-weight:<?= $_html_lang === $lc ? '700' : '400' ?>;
                                transition:background .15s;"
                         onmouseover="this.style.background='#f8fafc'"
-                        onmouseout="this.style.background='none'">
+                        onmouseout="this.style.background=(this.dataset.lang==='<?= $_html_lang ?>')?'#f0f4ff':'none'">
                     <?= htmlspecialchars($lname) ?>
                 </button>
                 <?php endforeach; ?>
@@ -2340,6 +2345,10 @@ function applyI18n() {
         el.style.fontWeight = (el.dataset.lang === MAPITA_UI_LANG) ? '700' : '400';
         el.style.background = (el.dataset.lang === MAPITA_UI_LANG) ? '#f0f4ff' : 'none';
     });
+
+    // Update globe button label with active language code
+    const globeLabel = document.getElementById('lang-globe-label');
+    if (globeLabel) globeLabel.textContent = MAPITA_UI_LANG.toUpperCase();
 
     console.info('[i18n] UI language applied:', MAPITA_UI_LANG);
 }
@@ -7464,28 +7473,16 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
         p += '</div>';
     }
 
-    // ── Tarjeta Inmobiliaria ─────────────────────────────────────────────────
-    p += '<div class="popup-inmobiliaria-card">';
-    p += '<div class="popup-inmobiliaria-card__logo">';
-    if (inmIcon && /^https?:\/\//i.test(inmIcon)) {
-        p += '<img src="' + escapeHtml(inmIcon) + '" alt="Logo ' + escapeHtml(inmNombre) + '" onerror="this.style.display=\'none\'">';
-    } else {
-        p += '🏢';
-    }
-    p += '</div>';
-    p += '<div class="popup-inmobiliaria-card__info">';
-    p += '<span class="popup-inmobiliaria-card__label">Inmobiliaria</span>';
-    p += '<span class="popup-inmobiliaria-card__name">' + escapeHtml(inmNombre) + '</span>';
-    p += '</div>';
+    // ── Tarjeta Inmobiliaria (compacta — sin repetir nombre ya visible en los datos) ──
     if (inmId) {
-        const safeId  = parseInt(inmId, 10);
-        const safeLat = isNaN(bizLat) ? 'null' : bizLat;
-        const safeLng = isNaN(bizLng) ? 'null' : bizLng;
-        p += '<button type="button" class="popup-inmobiliaria-card__focus-btn" '
-           + 'title="Enfocar inmobiliaria en el mapa" '
-           + 'onclick="enfocarInmobiliaria(' + safeId + ',' + safeLat + ',' + safeLng + ')">📍 En mapa</button>';
+        p += '<div class="popup-inm-inmobiliaria-row">';
+        // Solo mostrar logo pequeño si hay imagen propia de la inmobiliaria
+        if (inmIcon && /^https?:\/\//i.test(inmIcon)) {
+            p += '<img class="popup-inm-inmobiliaria-logo" src="' + escapeHtml(inmIcon) + '" alt="' + escapeHtml(inmNombre) + '" onerror="this.style.display=\'none\'">';
+        }
+        p += '<span class="popup-inm-inmobiliaria-name">🏢 ' + escapeHtml(inmNombre) + '</span>';
+        p += '</div>';
     }
-    p += '</div>';
 
     p += '</div>'; // popup-body
 
@@ -7506,6 +7503,13 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
         const safeNameJ = JSON.stringify(inmNombre);
         p += '<button type="button" class="popup-action popup-action--inm-list" '
            + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameJ + ')">🏘️ Ver Inmuebles</button>';
+        // 4) Enfocar inmobiliaria en el mapa (movido aquí desde la tarjeta eliminada)
+        const safeIdF  = parseInt(inmId, 10);
+        const safeLatF = isNaN(bizLat) ? 'null' : bizLat;
+        const safeLngF = isNaN(bizLng) ? 'null' : bizLng;
+        p += '<button type="button" class="popup-action popup-action--inm-map" '
+           + 'title="Ver inmobiliaria en el mapa" '
+           + 'onclick="enfocarInmobiliaria(' + safeIdF + ',' + safeLatF + ',' + safeLngF + ')">📍 En mapa</button>';
     }
     p += '</div>';
 
