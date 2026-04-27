@@ -549,7 +549,7 @@
     }
 
     function renderConsultaItem(c) {
-        const canClose = c.status === 'answered' || (c.total_resp > 0 && c.status !== 'closed' && c.status !== 'archived');
+        const canClose = c.status === 'answered' || (c.total_resp > 0 && c.status === 'open');
         const closeBtn = canClose
             ? `<button class="cq-close-btn" data-id="${c.id}" title="Cerrar consulta (ya fue respondida)" 
                        style="background:none;border:1px solid #dc2626;border-radius:4px;color:#dc2626;font-size:10px;padding:1px 7px;cursor:pointer;margin-left:4px;white-space:nowrap;" 

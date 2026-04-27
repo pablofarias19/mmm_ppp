@@ -637,7 +637,7 @@ if ($method === 'GET') {
         $inmTypes = ['inmobiliaria', 'inmobiliaria_venta', 'inmobiliaria_alquiler'];
         $ph       = implode(',', array_fill(0, count($inmTypes), '?'));
 
-        // Búsqueda flexible: LIKE sobre influence_zones
+        // Búsqueda flexible: FULLTEXT si está disponible, LIKE como fallback
         $stmt = $db->prepare(
             "SELECT b.id, b.name, b.address, b.lat, b.lng, b.phone, b.email,
                     b.og_image_url, b.business_type, b.influence_zones
@@ -646,13 +646,31 @@ if ($method === 'GET') {
                 AND b.business_type IN ($ph)
                 AND b.influence_zones IS NOT NULL
                 AND b.influence_zones != ''
-                AND b.influence_zones LIKE ?
+                AND MATCH(b.influence_zones) AGAINST(? IN NATURAL LANGUAGE MODE)
               ORDER BY b.name ASC
               LIMIT 30"
         );
-        $params = array_merge($inmTypes, ['%' . $zona . '%']);
+        $params = array_merge($inmTypes, [$zona]);
         $stmt->execute($params);
         $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        // Si FULLTEXT no devuelve resultados, intentar LIKE como fallback
+        if (empty($rows)) {
+            $stmt2 = $db->prepare(
+                "SELECT b.id, b.name, b.address, b.lat, b.lng, b.phone, b.email,
+                        b.og_image_url, b.business_type, b.influence_zones
+                   FROM businesses b
+                  WHERE b.visible = 1
+                    AND b.business_type IN ($ph)
+                    AND b.influence_zones IS NOT NULL
+                    AND b.influence_zones != ''
+                    AND b.influence_zones LIKE ?
+                  ORDER BY b.name ASC
+                  LIMIT 30"
+            );
+            $params2 = array_merge($inmTypes, ['%' . $zona . '%']);
+            $stmt2->execute($params2);
+            $rows = $stmt2->fetchAll(\PDO::FETCH_ASSOC);
+        }
         cq_ok($rows, count($rows) . ' inmobiliarias encontradas para zona "' . htmlspecialchars($zona, ENT_QUOTES) . '".');
     }
 }

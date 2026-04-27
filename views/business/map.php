@@ -7735,12 +7735,15 @@ async function buscarInmobiliariasPorZona() {
             return;
         }
         if (results) {
-            results.innerHTML = rows.map(b =>
-                `<div style="padding:4px 0;border-bottom:1px solid #e5e7eb;cursor:pointer;" onclick="enfocarInmobiliaria(${b.id}, ${b.lat || 'null'}, ${b.lng || 'null'})">
+            results.innerHTML = rows.map(b => {
+                const safeId  = parseInt(b.id, 10)  || 0;
+                const safeLat = parseFloat(b.lat)   || 0;
+                const safeLng = parseFloat(b.lng)   || 0;
+                return `<div style="padding:4px 0;border-bottom:1px solid #e5e7eb;cursor:pointer;" onclick="enfocarInmobiliaria(${safeId}, ${safeLat}, ${safeLng})">
                     🏠 <strong>${escapeHtml(b.name)}</strong>
                     <span style="color:#6b7280;font-size:10px;"> · ${escapeHtml(b.address || '')}</span>
-                 </div>`
-            ).join('') + `<div style="margin-top:4px;color:#6b7280;font-size:10px;">${rows.length} inmobiliaria${rows.length !== 1 ? 's' : ''} con zona "${escapeHtml(zona)}"</div>`;
+                 </div>`;
+            }).join('') + `<div style="margin-top:4px;color:#6b7280;font-size:10px;">${rows.length} inmobiliaria${rows.length !== 1 ? 's' : ''} con zona "${escapeHtml(zona)}"</div>`;
         }
         // Centrar en el primer resultado si tiene coords
         const first = rows.find(b => b.lat && b.lng);

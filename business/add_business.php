@@ -1418,7 +1418,7 @@ $descriptionPlaceholders = [
             <div class="section-body">
                 <div style="margin-bottom:10px;">
                     <label style="font-size:.82em;font-weight:600;display:block;margin-bottom:4px;">Barrios / Zonas atendidas</label>
-                    <textarea id="influence-zones-input" rows="3" maxlength="1000"
+                    <textarea id="influence-zones-input" rows="3" maxlength="800"
                         placeholder="Ej: Palermo, Belgrano, Villa Urquiza, Recoleta, Nuñez (separados por coma)"
                         style="width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;resize:vertical;font-family:inherit;font-size:.9em;"
                     ><?php echo $currentInfluenceZones; ?></textarea>
