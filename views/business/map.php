@@ -1113,7 +1113,7 @@ try {
                 font-size:9.5px;color:#8292aa;letter-spacing:0.6px;
                 font-weight:600;text-transform:uppercase;margin-top:1px;
                 white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                Negocios y Marcas
+                Negocios
             </div>
         </div>
         <button type="button" id="sb-compact-btn" class="sb-compact-btn"
