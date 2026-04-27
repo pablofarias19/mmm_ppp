@@ -104,7 +104,9 @@ if (!function_exists('mapitaGetSetting')) {
     function mapitaGetSetting(PDO $db, string $key, $default = null) {
         try {
             if (!mapitaTableExists($db, 'mapita_settings')) {
-                mapitaEnsureSettingsTable($db);
+                if (!mapitaEnsureSettingsTable($db)) {
+                    return $default;
+                }
             }
             $stmt = $db->prepare('SELECT setting_value FROM mapita_settings WHERE setting_key = ? LIMIT 1');
             $stmt->execute([$key]);

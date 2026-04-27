@@ -79,9 +79,10 @@ if ($method === 'GET') {
     }
 
     if ($all) {
-        $extCols    = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
-        $bizExtCols = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado') ? ", b.inmuebles_destacado" : "";
-        $orderDest  = $bizExtCols ? "b.inmuebles_destacado DESC, " : "";
+        $extCols     = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
+        $hasDestacado = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado');
+        $bizExtCols  = $hasDestacado ? ", b.inmuebles_destacado" : "";
+        $orderDest   = $hasDestacado ? "b.inmuebles_destacado DESC, " : "";
         try {
             $stmt = $db->prepare("SELECT i.*, b.name AS inmobiliaria_nombre, b.og_image_url AS inmobiliaria_icon,
                                           b.lat AS inm_lat_fallback, b.lng AS inm_lng_fallback{$bizExtCols}{$extCols}
@@ -100,8 +101,9 @@ if ($method === 'GET') {
     }
 
     if ($businessId > 0) {
-        $extCols    = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
-        $bizExtCols = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado') ? ", b.inmuebles_destacado" : "";
+        $extCols      = $hasExtended ? ", i.tipo, i.financiado, i.ambientes, i.superficie_m2" : "";
+        $hasDestacado = mapitaColumnExists($db, 'businesses', 'inmuebles_destacado');
+        $bizExtCols   = $hasDestacado ? ", b.inmuebles_destacado" : "";
         try {
             $stmt = $db->prepare("SELECT i.id, i.business_id, i.operacion, i.titulo, i.descripcion, i.precio, i.moneda,
                                           i.direccion, i.lat, i.lng, i.foto_url, i.contacto, i.activo, i.created_at, i.updated_at,
