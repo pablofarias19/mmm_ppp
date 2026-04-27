@@ -358,18 +358,25 @@ try {
         }
 
         /* ── RESPONSIVE: Tablet y Mobile (≤768px) ───────────────── */
+        /* CAMBIO: selector reubicado a esquina superior derecha, debajo del control de capas del mapa,
+           con disposición vertical para no superponerse con el panel lateral al abrirse */
         @media (max-width: 768px) {
             #ver-selector {
                 position: fixed;
-                top: 10px;
-                left: 50%;
-                transform: translateX(-50%);
+                /* Reubicado: arriba-derecha, debajo del botón de capas del mapa (≈34px + margen) */
+                top: 50px;
+                right: 10px;
+                left: auto;
+                transform: none;
                 animation: none;
                 width: fit-content;
                 padding: 4px 5px;
                 gap: 2px;
                 cursor: default;
                 touch-action: auto;
+                /* Disposición vertical para ocupar menos espacio horizontal */
+                flex-direction: column;
+                border-radius: 14px;
             }
             /* Ocultar texto, mostrar solo emoji → botones compactos */
             #ver-selector .toggle-btn .btn-label { display: none; }
@@ -378,6 +385,8 @@ try {
                 font-size: 16px !important;
                 flex: none;
                 line-height: 1;
+                /* Bordes uniformes para disposición vertical */
+                border-radius: 10px !important;
             }
             #ver-selector .drag-handle { display: none; }
         }
@@ -8697,7 +8706,8 @@ document.addEventListener('DOMContentLoaded', function() {
         <path d="M16.2 22 Q20 31 23.8 22" fill="url(#wmPin)"/>
         <circle cx="20" cy="16.5" r="3.2" fill="#1B3B6F"/>
     </svg>
-    <span class="mapita-wordmark">INICIO</span>
+    <!-- CAMBIO: renombrado de INICIO a AYUDA para reflejar mejor su función -->
+    <span class="mapita-wordmark">AYUDA</span>
 </div>
 
 <div id="mapita-home-panel" role="dialog" aria-modal="false" aria-label="Panel de Inicio">
