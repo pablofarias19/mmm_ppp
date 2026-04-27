@@ -24,12 +24,16 @@ class Brand {
     }
 
     public static function all($db) {
-        $stmt = $db->query('SELECT * FROM marcas');
+        $table = self::tableExists($db, 'brands') ? 'brands' : 'marcas';
+        // $table can only ever be 'brands' or 'marcas' (controlled by tableExists)
+        $stmt = $db->query("SELECT * FROM `{$table}`");
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
     public static function find($db, $id) {
-        $stmt = $db->prepare('SELECT * FROM marcas WHERE id = ?');
+        $table = self::tableExists($db, 'brands') ? 'brands' : 'marcas';
+        // $table can only ever be 'brands' or 'marcas' (controlled by tableExists)
+        $stmt = $db->prepare("SELECT * FROM `{$table}` WHERE id = ?");
         $stmt->execute([$id]);
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }

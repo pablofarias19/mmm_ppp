@@ -1,5 +1,7 @@
 <?php
 // models/BrandAnalysis.php
+// Persists brand-analysis data directly in the `brands` table (brands.id = marca_id).
+// Run migrations/035_add_brand_analysis_fields_to_brands.sql to add the required columns.
 class BrandAnalysis {
     public $id;
     public $marca_id;
@@ -21,16 +23,35 @@ class BrandAnalysis {
         $this->created_at = $data['created_at'] ?? null;
     }
 
+    /**
+     * Returns the analysis row for the given brand.
+     * `id` is aliased to `marca_id` so downstream consumers (form views,
+     * controllers) can use the same key regardless of which table is queried.
+     */
     public static function findByMarca($db, $marca_id) {
-        $stmt = $db->prepare('SELECT * FROM analisis_marcario WHERE marca_id = ?');
-        $stmt->execute([$marca_id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $db->prepare(
+                'SELECT id AS marca_id, nivel_proteccion,
+                        distintividad, riesgo_confusion, conflictos_clases, expansion_internacional
+                 FROM brands WHERE id = ?'
+            );
+            $stmt->execute([$marca_id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (\Throwable $e) {
+            error_log('[BrandAnalysis::findByMarca] ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     public static function save($db, $data) {
-        $existing = self::findByMarca($db, $data['marca_id']);
-        if ($existing) {
-            $stmt = $db->prepare('UPDATE analisis_marcario SET distintividad=?, riesgo_confusion=?, conflictos_clases=?, nivel_proteccion=?, expansion_internacional=? WHERE marca_id=?');
+        try {
+            $stmt = $db->prepare(
+                'UPDATE brands
+                 SET distintividad=?, riesgo_confusion=?, conflictos_clases=?,
+                     nivel_proteccion=?, expansion_internacional=?
+                 WHERE id=?'
+            );
             return $stmt->execute([
                 $data['distintividad'],
                 $data['riesgo_confusion'],
@@ -39,16 +60,9 @@ class BrandAnalysis {
                 $data['expansion_internacional'],
                 $data['marca_id']
             ]);
-        } else {
-            $stmt = $db->prepare('INSERT INTO analisis_marcario (marca_id, distintividad, riesgo_confusion, conflictos_clases, nivel_proteccion, expansion_internacional) VALUES (?, ?, ?, ?, ?, ?)');
-            return $stmt->execute([
-                $data['marca_id'],
-                $data['distintividad'],
-                $data['riesgo_confusion'],
-                $data['conflictos_clases'],
-                $data['nivel_proteccion'],
-                $data['expansion_internacional']
-            ]);
+        } catch (\Throwable $e) {
+            error_log('[BrandAnalysis::save] ' . $e->getMessage());
+            throw $e;
         }
     }
 }

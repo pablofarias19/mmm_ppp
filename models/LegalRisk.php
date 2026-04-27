@@ -1,5 +1,7 @@
 <?php
 // models/LegalRisk.php
+// Persists legal-risk data directly in the `brands` table (brands.id = marca_id).
+// Run migrations/035_add_brand_analysis_fields_to_brands.sql to add the required columns.
 class LegalRisk {
     public $id;
     public $marca_id;
@@ -19,16 +21,33 @@ class LegalRisk {
         $this->created_at = $data['created_at'] ?? null;
     }
 
+    /**
+     * Returns the legal-risk row for the given brand.
+     * `id` is aliased to `marca_id` so downstream consumers can use the same key.
+     */
     public static function findByMarca($db, $marca_id) {
-        $stmt = $db->prepare('SELECT * FROM riesgo_legal WHERE marca_id = ?');
-        $stmt->execute([$marca_id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $db->prepare(
+                'SELECT id AS marca_id, riesgo_oposicion,
+                        riesgo_nulidad, riesgo_infraccion, estrategias_defensivas
+                 FROM brands WHERE id = ?'
+            );
+            $stmt->execute([$marca_id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (\Throwable $e) {
+            error_log('[LegalRisk::findByMarca] ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     public static function save($db, $data) {
-        $existing = self::findByMarca($db, $data['marca_id']);
-        if ($existing) {
-            $stmt = $db->prepare('UPDATE riesgo_legal SET riesgo_oposicion=?, riesgo_nulidad=?, riesgo_infraccion=?, estrategias_defensivas=? WHERE marca_id=?');
+        try {
+            $stmt = $db->prepare(
+                'UPDATE brands
+                 SET riesgo_oposicion=?, riesgo_nulidad=?, riesgo_infraccion=?, estrategias_defensivas=?
+                 WHERE id=?'
+            );
             return $stmt->execute([
                 $data['riesgo_oposicion'],
                 $data['riesgo_nulidad'],
@@ -36,15 +55,9 @@ class LegalRisk {
                 $data['estrategias_defensivas'],
                 $data['marca_id']
             ]);
-        } else {
-            $stmt = $db->prepare('INSERT INTO riesgo_legal (marca_id, riesgo_oposicion, riesgo_nulidad, riesgo_infraccion, estrategias_defensivas) VALUES (?, ?, ?, ?, ?)');
-            return $stmt->execute([
-                $data['marca_id'],
-                $data['riesgo_oposicion'],
-                $data['riesgo_nulidad'],
-                $data['riesgo_infraccion'],
-                $data['estrategias_defensivas']
-            ]);
+        } catch (\Throwable $e) {
+            error_log('[LegalRisk::save] ' . $e->getMessage());
+            throw $e;
         }
     }
 }

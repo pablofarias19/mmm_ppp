@@ -65,9 +65,9 @@ try {
         <div class="tp-notice">
             <strong>⚠️ Servicio bajo consulta profesional</strong>
             Este reporte es de carácter orientativo y no sustituye el asesoramiento profesional.
-            Para un diagnóstico personalizado visitá
-            <a href="https://www.fariasortiz.com.ar/marcas.html" target="_blank" rel="noopener noreferrer"
-               style="color:#92400e; font-weight:600;">Farias Ortiz — Asesoría de Marcas</a>.
+            Para un <strong>análisis pormenorizado</strong> de su marca le recomendamos consultar con
+            <a href="https://fariasortiz.com.ar/marcas.html" target="_blank" rel="noopener noreferrer"
+               style="color:#92400e; font-weight:600;">Estudio Farias Ortiz — Asesoría de Marcas</a>.
         </div>
         <div style="background:#fff; border-radius:8px; border:1px solid #e2e8f0; padding:22px 26px; font-size:16px; color:#1a365d; margin-bottom:24px;">
             <pre style="background:none; border:none; font-family:inherit; color:inherit; font-size:inherit; margin:0; padding:0; white-space:pre-line; line-height:1.7;"><?= htmlspecialchars($resumen) ?></pre>
