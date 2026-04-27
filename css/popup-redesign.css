@@ -131,7 +131,7 @@
     background: #f8f9fa;
     display: flex;
     gap: 6px;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     border-top: 1px solid #e9ecef;
     border-radius: 0 0 12px 12px;
     align-items: center;
@@ -139,8 +139,9 @@
 
 .popup-action {
     flex: 1;
-    min-width: 36px;
-    max-width: 56px;
+    min-width: 40px;
+    min-height: 40px;
+    max-width: 60px;
     padding: 8px 6px;
     background: #667eea;
     color: white;
