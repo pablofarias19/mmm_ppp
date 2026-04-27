@@ -196,6 +196,35 @@
     margin-bottom: 18px;
 }
 
+/* Tools grid (shown in brand-detail fallback panel) */
+.tp-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-bottom: 26px;
+}
+
+.tp-tool-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 16px;
+    background: #f0f4ff;
+    border: 1.5px solid #c7d2fe;
+    border-radius: 8px;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: #1a365d;
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.tp-tool-link:hover {
+    background: #e0e7ff;
+    border-color: #818cf8;
+    color: #1e3a8a;
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .tp-header {
