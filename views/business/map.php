@@ -3097,6 +3097,14 @@ function escapeHtml(s) {
         .replace(/'/g, '&#39;');
 }
 
+/**
+ * Wraps a value in a single-quoted JS string safe for use inside HTML attributes.
+ * escapeHtml already encodes both ' and " so the result is safe in onclick="...".
+ */
+function toJsSingleStr(s) {
+    return "'" + escapeHtml(String(s || '')) + "'";
+}
+
 function wtPanelKey(entityType, entityId) {
     return entityType + ':' + entityId;
 }
@@ -4791,17 +4799,17 @@ function buildPopup(n, isMarca) {
         // Botón módulo disponibles (solo si el titular activó el módulo)
         if (n.disponibles_activo) {
             p += '<button type="button" class="popup-action" style="background:#d97706;font-weight:800;letter-spacing:.5px;" '
-               + 'onclick="abrirDisponibles(' + parseInt(n.id) + ',\'' + escapeHtml(n.name || n.nombre || '').replace(/'/g, '&#39;') + '\')">$$$</button>';
+               + 'onclick="abrirDisponibles(' + parseInt(n.id) + ',' + toJsSingleStr(n.name || n.nombre || '') + ')">$$$</button>';
         }
         // Botón módulo Busco Empleados/as (solo si hay oferta activa)
         if (n.job_offer_active) {
             p += '<button type="button" class="popup-action" style="background:#1d4ed8;font-weight:700;" '
-               + 'onclick="abrirOfertaTrabajo(' + parseInt(n.id) + ',\'' + escapeHtml(n.name || n.nombre || '').replace(/'/g, '&#39;') + '\')">💼 Empleos</button>';
+               + 'onclick="abrirOfertaTrabajo(' + parseInt(n.id) + ',' + toJsSingleStr(n.name || n.nombre || '') + ')">💼 Empleos</button>';
         }
         // Botón "Ver Inmuebles" para inmobiliarias
         if (n.business_type === 'inmobiliaria') {
-            p += '<button type="button" class="popup-action" style="background:#16a34a;font-weight:700;" '
-               + 'onclick="verInmueblesDe(' + parseInt(n.id) + ',\'' + escapeHtml(n.name || n.nombre || '').replace(/'/g, '&#39;') + '\')">🏘️ Ver otros Inmuebles</button>';
+            p += '<button type="button" class="popup-action" style="background:#16a34a;font-weight:700;color:#fff;" '
+               + 'onclick="verInmueblesDe(' + parseInt(n.id) + ',' + toJsSingleStr(n.name || n.nombre || '') + ')">🏘️ Ver otros Inmuebles</button>';
         }
         p += '</div>';
     }
@@ -7520,11 +7528,16 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
     p += '<div class="popup-body">';
 
     // Foto principal o placeholder elegante
-    if (inm.foto_url && /^https?:\/\//i.test(inm.foto_url)) {
-        p += '<img class="popup-inm-photo" src="' + escapeHtml(inm.foto_url) + '" alt="Foto del inmueble" loading="lazy" onerror="this.parentNode.querySelector(\'.popup-inm-placeholder\')&&(this.style.display=\'none\',this.parentNode.querySelector(\'.popup-inm-placeholder\').style.display=\'flex\')">';
+    // Acepta URLs absolutas (https?://) y rutas relativas (/uploads/...)
+    if (inm.foto_url && (/^https?:\/\//i.test(inm.foto_url) || /^\//.test(inm.foto_url))) {
+        p += '<div class="popup-inm-media">';
+        p += '<img class="popup-inm-img" src="' + escapeHtml(inm.foto_url) + '" alt="Foto del inmueble" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling&&(this.nextElementSibling.style.display=\'flex\')">';
         p += '<div class="popup-inm-placeholder" style="display:none" aria-hidden="true">' + tipoIcon + '</div>';
+        p += '</div>';
     } else {
+        p += '<div class="popup-inm-media">';
         p += '<div class="popup-inm-placeholder" aria-label="Sin imagen disponible">' + tipoIcon + '</div>';
+        p += '</div>';
     }
 
     // Chips: tipo, ambientes, superficie, financiado
@@ -7581,10 +7594,10 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
     }
     // 3) Ver Inmuebles de esta inmobiliaria
     if (inmId) {
-        const safeId2   = parseInt(inmId, 10);
-        const safeNameJ = JSON.stringify(inmNombre);
+        const safeId2    = parseInt(inmId, 10);
+        const safeNameS  = toJsSingleStr(inmNombre);
         p += '<button type="button" class="popup-action popup-action--inm-list" '
-           + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameJ + ')">🏘️ Ver otros Inmuebles</button>';
+           + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameS + ')">🏘️ Ver otros Inmuebles</button>';
         // 4) Enfocar inmobiliaria en el mapa (movido aquí desde la tarjeta eliminada)
         const safeIdF  = parseInt(inmId, 10);
         const safeLatF = isNaN(bizLat) ? 'null' : bizLat;
@@ -8381,10 +8394,12 @@ function abrirDetalleInmueble(inmId) {
 
         // Photo gallery
         const fotos = [];
-        if (inm.foto_url && /^https?:\/\//i.test(inm.foto_url)) fotos.push({ url: inm.foto_url, alt: 'Foto principal' });
+        // Acepta URLs absolutas (https?://) y rutas relativas (/uploads/...)
+        const _isValidUrl = u => u && (/^https?:\/\//i.test(u) || /^\//.test(u));
+        if (_isValidUrl(inm.foto_url)) fotos.push({ url: inm.foto_url, alt: 'Foto principal' });
         if (Array.isArray(inm.adjuntos)) {
             inm.adjuntos.forEach(a => {
-                if (a.url && /^https?:\/\//i.test(a.url)) fotos.push({ url: a.url, alt: a.nombre || 'Foto' });
+                if (_isValidUrl(a.url)) fotos.push({ url: a.url, alt: a.nombre || 'Foto' });
             });
         }
         if (fotos.length) {
@@ -8469,9 +8484,9 @@ function abrirDetalleInmueble(inmId) {
                    + ' target="_blank" rel="noopener noreferrer">🔎 Detalles</a>';
         }
         if (bizId2) {
-            const safeNameJ = JSON.stringify(bizName);
+            const safeNameS = toJsSingleStr(bizName);
             ftHtml += '<button type="button" class="inm-detail-btn inm-detail-btn--list"'
-                   + ' onclick="cerrarDetalleInmueble();verInmueblesDe(' + bizId2 + ',' + safeNameJ + ')">🏘️ Ver otros Inmuebles</button>';
+                   + ' onclick="cerrarDetalleInmueble();verInmueblesDe(' + bizId2 + ',' + safeNameS + ')">🏘️ Ver otros Inmuebles</button>';
         }
         footer.innerHTML = ftHtml;
     })

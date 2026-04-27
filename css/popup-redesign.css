@@ -164,6 +164,11 @@
     transform: translateY(0);
 }
 
+.popup-action:focus-visible {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
 .popup-action.secondary {
     background: #6c757d;
 }
@@ -428,7 +433,33 @@
     text-overflow: ellipsis;
 }
 
-/* ─── INMUEBLE PHOTO ──────────────────────────────────────────────────── */
+/* ─── INMUEBLE PHOTO MEDIA CONTAINER ─────────────────────────────────── */
+.popup-inm-media {
+    width: 100%;
+    height: 120px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.popup-inm-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 6px;
+    display: block;
+}
+
+.popup-inm-media .popup-inm-placeholder {
+    width: 100%;
+    height: 100%;
+    margin-bottom: 0;
+    border-radius: 6px;
+}
+
+/* Legacy class kept for backward compatibility */
 .popup-inm-photo {
     width: 100%;
     height: 120px;
@@ -442,11 +473,17 @@
 /* ─── INMUEBLE POPUP ACTION VARIANTS ─────────────────────────────────── */
 .popup-action.popup-action--inm {
     background: #16a34a;
+    color: #fff;
 }
 
 .popup-action.popup-action--inm:hover {
     background: #15803d;
     box-shadow: 0 4px 12px rgba(22, 163, 74, 0.3);
+}
+
+.popup-action.popup-action--inm:focus-visible {
+    outline: 2px solid #16a34a;
+    outline-offset: 2px;
 }
 
 /* ─── BRAND STATUS BADGES ─────────────────────────────────────────────── */
@@ -628,7 +665,7 @@
 /* ─── POPUP FOOTER BUTTON VARIANTS ───────────────────────────────────── */
 .popup-action.popup-action--inm-call {
     background: #2563eb;
-    color: white;
+    color: #fff;
     text-decoration: none;
     display: inline-flex;
     align-items: center;
@@ -640,9 +677,14 @@
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
 }
 
+.popup-action.popup-action--inm-call:focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 2px;
+}
+
 .popup-action.popup-action--inm-list {
     background: #0f766e;
-    color: white;
+    color: #fff;
 }
 
 .popup-action.popup-action--inm-list:hover {
@@ -650,14 +692,25 @@
     box-shadow: 0 4px 12px rgba(15, 118, 110, 0.3);
 }
 
+.popup-action.popup-action--inm-list:focus-visible {
+    outline: 2px solid #0f766e;
+    outline-offset: 2px;
+}
+
 .popup-action.popup-action--inm-map {
-    background: #eff6ff;
-    color: #1d4ed8;
-    border: 1px solid #bfdbfe;
+    background: #1d4ed8;
+    color: #fff;
+    border: none;
 }
 
 .popup-action.popup-action--inm-map:hover {
-    background: #dbeafe;
+    background: #1e40af;
+    box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+}
+
+.popup-action.popup-action--inm-map:focus-visible {
+    outline: 2px solid #1d4ed8;
+    outline-offset: 2px;
 }
 
 /* ─── INMUEBLE DETAIL MODAL ───────────────────────────────────────────── */
