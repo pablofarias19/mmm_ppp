@@ -1133,7 +1133,7 @@ try {
                                font-weight:<?= $_html_lang === $lc ? '700' : '400' ?>;
                                transition:background .15s;"
                         onmouseover="this.style.background='#f8fafc'"
-                        onmouseout="this.style.background=(this.dataset.lang==='<?= $_html_lang ?>')?'#f0f4ff':'none'">
+                        onmouseout="this.style.background=restoreLangBtnBg(this)">
                     <?= htmlspecialchars($lname) ?>
                 </button>
                 <?php endforeach; ?>
@@ -7344,6 +7344,11 @@ function compartirMarca(brandName, brandId) {
 }
 
 // ── Lang picker toggle ───────────────────────────────────────────────────────
+/** Returns the resting background for a language option button (active vs default). */
+function restoreLangBtnBg(btn) {
+    return (btn.dataset.lang === MAPITA_UI_LANG) ? '#f0f4ff' : 'none';
+}
+
 function toggleLangPicker() {
     const picker = document.getElementById('lang-picker');
     if (!picker) return;

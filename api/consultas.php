@@ -80,6 +80,7 @@ define('CQ_GENERAL_DEFAULT_RADIUS_KM', 25);
 /**
  * Duración máxima (en minutos) por tipo de consulta antes de archivarse automáticamente.
  * Las consultas que superen este tiempo pasan a status='archived'.
+ * Definidos por separado para permitir ajuste independiente en el futuro.
  */
 define('CQ_MAX_DURATION_GENERAL',    30);   // Consulta General → 30 min
 define('CQ_MAX_DURATION_PROVEEDOR',  30);   // Consulta Global Proveedores → 30 min

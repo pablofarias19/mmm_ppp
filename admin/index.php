@@ -3205,14 +3205,14 @@ async function loadArchivedConsultas(page = 1) {
             el.innerHTML = '<p style="color:#6b7280;font-size:13px;">✅ No hay consultas archivadas.</p>';
             return;
         }
-        const tipoLabel = t => ({ masiva:'Masiva', general:'General', global_proveedor:'Proveedor', envio:'Envío' }[t] || t);
+        const formatConsultaTipo = t => ({ masiva:'Masiva', general:'General', global_proveedor:'Proveedor', envio:'Envío' }[t] || t);
         let html = `<p style="font-size:12px;color:#6b7280;margin:0 0 8px;">Total archivadas: <strong>${total}</strong></p>`;
         html += '<table style="width:100%;border-collapse:collapse;font-size:12px;">';
         html += '<thead><tr style="background:#f9fafb;"><th style="padding:6px 8px;text-align:left;">ID</th><th>Tipo</th><th>Rubro</th><th>Texto</th><th>Remitente</th><th>Creada</th><th>Archivada</th><th>Dest.</th><th>Resp.</th><th></th></tr></thead><tbody>';
         items.forEach(c => {
             html += `<tr style="border-bottom:1px solid #f3f4f6;">
                 <td style="padding:6px 8px;">#${c.id}</td>
-                <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11px;">${escapeHtml(tipoLabel(c.tipo))}</span></td>
+                <td><span style="background:#e0f2fe;color:#0369a1;padding:2px 6px;border-radius:4px;font-size:11px;">${escapeHtml(formatConsultaTipo(c.tipo))}</span></td>
                 <td>${escapeHtml(c.rubro||'—')}</td>
                 <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(c.texto)}">${escapeHtml(c.texto)}</td>
                 <td>${escapeHtml(c.sender_name||'—')}</td>
