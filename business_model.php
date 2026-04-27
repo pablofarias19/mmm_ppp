@@ -24,6 +24,7 @@ try {
         $controller->index($marca_id);
     }
 } catch (\Throwable $e) {
+    error_log('[business_model] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
     $brand_label = $marca_id ? "Marca #$marca_id (demo)" : 'Demo';
     $back_url    = $marca_id ? "/brand_detail?id=$marca_id" : '/marcas';
 

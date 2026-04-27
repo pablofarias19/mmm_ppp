@@ -73,7 +73,7 @@ try {
             <pre style="background:none; border:none; font-family:inherit; color:inherit; font-size:inherit; margin:0; padding:0; white-space:pre-line; line-height:1.7;"><?= htmlspecialchars($resumen) ?></pre>
         </div>
         <nav class="tp-nav">
-            <a class="tp-nav-detail" href="brand_report.php?id=<?= $marca_id ?>&json=1" target="_blank">Ver JSON</a>
+            <a class="tp-nav-detail" href="/brand_report?id=<?= (int)$marca_id ?>&amp;json=1" target="_blank">Ver JSON</a>
             <?php if ($marca_id): ?>
             <a class="tp-nav-back" href="/brand_detail?id=<?= $marca_id ?>">← Volver al detalle</a>
             <?php endif; ?>
@@ -85,6 +85,7 @@ try {
 </html>
     <?php
 } catch (\Throwable $e) {
+    error_log('[brand_report] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
     $brand_label = $marca_id ? "Marca #$marca_id (demo)" : 'Demo';
     $back_url    = $marca_id ? "/brand_detail?id=$marca_id" : '/marcas';
 

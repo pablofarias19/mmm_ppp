@@ -7,7 +7,7 @@ class BrandController {
     private $db;
 
     public function __construct() {
-        $this->db = Database::getInstance()->getConnection();
+        $this->db = \Core\Database::getInstance()->getConnection();
     }
 
     public function index() {
