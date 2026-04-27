@@ -7393,20 +7393,22 @@ function enfocarInmobiliaria(bizId, bizLat, bizLng) {
  */
 function _buildInmPopup(inm, overrideBizId, overrideBizName) {
     const tipoIcon  = INM_TIPO_ICONS[inm.tipo] || '🏘️';
-    const op        = inm.operacion === 'alquiler' ? '🔑 Alquiler' : '🏠 Venta';
+    // Labels without duplicated emoji (the icon is already shown in the header)
+    const opLabel   = inm.operacion === 'alquiler' ? 'Alquiler' : 'Venta';
+    const opEmoji   = inm.operacion === 'alquiler' ? '🔑' : '🏠';
     const monSym    = INM_MONEDA_SYM[inm.moneda] || '$';
     const precio    = inm.precio ? `${monSym}${Number(inm.precio).toLocaleString()}` : '';
-    const tipoLabel = inm.tipo ? `${tipoIcon} ${inm.tipo.charAt(0).toUpperCase() + inm.tipo.slice(1)}` : '';
+    // Chip label without icon (already in header)
+    const tipoLabel = inm.tipo ? inm.tipo.charAt(0).toUpperCase() + inm.tipo.slice(1) : '';
     const ambStr    = inm.ambientes ? `${inm.ambientes} amb.` : '';
     const supStr    = inm.superficie_m2 ? `${Number(inm.superficie_m2).toLocaleString()}m²` : '';
     const isFin     = parseInt(inm.financiado, 10) === 1;
-
+    const inmId     = parseInt(overrideBizId || inm.business_id || 0, 10) || null;
     const inmNombre = overrideBizName || inm.inmobiliaria_nombre || 'Inmobiliaria';
-    const inmId     = overrideBizId   || inm.business_id         || null;
     const inmIcon   = inm.inmobiliaria_icon || '';
-    // Both map_inmuebles.php and inmuebles.php?business_id use inm_lat_fallback/inm_lng_fallback
     const bizLat    = parseFloat(inm.inm_lat_fallback);
     const bizLng    = parseFloat(inm.inm_lng_fallback);
+    const inmIdInt  = inm.id ? parseInt(inm.id, 10) : null;
 
     let p = '<div>';
 
@@ -7417,18 +7419,21 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
     p += '<div class="popup-header-text">';
     p += '<h3>' + escapeHtml(inm.titulo || 'Inmueble') + '</h3>';
     if (precio) {
-        p += '<div class="popup-inm-price">' + escapeHtml(op + ' — ' + precio) + '</div>';
+        p += '<div class="popup-inm-price">' + escapeHtml(opLabel + ' — ' + precio) + '</div>';
     } else {
-        p += '<span class="popup-type-badge">' + escapeHtml(op) + '</span>';
+        p += '<div class="popup-inm-price">' + opEmoji + ' ' + escapeHtml(opLabel) + '</div>';
     }
     p += '</div></div></div>';
 
     // ── Body ─────────────────────────────────────────────────────────────────
     p += '<div class="popup-body">';
 
-    // Foto (con fallback oculto vía CSS)
+    // Foto principal o placeholder elegante
     if (inm.foto_url && /^https?:\/\//i.test(inm.foto_url)) {
-        p += '<img class="popup-inm-photo" src="' + escapeHtml(inm.foto_url) + '" alt="Foto del inmueble" loading="lazy" onerror="this.style.display=\'none\'">';
+        p += '<img class="popup-inm-photo" src="' + escapeHtml(inm.foto_url) + '" alt="Foto del inmueble" loading="lazy" onerror="this.parentNode.querySelector(\'.popup-inm-placeholder\')&&(this.style.display=\'none\',this.parentNode.querySelector(\'.popup-inm-placeholder\').style.display=\'flex\')">';
+        p += '<div class="popup-inm-placeholder" style="display:none" aria-hidden="true">' + tipoIcon + '</div>';
+    } else {
+        p += '<div class="popup-inm-placeholder" aria-label="Sin imagen disponible">' + tipoIcon + '</div>';
     }
 
     // Chips: tipo, ambientes, superficie, financiado
@@ -7445,9 +7450,9 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
         p += '</div>';
     }
 
-    // Descripción (máx. 110 chars)
+    // Descripción (máx. 80 chars)
     if (inm.descripcion && inm.descripcion.trim()) {
-        const desc = inm.descripcion.length > 110 ? inm.descripcion.substring(0, 110) + '…' : inm.descripcion;
+        const desc = inm.descripcion.length > 80 ? inm.descripcion.substring(0, 80) + '…' : inm.descripcion;
         p += '<p style="margin:0 0 8px;font-size:12px;line-height:1.5;color:#374151;">' + escapeHtml(desc) + '</p>';
     }
 
@@ -7461,7 +7466,6 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
 
     // ── Tarjeta Inmobiliaria ─────────────────────────────────────────────────
     p += '<div class="popup-inmobiliaria-card">';
-    // Logo / fallback emoji
     p += '<div class="popup-inmobiliaria-card__logo">';
     if (inmIcon && /^https?:\/\//i.test(inmIcon)) {
         p += '<img src="' + escapeHtml(inmIcon) + '" alt="Logo ' + escapeHtml(inmNombre) + '" onerror="this.style.display=\'none\'">';
@@ -7469,19 +7473,17 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
         p += '🏢';
     }
     p += '</div>';
-    // Nombre
     p += '<div class="popup-inmobiliaria-card__info">';
     p += '<span class="popup-inmobiliaria-card__label">Inmobiliaria</span>';
     p += '<span class="popup-inmobiliaria-card__name">' + escapeHtml(inmNombre) + '</span>';
     p += '</div>';
-    // Botón enfocar (usa JSON.stringify para el nombre)
     if (inmId) {
         const safeId  = parseInt(inmId, 10);
         const safeLat = isNaN(bizLat) ? 'null' : bizLat;
         const safeLng = isNaN(bizLng) ? 'null' : bizLng;
         p += '<button type="button" class="popup-inmobiliaria-card__focus-btn" '
            + 'title="Enfocar inmobiliaria en el mapa" '
-           + 'onclick="enfocarInmobiliaria(' + safeId + ',' + safeLat + ',' + safeLng + ')">🏢 Ver</button>';
+           + 'onclick="enfocarInmobiliaria(' + safeId + ',' + safeLat + ',' + safeLng + ')">📍 En mapa</button>';
     }
     p += '</div>';
 
@@ -7489,13 +7491,20 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
 
     // ── Footer ────────────────────────────────────────────────────────────────
     p += '<div class="popup-footer">';
-    if (inm.contacto) {
-        p += '<a href="tel:' + escapeHtml(inm.contacto) + '" class="popup-action" style="background:#27ae60;">📞 Llamar</a>';
+    // 1) Ver detalle — CTA principal
+    if (inmIdInt) {
+        p += '<button type="button" class="popup-action popup-action--inm" '
+           + 'onclick="abrirDetalleInmueble(' + inmIdInt + ')">🔍 Ver detalle</button>';
     }
+    // 2) Llamar — si hay contacto
+    if (inm.contacto) {
+        p += '<a href="tel:' + escapeHtml(inm.contacto) + '" class="popup-action popup-action--inm-call">📞 Llamar</a>';
+    }
+    // 3) Ver Inmuebles de esta inmobiliaria
     if (inmId) {
         const safeId2   = parseInt(inmId, 10);
-        const safeNameJ = JSON.stringify(inmNombre); // safe for inline onclick
-        p += '<button type="button" class="popup-action popup-action--inm" '
+        const safeNameJ = JSON.stringify(inmNombre);
+        p += '<button type="button" class="popup-action popup-action--inm-list" '
            + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameJ + ')">🏘️ Ver Inmuebles</button>';
     }
     p += '</div>';
@@ -7951,6 +7960,31 @@ async function enviarConvocatoria() {
 </div>
 <!-- ══ FIN MÓDULO BUSCO EMPLEADOS/AS ══════════════════════════════════════════ -->
 
+<!-- ══ MÓDULO DETALLE INMUEBLE — Modal de detalle completo ════════════════════ -->
+<div id="inm-detail-modal" role="dialog" aria-modal="true" aria-labelledby="inm-detail-title"
+     style="display:none;position:fixed;z-index:10200;inset:0;
+            background:rgba(0,0,0,0.65);align-items:center;justify-content:center;"
+     onclick="if(event.target===this)cerrarDetalleInmueble()">
+    <div class="inm-detail-dialog" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div class="inm-detail-header">
+            <div class="inm-detail-header__icon" id="inm-detail-icon" aria-hidden="true">🏘️</div>
+            <div class="inm-detail-header__text">
+                <div class="inm-detail-header__op" id="inm-detail-op"></div>
+                <h3 class="inm-detail-header__title" id="inm-detail-title">Detalle del inmueble</h3>
+            </div>
+            <button type="button" class="inm-detail-close" onclick="cerrarDetalleInmueble()" aria-label="Cerrar detalle">✕</button>
+        </div>
+        <!-- Body -->
+        <div class="inm-detail-body" id="inm-detail-body">
+            <div class="inm-detail-loading">Cargando…</div>
+        </div>
+        <!-- Footer con acciones -->
+        <div class="inm-detail-footer" id="inm-detail-footer"></div>
+    </div>
+</div>
+<!-- ══ FIN MÓDULO DETALLE INMUEBLE ═════════════════════════════════════════════ -->
+
 <!-- ══ MÓDULO DISPONIBLES — Modal del usuario solicitante ══════════════════ --><div id="disp-overlay" class="disp-overlay" style="display:none;" onclick="if(event.target===this)cerrarDisponibles()">
     <div class="disp-panel" onclick="event.stopPropagation()">
         <div class="disp-header">
@@ -8218,6 +8252,162 @@ function cerrarOfertaTrabajo() {
     document.body.style.overflow = '';
     jobModalMsg('', '');
 }
+
+// ── Módulo Detalle Inmueble ───────────────────────────────────────────────────
+function abrirDetalleInmueble(inmId) {
+    const modal  = document.getElementById('inm-detail-modal');
+    const body   = document.getElementById('inm-detail-body');
+    const footer = document.getElementById('inm-detail-footer');
+    if (!modal || !body) return;
+
+    document.getElementById('inm-detail-title').textContent = 'Detalle del inmueble';
+    document.getElementById('inm-detail-op').textContent    = '';
+    document.getElementById('inm-detail-icon').textContent  = '🏘️';
+    body.innerHTML   = '<div class="inm-detail-loading">Cargando…</div>';
+    footer.innerHTML = '';
+
+    modal.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
+
+    fetch('/api/inmuebles.php?id=' + parseInt(inmId, 10))
+    .then(r => r.json())
+    .then(d => {
+        if (!d.success || !d.data) {
+            body.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;">No se pudo cargar el detalle del inmueble.</p>';
+            return;
+        }
+        const inm     = d.data;
+        const monSym  = (INM_MONEDA_SYM[inm.moneda] || '$');
+        const precio  = inm.precio ? monSym + Number(inm.precio).toLocaleString() : null;
+        const tipoIco = INM_TIPO_ICONS[inm.tipo] || '🏘️';
+        const opLabel = inm.operacion === 'alquiler' ? 'Alquiler' : 'Venta';
+        const opEmoji = inm.operacion === 'alquiler' ? '🔑' : '🏠';
+        const isFin   = parseInt(inm.financiado, 10) === 1;
+
+        // Update header
+        document.getElementById('inm-detail-icon').textContent = tipoIco;
+        document.getElementById('inm-detail-title').textContent = inm.titulo || 'Inmueble';
+        document.getElementById('inm-detail-op').textContent =
+            precio ? (opEmoji + ' ' + opLabel + ' — ' + precio) : (opEmoji + ' ' + opLabel);
+
+        // ── Build body ──
+        let html = '';
+
+        // Photo gallery
+        const fotos = [];
+        if (inm.foto_url && /^https?:\/\//i.test(inm.foto_url)) fotos.push({ url: inm.foto_url, alt: 'Foto principal' });
+        if (Array.isArray(inm.adjuntos)) {
+            inm.adjuntos.forEach(a => {
+                if (a.url && /^https?:\/\//i.test(a.url)) fotos.push({ url: a.url, alt: a.nombre || 'Foto' });
+            });
+        }
+        if (fotos.length) {
+            html += '<div class="inm-detail-gallery">';
+            fotos.forEach((f, idx) => {
+                html += '<img class="inm-detail-gallery__img' + (idx === 0 ? ' inm-detail-gallery__img--main' : '') + '"'
+                     + ' src="' + escapeHtml(f.url) + '"'
+                     + ' alt="' + escapeHtml(f.alt) + '"'
+                     + ' loading="lazy"'
+                     + ' onclick="var g=this.closest(\'.inm-detail-gallery\');g.querySelectorAll(\'img\').forEach(function(i){i.classList.remove(\'inm-detail-gallery__img--main\')});this.classList.add(\'inm-detail-gallery__img--main\')"'
+                     + ' onerror="this.style.display=\'none\'">';
+            });
+            html += '</div>';
+        } else {
+            html += '<div class="inm-detail-placeholder" aria-label="Sin imagen disponible">'
+                 + tipoIco + '<span>Sin imágenes disponibles</span></div>';
+        }
+
+        // Características grid
+        const chars = [];
+        if (inm.tipo)          chars.push({ icon: tipoIco,  label: 'Tipo',       val: inm.tipo.charAt(0).toUpperCase() + inm.tipo.slice(1) });
+        if (inm.ambientes)     chars.push({ icon: '🚪',      label: 'Ambientes',  val: inm.ambientes });
+        if (inm.superficie_m2) chars.push({ icon: '📐',      label: 'Superficie', val: Number(inm.superficie_m2).toLocaleString() + ' m²' });
+        if (precio)            chars.push({ icon: '💲',      label: 'Precio',     val: precio });
+        if (isFin)             chars.push({ icon: '💰',      label: 'Financiado', val: 'Sí' });
+        if (chars.length) {
+            html += '<div class="inm-detail-chars">';
+            chars.forEach(c => {
+                html += '<div class="inm-detail-chars__item">'
+                     + '<span class="inm-detail-chars__icon">' + c.icon + '</span>'
+                     + '<span class="inm-detail-chars__label">' + escapeHtml(c.label) + '</span>'
+                     + '<span class="inm-detail-chars__val">' + escapeHtml(String(c.val)) + '</span>'
+                     + '</div>';
+            });
+            html += '</div>';
+        }
+
+        // Descripción completa
+        if (inm.descripcion && inm.descripcion.trim()) {
+            html += '<div class="inm-detail-section">';
+            html += '<span class="inm-detail-section__label">📝 Descripción</span>';
+            html += '<p class="inm-detail-section__text">' + escapeHtml(inm.descripcion) + '</p>';
+            html += '</div>';
+        }
+
+        // Dirección
+        if (inm.direccion) {
+            html += '<div class="inm-detail-section">';
+            html += '<span class="inm-detail-section__label">📍 Dirección</span>';
+            html += '<p class="inm-detail-section__text">' + escapeHtml(inm.direccion) + '</p>';
+            html += '</div>';
+        }
+
+        // Inmobiliaria
+        const bizName = inm.inmobiliaria_nombre || 'Inmobiliaria';
+        const bizIcon = inm.inmobiliaria_icon   || '';
+        html += '<div class="inm-detail-biz">';
+        html += '<div class="inm-detail-biz__logo">';
+        if (bizIcon && /^https?:\/\//i.test(bizIcon)) {
+            html += '<img src="' + escapeHtml(bizIcon) + '" alt="Logo ' + escapeHtml(bizName) + '" onerror="this.style.display=\'none\'">';
+        } else {
+            html += '🏢';
+        }
+        html += '</div>';
+        html += '<div class="inm-detail-biz__info">';
+        html += '<span class="inm-detail-biz__label">Inmobiliaria</span>';
+        html += '<span class="inm-detail-biz__name">' + escapeHtml(bizName) + '</span>';
+        html += '</div>';
+        html += '</div>';
+
+        body.innerHTML = html;
+
+        // Footer buttons
+        let ftHtml = '';
+        if (inm.contacto) {
+            ftHtml += '<a href="tel:' + escapeHtml(inm.contacto) + '" class="inm-detail-btn inm-detail-btn--call">📞 Llamar</a>';
+        }
+        const bizId2 = parseInt(inm.business_id, 10) || 0;
+        if (bizId2) {
+            const bizLat2 = parseFloat(inm.inm_lat_fallback);
+            const bizLng2 = parseFloat(inm.inm_lng_fallback);
+            const safeL   = isNaN(bizLat2) ? 'null' : bizLat2;
+            const safeG   = isNaN(bizLng2) ? 'null' : bizLng2;
+            ftHtml += '<button type="button" class="inm-detail-btn inm-detail-btn--map"'
+                   + ' onclick="cerrarDetalleInmueble();enfocarInmobiliaria(' + bizId2 + ',' + safeL + ',' + safeG + ')">📍 Ver en mapa</button>';
+            const safeNameJ = JSON.stringify(bizName);
+            ftHtml += '<button type="button" class="inm-detail-btn inm-detail-btn--list"'
+                   + ' onclick="cerrarDetalleInmueble();verInmueblesDe(' + bizId2 + ',' + safeNameJ + ')">🏘️ Ver Inmuebles</button>';
+        }
+        footer.innerHTML = ftHtml;
+    })
+    .catch(() => {
+        body.innerHTML = '<p style="color:#ef4444;text-align:center;padding:20px;">Error de conexión. Intentá de nuevo.</p>';
+    });
+}
+
+function cerrarDetalleInmueble() {
+    const modal = document.getElementById('inm-detail-modal');
+    if (modal) modal.style.display = 'none';
+    document.body.style.overflow = '';
+}
+
+// Cerrar detalle con Escape
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('inm-detail-modal');
+        if (modal && modal.style.display === 'flex') cerrarDetalleInmueble();
+    }
+});
 
 function jobModalMsg(text, type) {
     const el = document.getElementById('job-modal-msg');
