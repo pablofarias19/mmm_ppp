@@ -993,6 +993,34 @@ try {
         }
         .tx-tipo-pill:hover { background:#fee2e2; }
         .tx-tipo-active { background:#c0392b !important;color:#fff !important;border-color:#9b1c1c !important; }
+
+        /* ── Zoom buttons: bottom-center on mobile ── */
+        @media (max-width: 768px) {
+            .leaflet-control-zoom {
+                position: fixed !important;
+                bottom: 24px !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                top: auto !important;
+                display: flex !important;
+                flex-direction: row !important;
+                gap: 0 !important;
+                z-index: 1000 !important;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.25) !important;
+                border-radius: 8px !important;
+            }
+            .leaflet-control-zoom a {
+                border-radius: 0 !important;
+                border-bottom: none !important;
+                border-right: 1px solid #ccc !important;
+                width: 36px !important;
+                height: 36px !important;
+                line-height: 36px !important;
+                font-size: 18px !important;
+            }
+            .leaflet-control-zoom-in  { border-radius: 8px 0 0 8px !important; }
+            .leaflet-control-zoom-out { border-radius: 0 8px 8px 0 !important; border-right: none !important; }
+        }
     </style>
 </head>
 <body>
