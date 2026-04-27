@@ -1,5 +1,7 @@
 <?php
 // models/Monetization.php
+// Persists monetization data directly in the `brands` table (brands.id = marca_id).
+// Run migrations/035_add_brand_analysis_fields_to_brands.sql to add the required columns.
 class Monetization {
     public $id;
     public $marca_id;
@@ -19,16 +21,33 @@ class Monetization {
         $this->created_at = $data['created_at'] ?? null;
     }
 
+    /**
+     * Returns the monetization row for the given brand.
+     * `id` is aliased to `marca_id` so downstream consumers can use the same key.
+     */
     public static function findByMarca($db, $marca_id) {
-        $stmt = $db->prepare('SELECT * FROM monetizacion WHERE marca_id = ?');
-        $stmt->execute([$marca_id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+        try {
+            $stmt = $db->prepare(
+                'SELECT id AS marca_id, valor_activo,
+                        fuentes_ingresos, escalabilidad, margen_potencial
+                 FROM brands WHERE id = ?'
+            );
+            $stmt->execute([$marca_id]);
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $row ?: null;
+        } catch (\Throwable $e) {
+            error_log('[Monetization::findByMarca] ' . $e->getMessage());
+            throw $e;
+        }
     }
 
     public static function save($db, $data) {
-        $existing = self::findByMarca($db, $data['marca_id']);
-        if ($existing) {
-            $stmt = $db->prepare('UPDATE monetizacion SET fuentes_ingresos=?, escalabilidad=?, margen_potencial=?, valor_activo=? WHERE marca_id=?');
+        try {
+            $stmt = $db->prepare(
+                'UPDATE brands
+                 SET fuentes_ingresos=?, escalabilidad=?, margen_potencial=?, valor_activo=?
+                 WHERE id=?'
+            );
             return $stmt->execute([
                 $data['fuentes_ingresos'],
                 $data['escalabilidad'],
@@ -36,15 +55,9 @@ class Monetization {
                 $data['valor_activo'],
                 $data['marca_id']
             ]);
-        } else {
-            $stmt = $db->prepare('INSERT INTO monetizacion (marca_id, fuentes_ingresos, escalabilidad, margen_potencial, valor_activo) VALUES (?, ?, ?, ?, ?)');
-            return $stmt->execute([
-                $data['marca_id'],
-                $data['fuentes_ingresos'],
-                $data['escalabilidad'],
-                $data['margen_potencial'],
-                $data['valor_activo']
-            ]);
+        } catch (\Throwable $e) {
+            error_log('[Monetization::save] ' . $e->getMessage());
+            throw $e;
         }
     }
 }

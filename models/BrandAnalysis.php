@@ -58,7 +58,7 @@ class BrandAnalysis {
                 $data['conflictos_clases'],
                 $data['nivel_proteccion'],
                 $data['expansion_internacional'],
-                $data['marca_id'],
+                $data['marca_id']
             ]);
         } catch (\Throwable $e) {
             error_log('[BrandAnalysis::save] ' . $e->getMessage());

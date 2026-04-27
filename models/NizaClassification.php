@@ -51,7 +51,7 @@ class NizaClassification {
                 $data['clase_principal'],
                 $data['clases_complementarias'],
                 $data['riesgo_colision'],
-                $data['marca_id'],
+                $data['marca_id']
             ]);
         } catch (\Throwable $e) {
             error_log('[NizaClassification::save] ' . $e->getMessage());
