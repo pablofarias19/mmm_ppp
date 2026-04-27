@@ -10,6 +10,7 @@
  *   reply_count           — número de respuestas nuevas desde un id dado (polling)
  *   rubros_proveedor      — lista de business_type que tienen negocios "P"
  *   influence_query       — busca inmobiliarias por zona de influencia
+ *   list_archived         — lista consultas archivadas (solo admin)
  *
  * Acciones POST:
  *   send                    — crea y envía una consulta masiva
@@ -21,6 +22,11 @@
  *   toggle_consulta_habilitada — activa/desactiva flag consulta_habilitada (admin)
  *   toggle_consulta_siempre    — admin marca negocio para siempre incluido en masivas
  *   toggle_proveedor_siempre   — admin marca negocio P para siempre incluido en proveedores
+ *   delete_archived            — elimina consultas archivadas (admin); {consulta_id:N} o {all:true}
+ *
+ * Duración máxima por tipo (auto-archivo):
+ *   general, masiva, envio   → 30 minutos
+ *   global_proveedor         → 30 minutos
  */
 
 ini_set('display_errors', 0);
@@ -72,6 +78,16 @@ define('CQ_MAX_MASIVA',     20);
 define('CQ_GENERAL_DEFAULT_RADIUS_KM', 25);
 
 /**
+ * Duración máxima (en minutos) por tipo de consulta antes de archivarse automáticamente.
+ * Las consultas que superen este tiempo pasan a status='archived'.
+ * Definidos por separado para permitir ajuste independiente en el futuro.
+ */
+define('CQ_MAX_DURATION_GENERAL',    30);   // Consulta General → 30 min
+define('CQ_MAX_DURATION_PROVEEDOR',  30);   // Consulta Global Proveedores → 30 min
+define('CQ_MAX_DURATION_MASIVA',     30);   // Consulta Masiva → 30 min
+define('CQ_MAX_DURATION_ENVIO',      30);   // Consulta Envío → 30 min
+
+/**
  * Tipos de negocio RESTRINGIDOS para consultas generales:
  * solo participan si el admin activó consulta_habilitada = 1 en ese negocio.
  * (Estudio Jurídico, Inmobiliaria, Productor de Seguros, Agente INPI)
@@ -104,6 +120,40 @@ function cq_own_business(\PDO $db, int $userId, int $businessId): bool {
     $stmt = $db->prepare("SELECT 1 FROM businesses WHERE id = ? AND user_id = ? LIMIT 1");
     $stmt->execute([$businessId, $userId]);
     return (bool)$stmt->fetchColumn();
+}
+
+/**
+ * Archiva automáticamente las consultas que han superado su duración máxima.
+ * Llama a esta función antes de devolver listas de consultas activas.
+ *
+ * Duración máxima por tipo:
+ *   general / masiva / envio → CQ_MAX_DURATION_GENERAL  (30 min)
+ *   global_proveedor         → CQ_MAX_DURATION_PROVEEDOR (30 min)
+ */
+function cq_auto_expire(\PDO $db): void {
+    if (!mapitaColumnExists($db, 'consultas_masivas', 'status')) return;
+    try {
+        // Mapeo tipo → minutos de duración máxima
+        $limits = [
+            'general'          => CQ_MAX_DURATION_GENERAL,
+            'masiva'           => CQ_MAX_DURATION_MASIVA,
+            'envio'            => CQ_MAX_DURATION_ENVIO,
+            'global_proveedor' => CQ_MAX_DURATION_PROVEEDOR,
+        ];
+        foreach ($limits as $tipo => $minutes) {
+            $db->prepare(
+                "UPDATE consultas_masivas
+                    SET status = 'archived',
+                        closed_at = NOW(),
+                        closed_by = 0
+                  WHERE tipo   = ?
+                    AND status IN ('open', 'answered')
+                    AND created_at <= DATE_SUB(NOW(), INTERVAL ? MINUTE)"
+            )->execute([$tipo, $minutes]);
+        }
+    } catch (\Throwable $e) {
+        error_log('cq_auto_expire error: ' . $e->getMessage());
+    }
 }
 
 /**
@@ -490,6 +540,9 @@ if ($method === 'GET') {
         $uid = cq_require_login();
         $filter = trim($_GET['filter'] ?? 'active');
 
+        // Archivar automáticamente las consultas que superaron su duración máxima
+        cq_auto_expire($db);
+
         // Incluir status en el SELECT solo si la columna existe
         $hasStatus = mapitaColumnExists($db, 'consultas_masivas', 'status');
         $statusCol = $hasStatus ? ", cm.status, DATE_FORMAT(cm.closed_at,'%d/%m/%Y %H:%i') AS closed_at_fmt" : "";
@@ -523,6 +576,9 @@ if ($method === 'GET') {
     // Excluye consultas que el remitente ya cerró/archivó y las que el destinatario descartó
     if ($action === 'pending') {
         $uid = cq_require_login();
+
+        // Archivar automáticamente las consultas que superaron su duración máxima
+        cq_auto_expire($db);
         $hasStatus    = mapitaColumnExists($db, 'consultas_masivas', 'status');
         $hasDismissed = mapitaColumnExists($db, 'consultas_destinatarios', 'dismissed_at');
         $statusFilter   = $hasStatus    ? " AND cm.status IN ('open','answered')" : '';
@@ -999,6 +1055,107 @@ if ($method === 'POST') {
         auditLog('dismiss_received', 'consulta_destinatario', $consultaId, ['business_id' => $businessId]);
         cq_ok([], 'Consulta descartada correctamente.');
     }
+}
+
+// ── delete_archived: elimina consultas archivadas (solo admin) ────────────────
+// POST {action:'delete_archived', consulta_id:N}   — elimina una consulta específica
+// POST {action:'delete_archived', all:true}         — elimina TODAS las archivadas
+if ($action === 'delete_archived') {
+    cq_require_login();
+    if (!isAdmin()) cq_err('Solo el administrador puede eliminar consultas archivadas.', 403);
+
+    $input = cq_input();
+    if (!mapitaColumnExists($db, 'consultas_masivas', 'status')) {
+        cq_err('El módulo de ciclo de vida aún no está disponible.', 503);
+    }
+
+    // Borrar en lote todas las archivadas
+    if (!empty($input['all'])) {
+        $deleted = 0;
+        $db->beginTransaction();
+        try {
+            // Eliminar destinatarios y respuestas de las archivadas antes de borrar cabecera
+            $db->exec(
+                "DELETE cd FROM consultas_destinatarios cd
+                   JOIN consultas_masivas cm ON cm.id = cd.consulta_id
+                  WHERE cm.status = 'archived'"
+            );
+            $db->exec(
+                "DELETE cr FROM consultas_respuestas cr
+                   JOIN consultas_masivas cm ON cm.id = cr.consulta_id
+                  WHERE cm.status = 'archived'"
+            );
+            $stmt = $db->exec("DELETE FROM consultas_masivas WHERE status = 'archived'");
+            $deleted = is_int($stmt) ? $stmt : 0;
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            error_log('delete_archived all error: ' . $e->getMessage());
+            cq_err('Error al eliminar consultas archivadas.');
+        }
+        auditLog('delete_archived_all', 'consulta_masiva', 0, ['deleted' => $deleted]);
+        cq_ok(['deleted' => $deleted], "Se eliminaron {$deleted} consultas archivadas.");
+    }
+
+    // Borrar una consulta archivada individual
+    $consultaId = (int)($input['consulta_id'] ?? 0);
+    if ($consultaId <= 0) cq_err('Debe indicar consulta_id o all:true.');
+
+    $stmtCm = $db->prepare("SELECT id, status FROM consultas_masivas WHERE id = ? LIMIT 1");
+    $stmtCm->execute([$consultaId]);
+    $cm = $stmtCm->fetch(\PDO::FETCH_ASSOC);
+    if (!$cm) cq_err('Consulta no encontrada.', 404);
+    if ($cm['status'] !== 'archived') {
+        cq_err('Solo se pueden eliminar consultas archivadas (status = archived).');
+    }
+
+    $db->beginTransaction();
+    try {
+        $db->prepare("DELETE FROM consultas_destinatarios WHERE consulta_id = ?")->execute([$consultaId]);
+        $db->prepare("DELETE FROM consultas_respuestas    WHERE consulta_id = ?")->execute([$consultaId]);
+        $db->prepare("DELETE FROM consultas_masivas       WHERE id = ?"         )->execute([$consultaId]);
+        $db->commit();
+    } catch (\Throwable $e) {
+        $db->rollBack();
+        error_log('delete_archived error: ' . $e->getMessage());
+        cq_err('Error al eliminar la consulta.');
+    }
+    auditLog('delete_archived', 'consulta_masiva', $consultaId, []);
+    cq_ok([], 'Consulta archivada eliminada correctamente.');
+}
+
+// ── list_archived: lista consultas archivadas (solo admin) ───────────────────
+// GET ?action=list_archived&page=1
+if ($action === 'list_archived') {
+    cq_require_login();
+    if (!isAdmin()) cq_err('Solo el administrador puede ver consultas archivadas.', 403);
+
+    if (!mapitaColumnExists($db, 'consultas_masivas', 'status')) {
+        cq_ok([]);
+    }
+
+    $page    = max(1, (int)($_GET['page'] ?? 1));
+    $perPage = 50;
+    $offset  = ($page - 1) * $perPage;
+
+    $stmt = $db->prepare(
+        "SELECT cm.id, cm.tipo, cm.rubro, cm.texto,
+                DATE_FORMAT(cm.created_at,'%d/%m/%Y %H:%i') AS created_at,
+                DATE_FORMAT(cm.closed_at, '%d/%m/%Y %H:%i') AS closed_at_fmt,
+                u.username AS sender_name,
+                (SELECT COUNT(*) FROM consultas_destinatarios WHERE consulta_id = cm.id) AS total_dest,
+                (SELECT COUNT(*) FROM consultas_respuestas    WHERE consulta_id = cm.id) AS total_resp
+           FROM consultas_masivas cm
+           LEFT JOIN users u ON u.id = cm.user_id
+          WHERE cm.status = 'archived'
+          ORDER BY cm.closed_at DESC
+          LIMIT $perPage OFFSET $offset"
+    );
+    $stmt->execute();
+    $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+    $total = (int)$db->query("SELECT COUNT(*) FROM consultas_masivas WHERE status = 'archived'")->fetchColumn();
+    cq_ok(['items' => $rows, 'total' => $total, 'page' => $page, 'per_page' => $perPage]);
 }
 
 cq_err('Acción no reconocida.', 400);
