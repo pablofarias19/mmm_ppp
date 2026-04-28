@@ -72,6 +72,15 @@ class BusinessValidationTest extends TestCase
         $this->assertEquals('otros', $result['data']['business_type']);
     }
 
+    public function testKnownBusinessTypeIsPreserved(): void
+    {
+        $data                  = $this->validData();
+        $data['business_type'] = 'restaurante';
+        $result                = validateBusinessData($data);
+        $this->assertTrue($result['valid'], implode(', ', $result['errors']));
+        $this->assertEquals('restaurante', $result['data']['business_type']);
+    }
+
     public function testInvalidLatitudeFails(): void
     {
         $data        = $this->validData();
