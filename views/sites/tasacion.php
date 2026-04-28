@@ -57,7 +57,7 @@ siteHeader(t('tasacion_page_title'), 'tasacion');
     <h2><?= htmlspecialchars(t('tasacion_cta_title'), ENT_QUOTES, 'UTF-8') ?></h2>
     <p><?= htmlspecialchars(t('tasacion_cta_desc'), ENT_QUOTES, 'UTF-8') ?></p>
     <p>
-        <a href="https://www.mariacelesteortiz.com.ar" target="_blank" rel="noopener noreferrer"
+        <a href="https://mariacelesteortiz.com.ar/tasacion_marcas.php" target="_blank" rel="noopener noreferrer"
            style="font-weight:800;font-size:1.05em;color:#1B3B6F;text-decoration:underline;">
             <?= htmlspecialchars(t('tasacion_specialist'), ENT_QUOTES, 'UTF-8') ?>
         </a>
@@ -68,7 +68,7 @@ siteHeader(t('tasacion_page_title'), 'tasacion');
     </p>
     <div class="cta-row">
         <a class="btn btn-primary"
-           href="https://www.mariacelesteortiz.com.ar" target="_blank" rel="noopener noreferrer">
+           href="https://mariacelesteortiz.com.ar/tasacion_marcas.php" target="_blank" rel="noopener noreferrer">
             <?= htmlspecialchars(t('tasacion_cta_btn'), ENT_QUOTES, 'UTF-8') ?>
         </a>
         <a class="btn btn-secondary" href="/contacto?tema=tasacion">
