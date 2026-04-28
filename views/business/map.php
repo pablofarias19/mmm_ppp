@@ -4981,12 +4981,12 @@ function buildPopup(n, isMarca) {
         const wa     = 'https://wa.me/?text=' + waText;
 
         p += '<div class="popup-footer">';
-        if (n.phone)   p += '<a href="tel:' + n.phone + '" class="popup-action" style="background:#27ae60;">📞 Llamar</a>';
-        if (n.email)   p += '<a href="mailto:' + n.email + '" class="popup-action" style="background:#8e44ad;">📧 Email</a>';
-        p += '<a href="' + gmaps + '" target="_blank" class="popup-action" style="background:#4285F4;">🗺️ Mapa</a>';
-        p += '<a href="' + wa   + '" target="_blank" class="popup-action" style="background:#25D366;">💬 WA</a>';
-        if (n.website) p += '<a href="' + n.website + '" target="_blank" class="popup-action" style="background:#e67e22;">🌐 Web</a>';
-        p += '<a href="/business/view_business.php?id=' + n.id + '" target="_blank" class="popup-action" style="background:#1B3B6F;">📋 Detalle</a>';
+        if (n.phone)   p += '<a href="tel:' + n.phone + '" class="popup-action" style="background:#27ae60;"> 📞 </a>';
+        if (n.email)   p += '<a href="mailto:' + n.email + '" class="popup-action" style="background:#8e44ad;"> 📧 </a>';
+        p += '<a href="' + gmaps + '" target="_blank" class="popup-action" style="background:#4285F4;"> 🗺️ </a>';
+        p += '<a href="' + wa   + '" target="_blank" class="popup-action" style="background:#25D366;"> 💬 </a>';
+        if (n.website) p += '<a href="' + n.website + '" target="_blank" class="popup-action" style="background:#e67e22;"> 🌐 </a>';
+        p += '<a href="/business/view_business.php?id=' + n.id + '" target="_blank" class="popup-action" style="background:#1B3B6F;"> 📋 </a>';
         // Botón módulo disponibles (solo si el titular activó el módulo)
         if (n.disponibles_activo) {
             p += '<button type="button" class="popup-action" style="background:#d97706;font-weight:800;letter-spacing:.5px;" '
@@ -5000,7 +5000,7 @@ function buildPopup(n, isMarca) {
         // Botón "Ver Inmuebles" para inmobiliarias
         if (n.business_type === 'inmobiliaria') {
             p += '<button type="button" class="popup-action" style="background:#16a34a;font-weight:700;color:#fff;" '
-               + 'onclick="verInmueblesDe(' + parseInt(n.id) + ',' + toJsSingleStr(n.name || n.nombre || '') + ')">🏘️ Ver otros Inmuebles</button>';
+               + 'onclick="verInmueblesDe(' + parseInt(n.id) + ',' + toJsSingleStr(n.name || n.nombre || '') + ')"> 🏘️ </button>';
         }
         p += '</div>';
     }
@@ -8722,18 +8722,18 @@ function abrirDetalleInmueble(inmId) {
         // Footer buttons
         let ftHtml = '';
         if (inm.contacto) {
-            ftHtml += '<a href="tel:' + escapeHtml(inm.contacto) + '" class="inm-detail-btn inm-detail-btn--call">📞 Llamar</a>';
+            ftHtml += '<a href="tel:' + escapeHtml(inm.contacto) + '" class="inm-detail-btn inm-detail-btn--call">📞</a>';
         }
         const bizId2 = parseInt(inm.business_id, 10) || 0;
         if (inm.web_url) {
             ftHtml += '<a class="inm-detail-btn inm-detail-btn--map"'
                    + ' href="' + escapeHtml(inm.web_url) + '"'
-                   + ' target="_blank" rel="noopener noreferrer">🔎 Detalles</a>';
+                   + ' target="_blank" rel="noopener noreferrer">🔎</a>';
         }
         if (bizId2) {
             const safeNameS = toJsSingleStr(bizName);
             ftHtml += '<button type="button" class="inm-detail-btn inm-detail-btn--list"'
-                   + ' onclick="cerrarDetalleInmueble();verInmueblesDe(' + bizId2 + ',' + safeNameS + ')">🏘️ Ver otros Inmuebles</button>';
+                   + ' onclick="cerrarDetalleInmueble();verInmueblesDe(' + bizId2 + ',' + safeNameS + ')">🏘️</button>';
         }
         footer.innerHTML = ftHtml;
     })
