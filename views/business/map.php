@@ -1408,19 +1408,6 @@ try {
             </div>
         </div>
 
-        <!-- SECTOR/RUBRO (marcas solo) -->
-        <div class="accordion-item" id="filter-sector-container" style="display:none;">
-            <button class="accordion-btn" onclick="toggleAccordion(this)">
-                📋 Sector
-                <span style="font-size:10px;">▼</span>
-            </button>
-            <div class="accordion-content">
-                <div id="filter-sector-list" style="max-height:200px;overflow-y:auto;">
-                    <!-- Se llena dinámicamente -->
-                </div>
-            </div>
-        </div>
-
         <!-- PAÍS DE LA ENTIDAD -->
         <div class="accordion-item" id="filter-country-container">
             <button class="accordion-btn" onclick="toggleAccordion(this)">
@@ -4176,7 +4163,6 @@ function filtrar() {
     // Update UI visibility for brand/business-only filters
     const showBrandFilters = (currentVer === 'marcas' || currentVer === 'ambos') || franquiciasFilter;
     document.getElementById('filter-protection-container').style.display = showBrandFilters ? '' : 'none';
-    document.getElementById('filter-sector-container').style.display = showBrandFilters ? '' : 'none';
 
     // ─── Filter negocios ────────────────────────────────────────────────────────
     let negocios_filtered = [];
