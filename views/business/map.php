@@ -5000,7 +5000,7 @@ function buildPopup(n, isMarca) {
         // Botón "Ver Inmuebles" para inmobiliarias
         if (n.business_type === 'inmobiliaria') {
             p += '<button type="button" class="popup-action" style="background:#16a34a;font-weight:700;color:#fff;" '
-               + 'onclick="verInmueblesDe(' + parseInt(n.id) + ',' + toJsSingleStr(n.name || n.nombre || '') + ')"> Ver + 🏘️ </button>';
+               + 'onclick="verInmueblesDe(' + parseInt(n.id) + ',' + toJsSingleStr(n.name || n.nombre || '') + ')"> Ver 🏘️ </button>';
         }
         p += '</div>';
     }
@@ -7844,7 +7844,7 @@ function _buildInmPopup(inm, overrideBizId, overrideBizName) {
         const safeNameS  = toJsSingleStr(inmNombre);
         p += '<button type="button" class="popup-action popup-action--inm-list" '
            + 'title="Ver otros inmuebles de esta inmobiliaria" aria-label="Ver otros inmuebles de esta inmobiliaria" '
-           + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameS + ')">Ver + 🏘️</button>';
+           + 'onclick="verInmueblesDe(' + safeId2 + ',' + safeNameS + ')">Ver 🏘️</button>';
         // 4) Enfocar inmobiliaria en el mapa (movido aquí desde la tarjeta eliminada)
         const safeIdF  = parseInt(inmId, 10);
         const safeLatF = isNaN(bizLat) ? 'null' : bizLat;
@@ -8733,7 +8733,7 @@ function abrirDetalleInmueble(inmId) {
         if (bizId2) {
             const safeNameS = toJsSingleStr(bizName);
             ftHtml += '<button type="button" class="inm-detail-btn inm-detail-btn--list"'
-                   + ' onclick="cerrarDetalleInmueble();verInmueblesDe(' + bizId2 + ',' + safeNameS + ')">Ver + 🏘️</button>';
+                   + ' onclick="cerrarDetalleInmueble();verInmueblesDe(' + bizId2 + ',' + safeNameS + ')">Ver 🏘️</button>';
         }
         footer.innerHTML = ftHtml;
     })
