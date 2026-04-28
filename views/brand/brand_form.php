@@ -301,7 +301,7 @@ $hasPersonalizedOg = ($ogCoverPublic !== null);
                     <line x1="12" y1="3" x2="12" y2="15"></line>
                 </svg>
                 <p>Arrastra imágenes aquí o haz clic para seleccionar</p>
-                <small>JPG, PNG, WebP - Máximo 5MB cada una</small>
+                <small>JPG, PNG, WebP - Máximo 120kb cada una</small>
                 <input type="file" id="imageInput" multiple accept="image/*">
             </div>
 
