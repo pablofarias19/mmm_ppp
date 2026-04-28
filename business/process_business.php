@@ -81,11 +81,13 @@ function validateBusinessData(array $data): array {
     }
     $clean['address'] = $address;
 
-    // Tipo de negocio (obligatorio, lista permitida)
+    // Tipo de negocio (obligatorio; si no está en la lista permitida, se normaliza a 'otros')
     $allowedTypes = mapitaAllowedBusinessTypes();
     $businessType = trim($data['business_type'] ?? '');
-    if (!in_array($businessType, $allowedTypes, true)) {
-        $errors[] = 'El tipo de negocio no es válido.';
+    if ($businessType === '') {
+        $errors[] = 'El tipo de negocio es obligatorio.';
+    } elseif (!in_array($businessType, $allowedTypes, true)) {
+        $businessType = 'otros';
     }
     $clean['business_type'] = $businessType;
 

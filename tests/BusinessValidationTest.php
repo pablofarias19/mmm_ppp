@@ -54,12 +54,31 @@ class BusinessValidationTest extends TestCase
         $this->assertFalse($result['valid']);
     }
 
-    public function testInvalidBusinessTypeFails(): void
+    public function testEmptyBusinessTypeFails(): void
     {
         $data                  = $this->validData();
-        $data['business_type'] = 'disco';
+        $data['business_type'] = '';
         $result                = validateBusinessData($data);
         $this->assertFalse($result['valid']);
+        $this->assertNotEmpty($result['errors']);
+    }
+
+    public function testUnknownBusinessTypeNormalizesToOtros(): void
+    {
+        $data                  = $this->validData();
+        $data['business_type'] = 'fonoaudiologia';
+        $result                = validateBusinessData($data);
+        $this->assertTrue($result['valid'], implode(', ', $result['errors']));
+        $this->assertEquals('otros', $result['data']['business_type']);
+    }
+
+    public function testKnownBusinessTypeIsPreserved(): void
+    {
+        $data                  = $this->validData();
+        $data['business_type'] = 'restaurante';
+        $result                = validateBusinessData($data);
+        $this->assertTrue($result['valid'], implode(', ', $result['errors']));
+        $this->assertEquals('restaurante', $result['data']['business_type']);
     }
 
     public function testInvalidLatitudeFails(): void
